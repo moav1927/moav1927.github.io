@@ -110,7 +110,7 @@
 <div class="envoltura">
   <header>
     <h1>Muchos PDF, <em>un solo Excel</em></h1>
-    <p>Sube 1, 10 o 50 documentos: facturas, remisiones, informes, cotizaciones… La herramienta los clasifica, saca los datos que pidas de cada uno y arma un Excel con un resumen, los totales y el detalle.</p>
+    <p>Sube 1, 10 o 50 documentos —facturas, recibos, remisiones, informes, tesis, normas, listados…— en español, inglés, francés, alemán, neerlandés, portugués o italiano. La herramienta los clasifica, saca los datos que pidas de cada uno y arma un Excel con un resumen, los totales por moneda y el detalle.</p>
     <div class="sellos"><span class="sello">Gratis</span><span class="sello">Sin cuenta</span><span class="sello">Tus PDF no salen de tu dispositivo</span></div>
   </header>
 
@@ -128,14 +128,14 @@
         <textarea id="pedido" placeholder="Ej.: número, fecha, proveedor, NIT, total"></textarea>
       </label>
       <div class="presets" id="presets" aria-label="Sugerencias">
-        <button type="button" data-v="número, fecha, proveedor, NIT, subtotal, IVA, total">Facturas</button>
+        <button type="button" data-v="número, fecha, proveedor, NIT, subtotal, IVA, total, moneda">Facturas</button>
         <button type="button" data-v="número, fecha, cliente, dirección, ciudad, transportador, placa">Remisiones</button>
-        <button type="button" data-v="título, fecha, proyecto, autor, resumen">Informes</button>
+        <button type="button" data-v="título, autor, institución, fecha, páginas, resumen">Informes y tesis</button>
         <button type="button" data-v="">Automático</button>
       </div>
 
       <label class="opcion" for="conItems"><input type="checkbox" id="conItems" checked>
-        <span>Incluir una hoja con las tablas de todos los documentos (productos, ítems, ensayos…).</span></label>
+        <span>Incluir las tablas de los documentos (ítems de facturas en una hoja y tablas de informes y listados en otra).</span></label>
       <label class="opcion" for="conTexto"><input type="checkbox" id="conTexto">
         <span>Incluir una hoja con todo el texto, línea por línea.</span></label>
       <label class="opcion" for="forzarOcr"><input type="checkbox" id="forzarOcr">
@@ -149,7 +149,7 @@
       <progress id="progreso" max="1" value="0" hidden></progress>
       <div class="estado" id="estado" role="status" aria-live="polite"></div>
 
-      <p class="nota">Funciona con reglas, no con inteligencia artificial: reconoce los formatos habituales («Total:», «NIT», «Factura No.»…). Los datos que no encuentra quedan marcados en la columna <b>Por revisar</b>.</p>
+      <p class="nota">Funciona con reglas, no con inteligencia artificial: reconoce los formatos habituales en varios idiomas («Total:», «Invoice No.», «Rechnungsdatum», «NIT», «VAT»…). Los datos que no encuentra quedan marcados en la columna <b>Por revisar</b>.</p>
       <p class="nota">Si un PDF está escaneado, la primera vez se descargan unos 6 MB para leer el texto de la imagen; después quedan guardados en el navegador.</p>
     </section>
 
@@ -175,118 +175,183 @@
 <script>
 (() => {
   const $ = s => document.querySelector(s);
-  const MAX_PAGINAS = 60;
+  const MAX_PAGINAS = 400;   // páginas leídas por documento
+  const MAX_OCR = 25;        // páginas escaneadas que se leen con OCR por documento (el OCR es lento)
   const base = new URL('./lib/', location.href).href;
   pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js';
 
   const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const pesos = n => '$ ' + Math.round(n).toLocaleString('es-CO');
+  const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const fmtNum = n => n.toLocaleString('es-CO', { maximumFractionDigits: 2 });
+  const fmtMonto = (n, m) => (m ? m + ' ' : '') + fmtNum(n);
 
   // =====================================================================
-  // TIPOS DE DOCUMENTO: palabras clave (sin tildes). Las del título pesan más.
+  // TIPOS DE DOCUMENTO (palabras sin tildes, en varios idiomas).
+  // "titulo": palabras que suelen ir en el encabezado (pesan más). "claves": palabras del cuerpo.
   // =====================================================================
   const TIPOS = [
-    { id: 'factura', nombre: 'Factura', plural: 'Facturas',
-      titulo: ['factura electronica de venta', 'factura de venta', 'factura electronica', 'factura'],
-      claves: ['cufe', 'resolucion dian', 'iva', 'subtotal', 'total a pagar', 'base gravable', 'retencion', 'forma de pago', 'fecha de vencimiento'],
-      campos: ['numero', 'fecha', 'emisor', 'nit', 'cliente', 'subtotal', 'iva', 'total'] },
-    { id: 'remision', nombre: 'Remisión', plural: 'Remisiones',
-      titulo: ['remision', 'nota de entrega', 'guia de despacho', 'orden de despacho', 'nota de remision'],
-      claves: ['despacho', 'despachado', 'recibido por', 'recibi conforme', 'entregado por', 'transportador', 'conductor', 'placa', 'destino', 'bultos'],
+    { id: 'factura', nombre: 'Factura', plural: 'Facturas', comercial: true,
+      titulo: ['factura electronica de venta', 'factura de venta', 'factura electronica', 'factura', 'tax invoice', 'commercial invoice', 'retail invoice', 'invoice', 'facture', 'rechnung', 'factuur', 'fattura', 'fatura', 'nota fiscal', 'bill of supply'],
+      claves: ['cufe', 'resolucion dian', 'iva', 'subtotal', 'total a pagar', 'invoice number', 'invoice date', 'amount due', 'balance due', 'bill to', 'vat', 'gst', 'gstin', 'tva', 'mwst', 'ust', 'btw', 'montant ht', 'total ttc', 'rechnungsnummer', 'rechnungsdatum', 'factuurnummer', 'factuurdatum', 'due date', 'payment terms', 'fecha de vencimiento', 'net 30', 'vervaldatum', 'unit price', 'qty', 'quantity'],
+      campos: ['numero', 'fecha', 'emisor', 'nit', 'cliente', 'subtotal', 'iva', 'total', 'moneda'] },
+    { id: 'recibo', nombre: 'Recibo', plural: 'Recibos', comercial: true,
+      titulo: ['recibo de caja', 'recibo de pago', 'recibo', 'payment receipt', 'sales receipt', 'receipt', 'recu', 'quittung', 'kwitantie', 'ricevuta', 'comprovante'],
+      claves: ['paid', 'pagado', 'amount paid', 'payment mode', 'payment method', 'cash', 'efectivo', 'transaction id', 'booking id', 'check in', 'check out'],
+      campos: ['numero', 'fecha', 'emisor', 'cliente', 'total', 'moneda', 'formapago'] },
+    { id: 'remision', nombre: 'Remisión', plural: 'Remisiones', comercial: true,
+      titulo: ['remision', 'nota de entrega', 'guia de despacho', 'orden de despacho', 'nota de remision', 'delivery note', 'packing slip', 'packing list', 'bill of lading', 'bon de livraison', 'lieferschein', 'pakbon', 'guia de remessa'],
+      claves: ['despacho', 'despachado', 'recibido por', 'recibi conforme', 'entregado por', 'transportador', 'conductor', 'placa', 'bultos', 'delivered', 'shipped', 'carrier', 'tracking', 'consignee', 'shipper'],
       campos: ['numero', 'fecha', 'emisor', 'cliente', 'direccion', 'ciudad', 'transportador', 'placa'] },
-    { id: 'informe', nombre: 'Informe', plural: 'Informes',
-      titulo: ['informe tecnico', 'informe de', 'informe', 'reporte tecnico', 'memoria de calculo', 'estudio de'],
-      claves: ['introduccion', 'objetivo', 'alcance', 'metodologia', 'conclusiones', 'recomendaciones', 'anexo', 'ingenieria', 'ensayo', 'resultados', 'elaborado por', 'revisado por'],
-      campos: ['titulo', 'fecha', 'proyecto', 'cliente', 'autor', 'resumen'] },
-    { id: 'cotizacion', nombre: 'Cotización', plural: 'Cotizaciones',
-      titulo: ['cotizacion', 'propuesta economica', 'oferta comercial', 'presupuesto'],
-      claves: ['validez de la oferta', 'validez', 'tiempo de entrega', 'condiciones comerciales'],
-      campos: ['numero', 'fecha', 'emisor', 'cliente', 'subtotal', 'iva', 'total'] },
-    { id: 'orden', nombre: 'Orden de compra', plural: 'Órdenes de compra',
-      titulo: ['orden de compra', 'orden de servicio', 'purchase order'],
-      claves: ['proveedor', 'fecha de entrega', 'autorizado por', 'condiciones de pago'],
-      campos: ['numero', 'fecha', 'emisor', 'proveedor', 'subtotal', 'iva', 'total'] },
-    { id: 'nota', nombre: 'Nota crédito/débito', plural: 'Notas crédito/débito',
-      titulo: ['nota credito', 'nota debito', 'nota de credito', 'nota de debito'],
-      claves: ['factura referencia', 'concepto'],
-      campos: ['numero', 'fecha', 'emisor', 'cliente', 'total'] },
-    { id: 'cobro', nombre: 'Cuenta de cobro', plural: 'Cuentas de cobro',
+    { id: 'cotizacion', nombre: 'Cotización', plural: 'Cotizaciones', comercial: true,
+      titulo: ['cotizacion', 'propuesta economica', 'oferta comercial', 'quotation', 'quote', 'estimate', 'proforma', 'pro forma', 'devis', 'angebot', 'offerte', 'preventivo', 'orcamento'],
+      claves: ['validez de la oferta', 'validez', 'tiempo de entrega', 'valid until', 'validity', 'valable', 'gultig'],
+      campos: ['numero', 'fecha', 'emisor', 'cliente', 'subtotal', 'iva', 'total', 'moneda'] },
+    { id: 'orden', nombre: 'Orden de compra', plural: 'Órdenes de compra', comercial: true,
+      titulo: ['orden de compra', 'orden de servicio', 'purchase order', 'bon de commande', 'bestellung', 'inkooporder', 'ordine di acquisto'],
+      claves: ['proveedor', 'fecha de entrega', 'autorizado por', 'po number', 'ship to', 'delivery date'],
+      campos: ['numero', 'fecha', 'emisor', 'proveedor', 'subtotal', 'iva', 'total', 'moneda'] },
+    { id: 'nota', nombre: 'Nota crédito/débito', plural: 'Notas crédito/débito', comercial: true,
+      titulo: ['nota credito', 'nota debito', 'nota de credito', 'nota de debito', 'credit note', 'credit memo', 'debit note', 'avoir', 'gutschrift', 'creditnota', 'nota di credito'],
+      claves: ['factura referencia', 'original invoice', 'concepto'],
+      campos: ['numero', 'fecha', 'emisor', 'cliente', 'total', 'moneda'] },
+    { id: 'cobro', nombre: 'Cuenta de cobro', plural: 'Cuentas de cobro', comercial: true,
       titulo: ['cuenta de cobro'], claves: ['debe a', 'la suma de', 'por concepto de'],
-      campos: ['numero', 'fecha', 'emisor', 'cliente', 'total'] },
-    { id: 'extracto', nombre: 'Extracto', plural: 'Extractos',
-      titulo: ['extracto', 'estado de cuenta'], claves: ['saldo anterior', 'saldo final', 'saldo actual', 'movimientos', 'retiros', 'consignaciones'],
-      campos: ['emisor', 'fecha', 'cliente', 'saldo'] },
+      campos: ['numero', 'fecha', 'emisor', 'cliente', 'total', 'moneda'] },
+    { id: 'extracto', nombre: 'Extracto', plural: 'Extractos', comercial: true,
+      titulo: ['extracto bancario', 'extracto', 'estado de cuenta', 'bank statement', 'account statement', 'statement of account', 'releve de compte', 'kontoauszug', 'rekeningafschrift'],
+      claves: ['saldo anterior', 'saldo final', 'saldo actual', 'movimientos', 'retiros', 'consignaciones', 'opening balance', 'closing balance', 'previous balance', 'deposits', 'withdrawals', 'solde'],
+      campos: ['emisor', 'fecha', 'cliente', 'saldo', 'moneda'] },
     { id: 'contrato', nombre: 'Contrato', plural: 'Contratos',
-      titulo: ['contrato', 'otrosi'], claves: ['clausula', 'las partes', 'contratante', 'contratista', 'objeto del contrato', 'plazo'],
-      campos: ['titulo', 'fecha', 'cliente', 'total'] },
+      titulo: ['contrato', 'otrosi', 'agreement', 'contract', 'contrat', 'vertrag', 'overeenkomst', 'contratto', 'memorandum of understanding'],
+      claves: ['clausula', 'clause', 'las partes', 'the parties', 'whereas', 'hereby', 'contratante', 'contratista', 'objeto del contrato', 'governing law', 'plazo'],
+      campos: ['titulo', 'fecha', 'cliente', 'total', 'moneda', 'resumen'] },
     { id: 'acta', nombre: 'Acta', plural: 'Actas',
-      titulo: ['acta de', 'acta'], claves: ['asistentes', 'orden del dia', 'compromisos', 'se da inicio'],
-      campos: ['titulo', 'fecha', 'proyecto', 'resumen'] },
+      titulo: ['acta de', 'acta', 'minutes of', 'minutes', 'proces-verbal', 'proces verbal', 'protokoll', 'notulen', 'verbale', 'agenda', 'orden del dia', 'votacion nominal'],
+      claves: ['asistentes', 'orden del dia', 'compromisos', 'se da inicio', 'attendees', 'quorum', 'motion', 'seconded', 'adjourned', 'seance', 'presences', 'sitzung', 'call to order', 'approval of minutes', 'board of', 'meeting'],
+      campos: ['titulo', 'fecha', 'emisor', 'paginas', 'resumen'] },
+    { id: 'tesis', nombre: 'Tesis', plural: 'Tesis',
+      titulo: ['tesis doctoral', 'tesis de maestria', 'tesis', 'trabajo de grado', 'trabajo de fin de grado', 'thesis', 'dissertation', 'these', 'doktorarbeit', 'masterarbeit', 'bachelorarbeit', 'proefschrift', 'tese', 'tesi di laurea'],
+      claves: ['doctor of philosophy', 'degree of', 'master of', 'partial fulfillment', 'acknowledgements', 'agradecimientos', 'declaration', 'supervisor', 'director de tesis', 'advisor', 'bibliography', 'bibliografia', 'chapter', 'capitulo', 'university', 'universidad', 'faculty', 'facultad'],
+      campos: ['titulo', 'autor', 'institucion', 'fecha', 'paginas', 'palabrasclave', 'resumen'] },
+    { id: 'articulo', nombre: 'Artículo académico', plural: 'Artículos académicos',
+      titulo: [],
+      claves: ['abstract', 'keywords', 'palabras clave', 'doi', 'references', 'referencias', 'journal', 'proceedings', 'arxiv', 'et al', 'introduction', 'related work', 'conclusion'],
+      campos: ['titulo', 'autor', 'fecha', 'institucion', 'palabrasclave', 'paginas', 'resumen'] },
+    { id: 'libro', nombre: 'Libro o apuntes', plural: 'Libros y apuntes',
+      titulo: ['lecture notes', 'apuntes', 'skript', 'manual', 'handbook', 'guia de usuario', 'user guide', 'user manual', 'tutorial', 'course notes', 'libro'],
+      claves: ['table of contents', 'contents', 'indice', 'inhaltsverzeichnis', 'sommaire', 'chapter', 'capitulo', 'kapitel', 'chapitre', 'preface', 'prologo', 'vorwort', 'auflage', 'edition', 'isbn', 'ubungsaufgaben', 'exercises', 'ejercicios'],
+      campos: ['titulo', 'autor', 'fecha', 'paginas', 'resumen'] },
+    { id: 'norma', nombre: 'Norma o reglamento', plural: 'Normas y reglamentos',
+      titulo: ['federal register', 'proposed rules', 'proposed rule', 'final rule', 'regulation', 'reglamento', 'ley', 'decreto', 'resolucion', 'circular', 'norma tecnica', 'standard', 'rules for', 'directive', 'directiva', 'reglement', 'verordnung', 'gesetz'],
+      claves: ['section', 'seccion', 'article', 'articulo', 'paragraph', 'shall', 'deberan', 'pursuant', 'cfr', 'u.s.c', 'effective date', 'agency', 'requirements', 'requisitos', 'rules', 'comments'],
+      campos: ['titulo', 'numero', 'fecha', 'emisor', 'paginas', 'resumen'] },
+    { id: 'transcripcion', nombre: 'Transcripción', plural: 'Transcripciones',
+      titulo: ['transcript', 'transcripcion', 'transcription', 'hearing', 'deposition', 'oral argument', 'in the supreme court', 'court of appeals'],
+      claves: ['the court', 'justice', 'petitioner', 'respondent', 'witness', 'examination', 'proceedings', 'argument', 'counsel'],
+      campos: ['titulo', 'fecha', 'paginas', 'resumen'] },
+    { id: 'informe', nombre: 'Informe', plural: 'Informes',
+      titulo: ['informe tecnico', 'informe de', 'informe', 'reporte', 'report', 'rapport', 'bericht', 'relatorio', 'relazione', 'estudio', 'study', 'assessment', 'evaluation', 'memoria de calculo', 'plan directeur', 'white paper'],
+      claves: ['introduccion', 'introduction', 'objetivo', 'objective', 'alcance', 'scope', 'metodologia', 'methodology', 'conclusiones', 'conclusions', 'recomendaciones', 'recommendations', 'findings', 'executive summary', 'resumen ejecutivo', 'highlights', 'table of contents', 'anexo', 'annex', 'appendix', 'elaborado por', 'prepared by'],
+      campos: ['titulo', 'autor', 'fecha', 'institucion', 'paginas', 'resumen'] },
+    { id: 'formulario', nombre: 'Formulario', plural: 'Formularios',
+      titulo: ['formulario', 'application form', 'registration form', 'solicitud', 'formulaire', 'formular'],
+      claves: ['please fill', 'diligencie', 'signature', 'firma del', 'check one', 'date of birth', 'fecha de nacimiento'],
+      campos: ['titulo', 'fecha', 'emisor', 'paginas'] },
     { id: 'certificado', nombre: 'Certificado', plural: 'Certificados',
-      titulo: ['certificado', 'certificacion', 'constancia'], claves: ['certifica', 'hace constar', 'se expide'],
+      titulo: ['certificado', 'certificacion', 'constancia', 'certificate', 'certification', 'attestation', 'bescheinigung', 'zertifikat', 'certificaat'],
+      claves: ['certifica', 'hace constar', 'se expide', 'hereby certify', 'this is to certify', 'atteste'],
       campos: ['titulo', 'fecha', 'emisor', 'cliente'] },
     { id: 'laboratorio', nombre: 'Resultado clínico', plural: 'Resultados clínicos',
-      titulo: ['resultado de laboratorio', 'resultados de laboratorio', 'historia clinica', 'examen'],
-      claves: ['paciente', 'valor de referencia', 'resultado', 'unidad', 'diagnostico', 'medico'],
+      titulo: ['resultado de laboratorio', 'resultados de laboratorio', 'historia clinica', 'laboratory report', 'lab report', 'medical report', 'informe medico', 'pathology report', 'body composition'],
+      claves: ['paciente', 'patient', 'valor de referencia', 'reference range', 'diagnostico', 'diagnosis', 'medico', 'physician', 'specimen', 'muestra'],
       campos: ['paciente', 'fecha', 'emisor', 'resumen'] },
+    { id: 'datos', nombre: 'Tabla de datos', plural: 'Tablas de datos',
+      titulo: ['list of', 'listado', 'lista de', 'relacion de', 'estadisticas', 'statistics', 'summary of contents', 'schedule of'],
+      claves: [],
+      campos: ['titulo', 'fecha', 'emisor', 'paginas', 'cantidaditems'] },
   ];
-  const OTRO = { id: 'otro', nombre: 'Sin clasificar', plural: 'Sin clasificar', campos: ['titulo', 'fecha', 'emisor', 'total'] };
+  const OTRO = { id: 'otro', nombre: 'Sin clasificar', plural: 'Sin clasificar', campos: ['titulo', 'fecha', 'emisor', 'paginas'] };
+  const COMERCIALES = new Set(TIPOS.filter(t => t.comercial).map(t => t.id));
 
   // =====================================================================
-  // CAMPOS: sinónimos de la etiqueta (sin tildes) y tipo de valor esperado
+  // CAMPOS: sinónimos de la etiqueta (sin tildes, varios idiomas) y tipo de valor esperado
   // =====================================================================
   const CAMPOS = {
-    numero: { etiqueta: 'Número', tipo: 'codigo', syn: ['factura electronica de venta no', 'factura de venta no', 'factura no', 'factura n', 'no factura', 'numero de factura', 'remision no', 'no remision', 'numero de remision', 'cotizacion no', 'orden de compra no', 'numero de orden', 'nota credito no', 'cuenta de cobro no', 'consecutivo', 'documento no', 'numero', 'no', 'nro', 'n'] },
-    fecha: { etiqueta: 'Fecha', tipo: 'fecha', syn: ['fecha de emision', 'fecha de expedicion', 'fecha factura', 'fecha de elaboracion', 'fecha de generacion', 'fecha de despacho', 'fecha de entrega', 'fecha del informe', 'fecha'], excluir: ['vencimiento', 'nacimiento'] },
-    vencimiento: { etiqueta: 'Fecha de vencimiento', tipo: 'fecha', syn: ['fecha de vencimiento', 'vencimiento', 'fecha limite de pago', 'pagar antes de'] },
-    emisor: { etiqueta: 'Emisor', tipo: 'texto', syn: ['razon social', 'emisor', 'vendedor', 'empresa', 'expedido por', 'prestador', 'laboratorio', 'institucion'] },
-    proveedor: { etiqueta: 'Proveedor', tipo: 'texto', syn: ['proveedor', 'razon social', 'vendedor', 'emisor', 'contratista'] },
-    nit: { etiqueta: 'NIT', tipo: 'nit', syn: ['nit', 'nit emisor', 'rut', 'cc/nit', 'identificacion tributaria'] },
-    cliente: { etiqueta: 'Cliente', tipo: 'texto', syn: ['cliente', 'senor(es)', 'senores', 'senor', 'adquiriente', 'adquirente', 'comprador', 'facturar a', 'facturado a', 'destinatario', 'entregar a', 'contratante', 'dirigido a', 'nombre del cliente'] },
-    nitcliente: { etiqueta: 'NIT cliente', tipo: 'nit', syn: ['nit cliente', 'nit adquiriente', 'nit comprador', 'cc/nit cliente'] },
-    direccion: { etiqueta: 'Dirección', tipo: 'texto', syn: ['direccion de entrega', 'direccion de despacho', 'direccion', 'dir'] },
-    ciudad: { etiqueta: 'Ciudad', tipo: 'texto', syn: ['ciudad', 'municipio', 'ciudad destino', 'destino'] },
-    telefono: { etiqueta: 'Teléfono', tipo: 'texto', syn: ['telefono', 'tel', 'celular', 'movil'] },
-    correo: { etiqueta: 'Correo', tipo: 'correo', syn: ['correo electronico', 'correo', 'email', 'e-mail'] },
-    subtotal: { etiqueta: 'Subtotal', tipo: 'dinero', syn: ['subtotal', 'sub total', 'valor antes de iva', 'base gravable', 'total bruto'] },
-    iva: { etiqueta: 'IVA', tipo: 'dinero', syn: ['iva 19%', 'iva', 'valor iva', 'total iva', 'impuesto'], excluir: ['sin iva', 'antes de iva', 'base', 'regimen', 'responsable', '%$'] },
-    descuento: { etiqueta: 'Descuento', tipo: 'dinero', syn: ['descuento', 'descuentos', 'dcto'] },
-    retencion: { etiqueta: 'Retención', tipo: 'dinero', syn: ['retencion en la fuente', 'retefuente', 'retencion', 'reteica', 'reteiva'] },
-    total: { etiqueta: 'Total', tipo: 'dinero', ultimo: true, syn: ['total a pagar', 'valor total', 'neto a pagar', 'total factura', 'total general', 'gran total', 'valor a pagar', 'total cotizacion', 'total'], excluir: ['subtotal', 'sub total', 'total items', 'total unidades', 'total bultos', 'total iva', 'total cantidad', 'total paginas', 'total bruto'] },
-    saldo: { etiqueta: 'Saldo', tipo: 'dinero', ultimo: true, syn: ['saldo final', 'saldo actual', 'nuevo saldo', 'saldo'] },
-    formapago: { etiqueta: 'Forma de pago', tipo: 'texto', syn: ['forma de pago', 'medio de pago', 'condiciones de pago', 'metodo de pago'] },
-    transportador: { etiqueta: 'Transportador', tipo: 'texto', syn: ['transportador', 'transportadora', 'conductor', 'empresa transportadora'] },
-    placa: { etiqueta: 'Placa', tipo: 'texto', syn: ['placa', 'placa vehiculo'] },
-    titulo: { etiqueta: 'Título', tipo: 'texto', syn: ['titulo', 'asunto', 'referencia', 'nombre del informe'] },
-    proyecto: { etiqueta: 'Proyecto', tipo: 'texto', syn: ['proyecto', 'obra', 'nombre del proyecto', 'contrato'] },
-    autor: { etiqueta: 'Autor', tipo: 'texto', syn: ['elaborado por', 'preparado por', 'autor', 'responsable', 'ingeniero', 'firma'] },
-    paciente: { etiqueta: 'Paciente', tipo: 'texto', syn: ['paciente', 'nombre del paciente', 'nombre'] },
+    numero: { etiqueta: 'Número', tipo: 'codigo', syn: ['factura electronica de venta no', 'factura de venta no', 'factura no', 'numero de factura', 'no factura', 'invoice number', 'invoice no', 'invoice nr', 'invoice #', 'invoice id', 'bill no', 'bill number', 'receipt no', 'receipt number', 'booking id', 'numero de facture', 'facture n', 'facture no', 'rechnungsnummer', 'rechnungsnr', 'rechnung nr', 'factuurnummer', 'factuur nr', 'factuurnr', 'numero fattura', 'fattura n', 'remision no', 'numero de remision', 'delivery note no', 'cotizacion no', 'quote no', 'quotation no', 'orden de compra no', 'po number', 'order number', 'numero de orden', 'credit note no', 'nota credito no', 'documento no', 'document no', 'docket no', 'consecutivo', 'invoice', 'factuur', 'facture', 'rechnung', 'factura', 'numero', 'number', 'no', 'nro', 'nr', 'n'] },
+    fecha: { etiqueta: 'Fecha', tipo: 'fecha', syn: ['fecha de emision', 'fecha de expedicion', 'fecha factura', 'fecha de factura', 'fecha de elaboracion', 'fecha de generacion', 'fecha de despacho', 'invoice date', 'date of issue', 'issue date', 'bill date', 'receipt date', 'date de facture', 'date d emission', 'rechnungsdatum', 'factuurdatum', 'factuur datum', 'data da fatura', 'data fattura', 'fecha', 'date', 'datum', 'data', 'dated', 'issued'], excluir: ['vencimiento', 'nacimiento', 'due', 'echeance', 'fallig', 'verval', 'scadenza', 'birth', 'check out', 'entrega', 'delivery', 'periodo', 'period', 'order date', 'besteldatum', 'report run'] },
+    vencimiento: { etiqueta: 'Fecha de vencimiento', tipo: 'fecha', syn: ['fecha de vencimiento', 'vencimiento', 'due date', 'payment due', 'date d echeance', 'echeance', 'falligkeitsdatum', 'fallig am', 'vervaldatum', 'scadenza', 'pay by'] },
+    emisor: { etiqueta: 'Emisor', tipo: 'texto', syn: ['razon social', 'emisor', 'vendedor', 'expedido por', 'prestador', 'seller', 'sold by', 'vendor', 'supplier', 'issued by', 'titulaire du compte', 'account holder', 'account name', 'beneficiary', 'beneficiario', 'titular de la cuenta', 'rekeninghouder', 'kontoinhaber', 'payable to', 'pagar a', 'fournisseur', 'vendeur', 'lieferant', 'verkaufer', 'leverancier', 'verkoper', 'fornitore'] },
+    proveedor: { etiqueta: 'Proveedor', tipo: 'texto', syn: ['proveedor', 'razon social', 'vendedor', 'emisor', 'contratista', 'seller', 'sold by', 'vendor', 'supplier', 'fournisseur', 'lieferant', 'leverancier', 'fornitore'] },
+    nit: { etiqueta: 'NIT / ID fiscal', tipo: 'nit', syn: ['nit', 'nit emisor', 'rut', 'cc/nit', 'gstin', 'gst no', 'gst number', 'gst reg', 'vat no', 'vat number', 'vat id', 'vat reg no', 'vat registration', 'tax id', 'tin', 'ein', 'siret', 'siren', 'tva intracommunautaire', 'n tva', 'ust-idnr', 'ust-id', 'ust id', 'steuernummer', 'btw nr', 'btw-nummer', 'btw nummer', 'btw', 'partita iva', 'cnpj', 'rfc', 'cif', 'nif'] },
+    cliente: { etiqueta: 'Cliente', tipo: 'texto', syn: ['cliente', 'senor(es)', 'senores', 'senor', 'adquiriente', 'adquirente', 'comprador', 'facturar a', 'facturado a', 'destinatario', 'contratante', 'dirigido a', 'nombre del cliente', 'bill to', 'billed to', 'invoice to', 'sold to', 'customer name', 'customer', 'client name', 'client', 'guest name', 'buyer', 'facture a', 'adresse de facturation', 'kunde', 'rechnungsadresse', 'klant', 'factuuradres', 't.a.v', 'nom de l abonne', 'billing address'], excluir: ['care', 'service', 'support', 'number', 'nummer', 'numero', 'no', 'id', 'code', 'ref'] },
+    nitcliente: { etiqueta: 'ID fiscal cliente', tipo: 'nit', syn: ['nit cliente', 'nit adquiriente', 'customer vat', 'customer gstin', 'buyer tax id'] },
+    direccion: { etiqueta: 'Dirección', tipo: 'texto', syn: ['direccion de entrega', 'direccion de despacho', 'direccion', 'shipping address', 'billing address', 'address', 'adresse', 'adres', 'indirizzo', 'endereco'] },
+    ciudad: { etiqueta: 'Ciudad', tipo: 'texto', syn: ['ciudad', 'municipio', 'ciudad destino', 'city', 'ville', 'stadt', 'plaats', 'citta', 'cidade'] },
+    telefono: { etiqueta: 'Teléfono', tipo: 'texto', syn: ['telefono', 'tel', 'phone', 'telephone', 'telefon', 'telefoon', 'celular', 'movil', 'mobile'] },
+    correo: { etiqueta: 'Correo', tipo: 'correo', syn: ['correo electronico', 'correo', 'email', 'e-mail', 'mail', 'courriel'] },
+    subtotal: { etiqueta: 'Subtotal', tipo: 'dinero', ultimo: true, syn: ['totaal exclusief btw', 'exclusief btw', 'excl btw', 'subtotal', 'sub total', 'sub-total', 'valor antes de iva', 'base gravable', 'total bruto', 'net amount', 'net total', 'total excl', 'total excluding tax', 'total before tax', 'amount before tax', 'taxable amount', 'taxable value', 'montant ht', 'total ht', 'sous-total', 'sous total', 'nettobetrag', 'zwischensumme', 'netto', 'subtotaal', 'totaal excl', 'imponibile', 'totale imponibile'] },
+    iva: { etiqueta: 'Impuesto (IVA/VAT)', tipo: 'dinero', syn: ['iva', 'valor iva', 'total iva', 'impuesto', 'impuestos', 'total tax', 'sales tax', 'tax', 'taxes', 'vat', 'gst', 'igst', 'cgst', 'sgst', 'tva', 'montant tva', 'mwst', 'ust', 'umsatzsteuer', 'btw', 'imposta', 'icms'], excluir: ['sin iva', 'antes de iva', 'base', 'regimen', 'responsable', 'excl', 'incl', 'tax id', 'vat no', 'vat number', 'vat id', 'vat reg', 'gst no', 'gstin', 'gst number', 'gst reg', 'tax invoice', 'btw nr', 'btw-nummer', 'btw nummer', 'tva intra', 'n tva', 'ust-id', 'ust id', 'number', 'statement', 'rate', 'tarif', 'tasa'] },
+    descuento: { etiqueta: 'Descuento', tipo: 'dinero', syn: ['descuento', 'descuentos', 'dcto', 'discount', 'remise', 'rabatt', 'korting', 'sconto'] },
+    retencion: { etiqueta: 'Retención', tipo: 'dinero', syn: ['retencion en la fuente', 'retefuente', 'retencion', 'reteica', 'reteiva', 'withholding', 'tds'] },
+    total: { etiqueta: 'Total', tipo: 'dinero', ultimo: true, syn: ['total a pagar', 'bedrag inclusief btw', 'bedrag incl', 'totaal incl', 'somme a payer', 'montant a payer', 'total for this invoice', 'total facture', 'valor total', 'neto a pagar', 'total factura', 'total general', 'gran total', 'valor a pagar', 'total cotizacion', 'total due', 'amount due', 'balance due', 'grand total', 'invoice total', 'total amount', 'amount payable', 'total payable', 'total incl', 'total including', 'total ttc', 'montant ttc', 'net a payer', 'total a payer', 'montant total', 'gesamtbetrag', 'rechnungsbetrag', 'endbetrag', 'gesamtsumme', 'zu zahlen', 'factuur totaal', 'totaalbedrag', 'te betalen', 'totaal', 'totale fattura', 'importo totale', 'totale', 'total'], excluir: ['subtotal', 'sub total', 'sub-total', 'total items', 'total unidades', 'total bultos', 'total iva', 'total cantidad', 'total paginas', 'total bruto', 'total tax', 'total excl', 'total ht', 'total quantity', 'total qty', 'totaal excl', 'total discount', 'total hours', 'total pages', 'total weight', 'total units', 'total savings'] },
+    saldo: { etiqueta: 'Saldo', tipo: 'dinero', ultimo: true, syn: ['saldo final', 'saldo actual', 'nuevo saldo', 'closing balance', 'ending balance', 'new balance', 'solde', 'saldo', 'balance'] },
+    moneda: { etiqueta: 'Moneda', tipo: 'texto', syn: ['moneda', 'currency', 'devise', 'wahrung', 'valuta'] },
+    formapago: { etiqueta: 'Forma de pago', tipo: 'texto', syn: ['forma de pago', 'medio de pago', 'condiciones de pago', 'metodo de pago', 'payment method', 'payment mode', 'payment terms', 'mode de paiement', 'zahlungsart', 'zahlungsbedingungen', 'betaalwijze'] },
+    transportador: { etiqueta: 'Transportador', tipo: 'texto', syn: ['transportador', 'transportadora', 'conductor', 'empresa transportadora', 'carrier', 'transporteur', 'spediteur', 'vervoerder'] },
+    placa: { etiqueta: 'Placa', tipo: 'codigo', syn: ['placa', 'placa vehiculo', 'license plate', 'plate'] },
+    titulo: { etiqueta: 'Título', tipo: 'texto', syn: ['titulo', 'title', 'asunto', 'subject', 'titre', 'titel', 'betreff', 'onderwerp', 'oggetto'] },
+    proyecto: { etiqueta: 'Proyecto', tipo: 'texto', syn: ['proyecto', 'obra', 'nombre del proyecto', 'project', 'projet', 'projekt', 'progetto', 'projeto'] },
+    autor: { etiqueta: 'Autor', tipo: 'texto', syn: ['elaborado por', 'preparado por', 'presentado por', 'autor', 'autores', 'author', 'authors', 'written by', 'prepared by', 'presented by', 'submitted by', 'auteur', 'verfasser', 'verfasst von'] },
+    institucion: { etiqueta: 'Institución', tipo: 'texto', syn: ['universidad', 'university', 'institucion', 'institution', 'facultad', 'faculty', 'department', 'departamento'] },
+    palabrasclave: { etiqueta: 'Palabras clave', tipo: 'largo', syn: ['palabras clave', 'keywords', 'key words', 'mots-cles', 'mots cles', 'schlusselworter', 'schlagworter', 'trefwoorden', 'palavras-chave', 'parole chiave', 'index terms'] },
+    paciente: { etiqueta: 'Paciente', tipo: 'texto', syn: ['paciente', 'nombre del paciente', 'patient name', 'patient', 'nom du patient', 'nombre'] },
+    idioma: { etiqueta: 'Idioma', tipo: 'texto', syn: [] },
+    paginas: { etiqueta: 'Páginas', tipo: 'numero', syn: [] },
     resumen: { etiqueta: 'Resumen', tipo: 'resumen', syn: [] },
-    cantidaditems: { etiqueta: 'Ítems', tipo: 'items', syn: [] },
+    cantidaditems: { etiqueta: 'Filas / ítems', tipo: 'numero', syn: [] },
   };
   // Palabras que la persona puede escribir y a qué campo apuntan
   const ALIAS = {
-    'numero': 'numero', 'no': 'numero', 'n': 'numero', 'nro': 'numero', 'consecutivo': 'numero', 'numero de factura': 'numero', 'numero factura': 'numero', 'factura': 'numero', 'numero de remision': 'numero', 'id': 'numero',
-    'fecha': 'fecha', 'fecha de emision': 'fecha', 'fecha factura': 'fecha', 'fecha de vencimiento': 'vencimiento', 'vencimiento': 'vencimiento',
-    'emisor': 'emisor', 'empresa': 'emisor', 'razon social': 'emisor', 'proveedor': 'proveedor', 'vendedor': 'proveedor',
-    'nit': 'nit', 'nit proveedor': 'nit', 'nit emisor': 'nit', 'rut': 'nit', 'nit cliente': 'nitcliente',
-    'cliente': 'cliente', 'comprador': 'cliente', 'adquiriente': 'cliente', 'destinatario': 'cliente',
-    'direccion': 'direccion', 'ciudad': 'ciudad', 'telefono': 'telefono', 'correo': 'correo', 'email': 'correo',
-    'subtotal': 'subtotal', 'base': 'subtotal', 'iva': 'iva', 'impuesto': 'iva', 'descuento': 'descuento', 'retencion': 'retencion', 'retefuente': 'retencion',
-    'total': 'total', 'valor total': 'total', 'valor': 'total', 'monto': 'total', 'total a pagar': 'total', 'valor a pagar': 'total', 'el total': 'total',
-    'saldo': 'saldo', 'forma de pago': 'formapago', 'medio de pago': 'formapago',
-    'transportador': 'transportador', 'conductor': 'transportador', 'placa': 'placa',
-    'titulo': 'titulo', 'asunto': 'titulo', 'proyecto': 'proyecto', 'obra': 'proyecto', 'autor': 'autor', 'elaborado por': 'autor', 'responsable': 'autor',
-    'paciente': 'paciente', 'resumen': 'resumen', 'descripcion': 'resumen', 'items': 'cantidaditems', 'cantidad de items': 'cantidaditems', 'productos': 'cantidaditems',
-    'tipo': null, 'tipo de documento': null, 'archivo': null, 'nombre del archivo': null,
+    'numero': 'numero', 'no': 'numero', 'n': 'numero', 'nro': 'numero', 'consecutivo': 'numero', 'numero de factura': 'numero', 'numero factura': 'numero', 'factura': 'numero', 'numero de remision': 'numero', 'id': 'numero', 'number': 'numero', 'invoice number': 'numero', 'invoice no': 'numero', 'invoice': 'numero', 'numero de documento': 'numero',
+    'fecha': 'fecha', 'fecha de emision': 'fecha', 'fecha factura': 'fecha', 'date': 'fecha', 'invoice date': 'fecha', 'ano': 'fecha', 'year': 'fecha', 'fecha de vencimiento': 'vencimiento', 'vencimiento': 'vencimiento', 'due date': 'vencimiento',
+    'emisor': 'emisor', 'empresa': 'emisor', 'razon social': 'emisor', 'company': 'emisor', 'issuer': 'emisor', 'entidad': 'emisor', 'proveedor': 'proveedor', 'vendedor': 'proveedor', 'vendor': 'proveedor', 'supplier': 'proveedor', 'seller': 'proveedor',
+    'nit': 'nit', 'nit proveedor': 'nit', 'nit emisor': 'nit', 'rut': 'nit', 'id fiscal': 'nit', 'tax id': 'nit', 'vat number': 'nit', 'gstin': 'nit', 'nif': 'nit', 'rfc': 'nit', 'cif': 'nit', 'nit cliente': 'nitcliente',
+    'cliente': 'cliente', 'comprador': 'cliente', 'adquiriente': 'cliente', 'destinatario': 'cliente', 'customer': 'cliente', 'client': 'cliente', 'buyer': 'cliente', 'bill to': 'cliente',
+    'direccion': 'direccion', 'address': 'direccion', 'ciudad': 'ciudad', 'city': 'ciudad', 'telefono': 'telefono', 'phone': 'telefono', 'correo': 'correo', 'email': 'correo', 'e-mail': 'correo',
+    'subtotal': 'subtotal', 'base': 'subtotal', 'iva': 'iva', 'impuesto': 'iva', 'impuestos': 'iva', 'tax': 'iva', 'taxes': 'iva', 'vat': 'iva', 'gst': 'iva', 'descuento': 'descuento', 'discount': 'descuento', 'retencion': 'retencion', 'retefuente': 'retencion',
+    'total': 'total', 'valor total': 'total', 'valor': 'total', 'monto': 'total', 'importe': 'total', 'total a pagar': 'total', 'valor a pagar': 'total', 'el total': 'total', 'amount': 'total', 'total amount': 'total', 'amount due': 'total', 'grand total': 'total',
+    'saldo': 'saldo', 'balance': 'saldo', 'moneda': 'moneda', 'divisa': 'moneda', 'currency': 'moneda', 'forma de pago': 'formapago', 'medio de pago': 'formapago', 'payment method': 'formapago',
+    'transportador': 'transportador', 'conductor': 'transportador', 'carrier': 'transportador', 'placa': 'placa',
+    'titulo': 'titulo', 'title': 'titulo', 'asunto': 'titulo', 'nombre del documento': 'titulo', 'proyecto': 'proyecto', 'obra': 'proyecto', 'project': 'proyecto',
+    'autor': 'autor', 'autores': 'autor', 'author': 'autor', 'authors': 'autor', 'elaborado por': 'autor', 'responsable': 'autor',
+    'institucion': 'institucion', 'universidad': 'institucion', 'university': 'institucion', 'facultad': 'institucion', 'institution': 'institucion',
+    'palabras clave': 'palabrasclave', 'keywords': 'palabrasclave', 'idioma': 'idioma', 'lengua': 'idioma', 'language': 'idioma',
+    'paginas': 'paginas', 'numero de paginas': 'paginas', 'pages': 'paginas', 'extension': 'paginas',
+    'paciente': 'paciente', 'patient': 'paciente', 'resumen': 'resumen', 'abstract': 'resumen', 'summary': 'resumen', 'sintesis': 'resumen', 'descripcion': 'resumen', 'de que trata': 'resumen',
+    'items': 'cantidaditems', 'cantidad de items': 'cantidaditems', 'productos': 'cantidaditems', 'filas': 'cantidaditems',
+    'tipo': null, 'tipo de documento': null, 'clasificacion': null, 'archivo': null, 'nombre del archivo': null,
   };
+
+  // Palabras frecuentes y propias de cada idioma (las compartidas, como "de", se omiten)
+  const IDIOMAS = {
+    'Español': ['el', 'la', 'los', 'las', 'y', 'del', 'por', 'con', 'para', 'una', 'se', 'es', 'al', 'su', 'lo', 'como', 'pero'],
+    'Inglés': ['the', 'and', 'of', 'to', 'in', 'is', 'for', 'with', 'that', 'on', 'this', 'be', 'are', 'by', 'from'],
+    'Francés': ['le', 'les', 'des', 'et', 'est', 'une', 'du', 'pour', 'dans', 'au', 'sur', 'aux', 'par', 'ce', 'qui'],
+    'Alemán': ['der', 'die', 'und', 'das', 'ist', 'mit', 'von', 'den', 'fur', 'nicht', 'ein', 'eine', 'wird', 'dem', 'im', 'auf', 'zu'],
+    'Neerlandés': ['het', 'een', 'van', 'voor', 'met', 'niet', 'op', 'zijn', 'wij', 'uw', 'bij', 'naar', 'ook', 'deze', 'te'],
+    'Portugués': ['os', 'do', 'da', 'dos', 'das', 'em', 'nao', 'ao', 'pelo', 'pela', 'sao', 'um', 'uma', 'na', 'no'],
+    'Italiano': ['il', 'di', 'che', 'della', 'per', 'non', 'sono', 'gli', 'nel', 'alla', 'dei', 'delle'],
+  };
+
 
   // =====================================================================
   // Estado
   // =====================================================================
   let archivos = [];   // {file, nombre, estado, clase}
   let libro = null, hojaActiva = 0, esEjemplo = true, cancelado = false, ocrWorker = null;
+  let idiomaActual = '';   // idioma del documento en proceso
+  let mesPrimero = false;  // fechas numéricas mm/dd (EE. UU.) en el documento en proceso
 
   const estado = (txt, tipo = '') => { const e = $('#estado'); e.textContent = txt; e.className = 'estado ' + tipo; };
   const progreso = v => { const p = $('#progreso'); p.hidden = v === null; if (v !== null) p.value = v; };
@@ -361,7 +426,9 @@
     piezas.sort((a, b) => a.y - b.y || a.x - b.x);
     const lineas = [];
     for (const p of piezas) {
-      const l = lineas.find(l => Math.abs(l.y - p.y) < Math.max(l.alto, p.alto) * 0.5);
+      let l = null;
+      for (let k = lineas.length - 1; k >= 0 && k >= lineas.length - 6; k--)
+        if (Math.abs(lineas[k].y - p.y) < Math.max(lineas[k].alto, p.alto) * 0.5) { l = lineas[k]; break; }
       if (l) { l.piezas.push(p); l.alto = Math.max(l.alto, p.alto); } else lineas.push({ y: p.y, alto: p.alto, piezas: [p] });
     }
     lineas.sort((a, b) => a.y - b.y);
@@ -379,49 +446,132 @@
     }).filter(l => l.celdas.length);
   }
 
+  // Páginas a 2 o 3 columnas de texto (artículos, normas, boletines): se leen columna por columna
+  function porColumnas(lineas, prof = 0) {
+    if (lineas.length < 15 || prof > 2) return lineas;
+    const celdas = lineas.flatMap(l => l.celdas);
+    const minX = Math.min(...celdas.map(c => c.x)), maxX = Math.max(...celdas.map(c => c.fin)), W = maxX - minX;
+    let mejor = null;
+    for (let f = 0.25; f <= 0.75; f += 0.01) {
+      const x = minX + W * f;
+      let cruzan = 0, ambos = 0, unaPorLado = 0;
+      for (const l of lineas) {
+        if (l.celdas.some(c => c.x < x - 2 && c.fin > x + 2)) { cruzan++; continue; }
+        const iz = l.celdas.filter(c => c.fin <= x), de = l.celdas.filter(c => c.x >= x);
+        if (iz.length && de.length) { ambos++; if (iz.length === 1 && de.length === 1) unaPorLado++; }
+      }
+      const puntos = ambos - cruzan * 3;
+      if (cruzan <= lineas.length * 0.12 && ambos >= lineas.length * 0.35 && unaPorLado >= ambos * 0.6 && (!mejor || puntos > mejor.puntos || (puntos === mejor.puntos && Math.abs(f - 0.5) < Math.abs(mejor.f - 0.5)))) mejor = { x, f, puntos };
+    }
+    if (!mejor) return lineas;
+    const largo = cs => cs.reduce((s, c) => s + c.txt.length, 0) / Math.max(1, cs.length);
+    const iz = [], de = [], cabecera = [];
+    let empezo = false;
+    for (const l of lineas) {
+      const cruza = l.celdas.some(c => c.x < mejor.x - 2 && c.fin > mejor.x + 2);
+      if (cruza) { (empezo ? iz : cabecera).push(l); continue; }
+      empezo = true;
+      const ci = l.celdas.filter(c => c.fin <= mejor.x), cd = l.celdas.filter(c => c.x >= mejor.x);
+      if (ci.length) iz.push({ ...l, celdas: ci });
+      if (cd.length) de.push({ ...l, celdas: cd });
+    }
+    // Solo si ambos lados son texto corrido (celdas largas), no una tabla
+    if (largo(iz.flatMap(l => l.celdas)) < 18 || largo(de.flatMap(l => l.celdas)) < 18) return lineas;
+    return [...cabecera, ...porColumnas(iz, prof + 1), ...porColumnas(de, prof + 1)];
+  }
+
   // =====================================================================
-  // Valores
+  // Valores: números, dinero, monedas y fechas en varios idiomas y formatos
   // =====================================================================
+  const RE_MONEDA = /(US\$|R\$|C\$|A\$|\$|€|£|₹|¥|R[sS]\.?(?=\s*-?\d)|\b(?:INR|EUR|USD|GBP|COP|CHF|MXN|ARS|BRL|CLP|PEN|CAD|AUD|JPY)\b)/;
+  function monedaDe(s) {
+    const m = String(s).match(RE_MONEDA);
+    if (!m) return null;
+    const t = m[1].toUpperCase().replace(/\.$/, '');
+    return { '€': 'EUR', '£': 'GBP', '₹': 'INR', 'RS': 'INR', '¥': 'JPY', 'US$': 'USD', 'R$': 'BRL', 'C$': 'CAD', 'A$': 'AUD', '$': '$' }[t] || t;
+  }
   function convertir(v) {
     if (typeof v !== 'string') return v;
     const t = v.trim();
     const f = fechaDe(t, true);
     if (f) return f;
-    let s = t.replace(/^(US\$|COP|USD|EUR|\$|€)\s*/i, '').replace(/\s*(COP|USD|EUR|€)$/i, '').replace(/\s/g, '');
-    const neg = /^\(.*\)$/.test(s) || /^-/.test(s);
-    s = s.replace(/^[(-]|\)$/g, '');
+    let s = t.replace(new RegExp('^' + RE_MONEDA.source + '\\s*'), '').replace(new RegExp('\\s*' + RE_MONEDA.source + '$'), '').replace(/[\s']/g, '');
+    const neg = /^\(.*\)$/.test(s) || /^-/.test(s) || /-$/.test(s);
+    s = s.replace(/^[(-]|[)-]$/g, '');
     if (/^0\d/.test(s) || s.replace(/\D/g, '').length > 15) return v;
     let n = null;
     if (/^\d+$/.test(s)) n = +s;
     else if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) n = +s.replace(/\./g, '').replace(',', '.');
     else if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) n = +s.replace(/,/g, '');
+    else if (/^\d{1,2}(,\d{2})+,\d{3}(\.\d+)?$/.test(s)) n = +s.replace(/,/g, '');          // 1,23,456.00 (India)
     else if (/^\d+,\d+$/.test(s)) n = +s.replace(',', '.');
     else if (/^\d+\.\d+$/.test(s)) n = +s;
     return n === null || isNaN(n) ? v : (neg ? -n : n);
   }
   const esNumerico = t => typeof convertir(t) === 'number';
-  function dineroDe(s) {
-    const m = String(s).match(/-?\(?\s*(?:US\$|\$|COP)?\s*\d[\d.,]*\d\)?|-?\$?\s*\d/g);
-    if (!m) return null;
-    for (const tok of m) { const n = convertir(tok.replace(/\s/g, '')); if (typeof n === 'number' && !(/^\d{1,2}$/.test(tok.trim()) && m.length > 1)) return n; }
-    return null;
+  // Tapa las fechas de un texto (para que "August 3, 2014" no se lea como monto)
+  function sinFechas(txt) {
+    const bajo = txt.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const tapar = [];
+    const mes = '(' + Object.keys(MESES).join('|') + ')';
+    for (const re of [/\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2}/g, /\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}/g,
+      new RegExp('\\d{1,2}\\.?\\s*(de\\s+)?' + mes + '\\.?,?\\s*(de\\s+)?\\d{4}', 'g'), new RegExp(mes + '\\.?\\s+\\d{1,2}(st|nd|rd|th)?\\s*,?\\s*\\d{4}', 'g')])
+      for (const m of bajo.matchAll(re)) tapar.push([m.index, m.index + m[0].length]);
+    let r = txt;
+    for (const [i, j] of tapar) r = r.slice(0, i) + ' '.repeat(j - i) + r.slice(j);
+    return r;
   }
-  const MESES = { ene: 1, enero: 1, feb: 2, febrero: 2, mar: 3, marzo: 3, abr: 4, abril: 4, may: 5, mayo: 5, jun: 6, junio: 6, jul: 7, julio: 7, ago: 8, agosto: 8, sep: 9, sept: 9, septiembre: 9, set: 9, oct: 10, octubre: 10, nov: 11, noviembre: 11, dic: 12, diciembre: 12,
-    jan: 1, january: 1, february: 2, march: 3, apr: 4, april: 4, june: 6, july: 7, aug: 8, august: 8, september: 9, october: 10, november: 11, dec: 12, december: 12 };
-  function fechaDe(s, exacta = false) {
+  // Monto de un texto: si hay varios, el último (en "Total 1 278.61 40.39 319.00" el total es 319.00), priorizando los que llevan moneda
+  function dineroDe(s) {
+    const txt = sinFechas(String(s)).replace(/\d+([.,]\d+)?\s*%/g, ' ');
+    const re = new RegExp('(?:' + RE_MONEDA.source + ')?\\s*-?\\(?(?<![A-Za-z0-9_])(?:\\d{1,3}(?:[ \\u00a0\\u202f]\\d{3})+(?:[.,]\\d+)?|\\d[\\d.,\']*\\d|\\d)(?![A-Za-z0-9_])\\)?-?(?:\\s?(?:' + RE_MONEDA.source + ')(?!\\s*-?\\d))?', 'g');
+    const cands = [];
+    for (const m of txt.matchAll(re)) {
+      const tok = m[0].trim();
+      const conMoneda = RE_MONEDA.test(tok);
+      const num = tok.replace(new RegExp(RE_MONEDA.source, 'g'), '').replace(/[\s  ]/g, '');
+      if (!conMoneda && /^(19|20)\d{2}$/.test(num)) continue;          // un año suelto no es un monto
+      const n = convertir(num);
+      if (typeof n !== 'number') continue;
+      cands.push({ n, conMoneda, corto: /^\d{1,2}$/.test(num) });
+    }
+    const utiles = cands.filter(c => !c.corto || cands.length === 1);
+    const conM = utiles.filter(c => c.conMoneda);
+    return (conM.length ? conM : utiles).at(-1)?.n ?? null;
+  }
+  const MESES = {
+    ene: 1, enero: 1, feb: 2, febrero: 2, mar: 3, marzo: 3, abr: 4, abril: 4, may: 5, mayo: 5, jun: 6, junio: 6, jul: 7, julio: 7, ago: 8, agosto: 8, sep: 9, sept: 9, septiembre: 9, setiembre: 9, set: 9, oct: 10, octubre: 10, nov: 11, noviembre: 11, dic: 12, diciembre: 12,
+    jan: 1, january: 1, february: 2, march: 3, apr: 4, april: 4, june: 6, july: 7, aug: 8, august: 8, september: 9, october: 10, november: 11, dec: 12, december: 12,
+    janvier: 1, fevrier: 2, fev: 2, mars: 3, avril: 4, avr: 4, mai: 5, juin: 6, juillet: 7, juil: 7, aout: 8, septembre: 9, octobre: 10, novembre: 11, decembre: 12,
+    januar: 1, februar: 2, marz: 3, maerz: 3, juni: 6, juli: 7, oktober: 10, okt: 10, dezember: 12, dez: 12,
+    januari: 1, februari: 2, maart: 3, mei: 5, augustus: 8,
+    janeiro: 1, fevereiro: 2, marco: 3, maio: 5, junho: 6, julho: 7, setembro: 9, outubro: 10, novembro: 11, dezembro: 12,
+    gennaio: 1, febbraio: 2, aprile: 4, maggio: 5, giugno: 6, luglio: 7, settembre: 9, ottobre: 10, dicembre: 12,
+  };
+  function fechaDe(s, exacta = false, mesAno = false) {
     const t = norm(s);
-    const iso = (a, m, d) => (a >= 1990 && a <= 2100 && m >= 1 && m <= 12 && d >= 1 && d <= 31) ? `${a}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` : null;
+    const iso = (a, m, d) => (a >= 1900 && a <= 2100 && m >= 1 && m <= 12 && d >= 1 && d <= 31) ? `${a}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` : null;
     const pats = [
       [/(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/, m => iso(+m[1], +m[2], +m[3])],
-      [/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/, m => iso(+m[3], +m[2], +m[1]) || iso(+m[3], +m[1], +m[2])],
-      [/(\d{1,2})\s*(?:de\s+)?([a-z]{3,10})\.?\s*(?:de\s+|del\s+)?(\d{4})/, m => MESES[m[2]] && iso(+m[3], MESES[m[2]], +m[1])],
-      [/([a-z]{3,10})\.?\s+(\d{1,2}),?\s+(?:de\s+)?(\d{4})/, m => MESES[m[1]] && iso(+m[3], MESES[m[1]], +m[2])],
+      [/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/, m => mesPrimero ? (iso(+m[3], +m[1], +m[2]) || iso(+m[3], +m[2], +m[1])) : (iso(+m[3], +m[2], +m[1]) || iso(+m[3], +m[1], +m[2]))],
+      [/(\d{1,2})\.?\s*(?:de\s+)?([a-z]{3,10})\.?\s*,?\s*(?:de\s+|del\s+)?(\d{4})/, m => MESES[m[2]] && iso(+m[3], MESES[m[2]], +m[1])],
+      [/([a-z]{3,10})\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*,?\s*(?:de\s+)?(\d{4})/, m => MESES[m[1]] && iso(+m[3], MESES[m[1]], +m[2])],
     ];
+    if (mesAno) pats.push([/\b([a-z]{3,10})\.?,?\s+(?:de\s+)?(\d{4})\b/, m => MESES[m[1]] && +m[2] >= 1900 && +m[2] <= 2100 ? `${m[2]}-${String(MESES[m[1]]).padStart(2, '0')}` : null]);
     for (const [re, fn] of pats) {
       const m = t.match(exacta ? new RegExp('^' + re.source + '$') : re);
       if (m) { const r = fn(m); if (r) return r; }
     }
     return null;
+  }
+  function detectarIdioma(texto) {
+    const t = ' ' + norm(texto).replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ') + ' ';
+    const arabe = (texto.match(/[؀-ۿﹰ-﻿]/g) || []).length;
+    if (arabe > texto.length * 0.2) return 'Árabe';
+    const puntos = Object.entries(IDIOMAS).map(([id, palabras]) => [id, palabras.reduce((n, p) => n + (t.match(new RegExp(' ' + p + ' ', 'g')) || []).length, 0)]).sort((a, b) => b[1] - a[1]);
+    const [[mejor, max], [, segundo]] = puntos;
+    // En documentos cortos basta con pocas palabras si ningún otro idioma compite
+    return max >= 4 && max >= segundo * 1.5 || max >= 2 && segundo === 0 ? mejor : '';
   }
 
   // =====================================================================
@@ -472,6 +622,7 @@
 
   function analizar(paginas) {
     const kv = [], lineas = [], tablas = [];
+    let enTablas = 0;
     paginas.forEach((ls, ip) => {
       const pagina = ip + 1;
       let bloque = [];
@@ -488,6 +639,7 @@
             filas.forEach(f => kv.push({ label: f[0], labelN: norm(f[0]).replace(/[:.#]+$/, ''), valor: f.slice(1).filter(Boolean).join(' '), pagina, pos: lineas.length }));
             bloque = []; return;
           }
+          enTablas += bloque.length;
           const previa = tablas[tablas.length - 1];
           if (previa && previa.columnas.length === columnas.length &&
               (previa.columnas.join('|') === columnas.join('|') || (!cab && previa.pagina < pagina)))
@@ -511,21 +663,20 @@
       }
       cerrar();
     });
-    // Filtra "tablas" que en realidad son pares etiqueta/valor sueltos
     const utiles = tablas.filter(t => t.filas.length >= 1 && !(t.filas.length === 1 && t.columnas.every(c => !/^Columna/.test(c))));
-    return { kv, lineas, tablas: utiles };
+    return { kv, lineas, tablas: utiles, ratioTabla: lineas.length ? enTablas / lineas.length : 0 };
   }
 
   // =====================================================================
   // Clasificación
   // =====================================================================
-  function clasificar(doc, nombreArchivo) {
-    const inicio = doc.lineas.filter(l => l.pagina === 1).slice(0, 14);
+  const cuenta = (txt, k) => (txt.match(new RegExp('(^|[^a-z])' + escRe(k) + '([^a-z]|$)', 'g')) || []).length;
+  function clasificar(doc, nombreArchivo, meta) {
+    const inicio = doc.lineas.filter(l => l.pagina === 1).slice(0, 16);
     const altoMax = Math.max(...inicio.map(l => l.alto), 1);
-    const cuerpo = ' ' + doc.lineas.filter(l => l.pagina <= 3).map(l => l.textoN).join(' \n ') + ' ';
+    const cuerpo = ' ' + doc.lineas.filter(l => l.pagina <= 4).map(l => l.textoN).join(' \n ') + ' ';
     const archivoN = norm(nombreArchivo).replace(/[_\-.]+/g, ' ');
-    const cuenta = (txt, k) => (txt.match(new RegExp('(^|[^a-z])' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-z]|$)', 'g')) || []).length;
-    let mejor = OTRO, pMejor = 0, segundo = 0;
+    const puntajes = [];
     for (const t of TIPOS) {
       let p = 0;
       for (const k of t.titulo) {
@@ -534,159 +685,327 @@
         p += Math.min(3, cuenta(cuerpo, k));
       }
       for (const k of t.claves) p += Math.min(2, cuenta(cuerpo, k)) * 1.5;
-      if (p > pMejor) { segundo = pMejor; pMejor = p; mejor = t; } else if (p > segundo) segundo = p;
+      if (t.id === 'formulario' && meta.camposFormulario) p += 8 + Math.min(6, meta.camposFormulario);
+      puntajes.push([t, p]);
     }
-    if (pMejor < 6) return { tipo: OTRO, confianza: 'baja' };
+    puntajes.sort((a, b) => b[1] - a[1]);
+    let [mejor, pMejor] = puntajes[0];
+    const segundo = puntajes[1][1];
+    // Documentos donde casi todo son tablas: son listados/tablas de datos (salvo documentos comerciales claros)
+    if (doc.ratioTabla >= 0.6 && !mejor.comercial && pMejor < 16 && doc.lineas.length >= 12)
+      return { tipo: TIPOS.find(t => t.id === 'datos'), confianza: 'media' };
+    if (pMejor < 6) return doc.ratioTabla >= 0.45 && doc.lineas.length >= 12 ? { tipo: TIPOS.find(t => t.id === 'datos'), confianza: 'media' } : { tipo: OTRO, confianza: 'baja' };
     return { tipo: mejor, confianza: pMejor - segundo >= 6 ? 'alta' : 'media' };
   }
 
   // =====================================================================
   // Extracción de campos
   // =====================================================================
+  const PALABRAS_ETIQUETA = /^(pag|page|seite|pagina|date|datum|fecha|data|dated|due|total|amount|of|de|van|du)\b/i;
   function validar(valor, tipo) {
     const v = String(valor ?? '').trim();
     if (!v) return null;
     switch (tipo) {
-      case 'dinero': return dineroDe(v.replace(/\d+([.,]\d+)?\s*%/g, ' '));
-      case 'fecha': return fechaDe(v);
-      case 'nit': { const m = v.match(/\d[\d.\s]{4,14}\d(\s*-\s*\d)?/); return m ? m[0].replace(/\s/g, '') : null; }
+      case 'dinero': return dineroDe(v);
+      case 'fecha': return fechaDe(v) || fechaDe(v, false, true);
+      case 'nit': {
+        const m = v.match(/\b[A-Z]{0,4}[\dA-Z][\dA-Z.\-\s]{4,20}[\dA-Z]\b/i);
+        return m && (m[0].match(/\d/g) || []).length >= 5 ? m[0].replace(/\s/g, '') : null;
+      }
       case 'correo': { const m = v.match(/[\w.+-]+@[\w-]+\.[\w.]+/); return m ? m[0] : null; }
       case 'codigo': {
-        const m = v.replace(/^(n[°ºo]\.?|no\.?|nro\.?|numero|#)\s*[:.]?\s*/i, '').match(/^[A-Za-z]{0,6}[\s-]?\d[\w\-\/]*/);
-        return m && !fechaDe(m[0], true) && !/^pag/i.test(m[0]) ? m[0].trim() : null;
+        const t = v.replace(/^(n[°ºo]\.?|no\.?|nr\.?|nro\.?|numero|number|#|:)\s*[:.]?\s*/i, '').replace(/^#\s*/, '');
+        let m = t.match(/^([A-Za-z]{1,5})\s(\d[\w\-\/.]*)/);
+        let c = m ? m[1] + ' ' + m[2] : (t.match(/^[\w\-\/.]*\d[\w\-\/.]*/) || [])[0];
+        if (!c) return null;
+        c = c.replace(/[.,;]$/, '');
+        return c.length <= 30 && !fechaDe(c) && !PALABRAS_ETIQUETA.test(c) ? c : null;
       }
-      default: return v.length > 1 && v.length <= 140 && /[a-zñáéíóú]/i.test(v) ? v.replace(/\s+/g, ' ') : null;
+      case 'largo': return v.length > 2 && v.length <= 400 ? v.replace(/\s+/g, ' ') : null;
+      default: {
+        if (v.length < 2 || v.length > 140 || !/\p{L}{2}/u.test(v) || /www\.|https?:|@/.test(v)) return null;
+        if (/^[A-Z0-9\-_\/.#]+$/.test(v) && /\d/.test(v)) return null;          // parece un código, no un nombre
+        if ((v.match(/\d/g) || []).length > v.length * 0.4) return null;
+        return esEtiqueta(v) ? null : v.replace(/\s+/g, ' ');
+      }
     }
   }
-  const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const ETIQUETAS = new Set(Object.values(CAMPOS).flatMap(c => c.syn).filter(s => s.length > 2).concat(['forma de pago', 'cantidad', 'descripcion', 'codigo', 'valor unitario']));
-  const esEtiqueta = t => /:\s*$/.test(t) || ETIQUETAS.has(norm(t).replace(/[:.#]+$/, '').replace(/\s*\d+([.,]\d+)?\s*%$/, ''));
+  const ETIQUETAS = new Set(Object.values(CAMPOS).flatMap(c => c.syn).filter(s => s.length > 2).concat(['forma de pago', 'cantidad', 'descripcion', 'description', 'codigo', 'valor unitario', 'unit price', 'quantity', 'qty', 'amount', 'order', 'ordernummer', 'order id', 'artikel', 'omschrijving', 'prijs', 'bedrag', 'aantal', 'product', 'item', 'items', 'price', 'reference', 'referencia', 'ship to', 'shipping address', 'payment terms', 'po number', 'klantnummer', 'kundennr', 'customer id', 'account number', 'afleveradres', 'besteldatum', 'vervaldatum']));
+  const esEtiqueta = t => /:\s*$/.test(t) || ETIQUETAS.has(norm(t).replace(/[:.#]+$/, '').replace(/\s*\d+([.,]\d+)?\s*%$/, '').replace(/\s*\(.*\)$/, ''));
+  const excluye = (l, campo) => campo.excluir?.some(x => /^[a-z ]+$/.test(x) ? new RegExp('(^|\\s)' + x + '($|\\s)').test(l) : l.includes(x));
   function puntajeEtiqueta(labelN, campo) {
-    const l = labelN.replace(/[()]/g, '').replace(/\s*(no|n[°º]|#)\.?$/, m => m);
-    if (campo.excluir?.some(x => l.includes(x))) return 0;
+    const l = labelN.replace(/[()]/g, '');
+    if (excluye(l, campo)) return 0;
     let mejor = 0;
     campo.syn.forEach((s, i) => {
       const peso = 1 + (campo.syn.length - i) / campo.syn.length;   // los primeros sinónimos son más específicos
       if (l === s) mejor = Math.max(mejor, 4 * peso);
       else if (s.length > 2 && l.startsWith(s + ' ')) mejor = Math.max(mejor, 2.5 * peso);
-      else if (s.length > 3 && new RegExp('(^|\\s)' + s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|\\s)').test(l)) mejor = Math.max(mejor, 1.5 * peso);
+      else if (s.length > 3 && new RegExp('(^|\\s)' + escRe(s) + '($|\\s)').test(l)) mejor = Math.max(mejor, 1.5 * peso);
     });
     return mejor;
   }
 
-  function buscar(doc, campo) {
+  // Devuelve {v, raw} con el mejor candidato para un campo
+  function buscarCon(doc, campo) {
     const cand = [];
+    const dinero = campo.tipo === 'dinero';
+    const bono = raw => dinero && (RE_MONEDA.test(raw) || /\d[.,]\d{2}\b/.test(raw)) ? 0.6 : 0;
     for (const kv of doc.kv) {
       const p = puntajeEtiqueta(kv.labelN, campo);
       if (!p) continue;
       const v = validar(kv.valor, campo.tipo);
-      if (v !== null) cand.push({ v, p: p + 1, pos: kv.pos });
+      if (v !== null) cand.push({ v, raw: kv.valor, p: p + 1 + bono(kv.valor), pos: kv.pos });
     }
-    // Etiqueta al inicio de una celda; el valor va en el resto de la celda, en la celda
+    // Etiqueta al inicio de una celda; el valor va en el resto de la celda, en las celdas
     // de la derecha o justo debajo (formatos con etiquetas arriba y valores abajo)
     doc.lineas.forEach((l, pos) => l.cx.forEach((c, i) => {
       const cn = norm(c.txt);
       for (const s of campo.syn) {
-        if (s.length < 3 && !/^(no|nro|n)$/.test(s)) continue;
-        const m = cn.match(new RegExp('^' + escRe(s) + '(?![a-z0-9])(?:\\s*\\d+(?:[.,]\\d+)?\\s*%)?\\s*([:#°º.]*)\\s*(.*)$'));
+        if (s.length < 3 && !/^(no|nro|nr|n)$/.test(s)) continue;
+        const m = cn.match(new RegExp('^' + escRe(s) + '(?![a-z0-9])(?:\\s*\\(?[a-z$€£₹.]{0,4}\\)?)?(?:\\s*\\d+(?:[.,]\\d+)?\\s*%)?\\s*([:#°º.]*)\\s*(.*)$'));
         if (!m) continue;
-        if (campo.excluir?.some(x => cn.startsWith(x))) return;
-        let v = null;
-        if (m[2]) {
+        if (excluye(cn, campo)) return;
+        let v = null, raw = '';
+        const resto = m[2] ? c.txt.slice(c.txt.length - m[2].length) : '';
+        if (dinero) {
+          const sigs = [];
+          for (const o of l.cx.slice(i + 1)) { if (esEtiqueta(o.txt) || /^\p{L}{3,}/u.test(o.txt) && !RE_MONEDA.test(o.txt)) break; sigs.push(o.txt); }
+          raw = [resto, ...sigs].join('   ');
+          v = validar(raw, 'dinero');
+        } else if (resto && (campo.tipo !== 'texto' || /[:#]/.test(m[1]))) {
           // En texto libre exige separador ("Cliente: X"); así "Laboratorio Dental" no se corta en "Dental"
-          if (campo.tipo !== 'texto' || /[:#]/.test(m[1])) v = validar(c.txt.slice(c.txt.length - m[2].length), campo.tipo);
-        } else {
+          raw = resto; v = validar(raw, campo.tipo);
+        }
+        if (v === null && !(resto && campo.tipo === 'texto')) {
           const sig = l.cx[i + 1];
-          if (sig && !esEtiqueta(sig.txt)) v = validar(sig.txt, campo.tipo);
-          const abajo = doc.lineas[pos + 1];
-          if (v === null && abajo && abajo.pagina === l.pagina) {
+          if (!dinero && sig && !esEtiqueta(sig.txt)) { raw = sig.txt; v = validar(raw, campo.tipo); }
+          for (let k = 1; v === null && k <= 2; k++) {
+            const abajo = doc.lineas[pos + k];
+            if (!abajo || abajo.pagina !== l.pagina) break;
             const d = abajo.cx.find(o => o.x < c.fin + 4 && o.fin > c.x - 4);
-            if (d && !esEtiqueta(d.txt)) v = validar(d.txt, campo.tipo);
+            if (d && !esEtiqueta(d.txt)) { raw = d.txt; v = validar(raw, campo.tipo); }
           }
         }
-        if (v !== null) { cand.push({ v, p: puntajeEtiqueta(s, campo) * 0.8, pos }); return; }
+        if (v !== null) { cand.push({ v, raw, p: puntajeEtiqueta(s, campo) * 0.8 + bono(raw), pos }); return; }
       }
     }));
     if (!cand.length) return null;
-    cand.sort((a, b) => b.p - a.p || (campo.ultimo ? b.pos - a.pos : a.pos - b.pos));
-    return cand[0].v;
+    // Un total en cero ("Te betalen € 0,00" tras pagar) cede ante uno real
+    const lista = dinero && cand.some(c => c.v !== 0) ? cand.filter(c => c.v !== 0) : cand;
+    lista.sort((a, b) => b.p - a.p || (campo.ultimo ? b.pos - a.pos : a.pos - b.pos));
+    return lista[0];
   }
+  const buscar = (doc, campo) => buscarCon(doc, campo)?.v ?? null;
 
-  function numeroDoc(doc) {
-    const re = /(factura(?:\s+electr[oó]nica)?(?:\s+de\s+venta)?|remisi[oó]n|cotizaci[oó]n|orden\s+de\s+(?:compra|servicio)|nota\s+(?:cr[eé]dito|d[eé]bito)|cuenta\s+de\s+cobro|documento)\s*(?:n[°ºo]\.?|no\.?|nro\.?|n[uú]mero|#)?\s*[:.]?\s*([A-Z]{0,6}[\s-]?\d[\w\-\/]*)/i;
-    for (const l of doc.lineas.slice(0, 60)) {
-      const m = l.texto.match(re);
-      if (m && /\d/.test(m[2]) && !fechaDe(m[2], true) && !/^pag/i.test(m[2])) return m[2].trim();
+  const RE_NUMDOC = /(factura(?:\s+electr[oó]nica)?(?:\s+de\s+venta)?|tax\s+invoice|invoice|facture|rechnung|factuur|fattura|fatura|receipt|recibo|remisi[oó]n|delivery\s+note|cotizaci[oó]n|quotation|quote|devis|angebot|orden\s+de\s+(?:compra|servicio)|purchase\s+order|nota\s+(?:cr[eé]dito|d[eé]bito)|credit\s+note|cuenta\s+de\s+cobro|booking\s+id|docket)\s*(?:n[°ºo]\.?|no\.?|nr\.?|nro\.?|n[uú]mero|number|num[eé]ro|nummer|#|id)?\s*[:.]?\s*([A-Z]{0,8}[\s\-\/#.]?\d[\w\-\/.]*)/i;
+  function numeroDoc(doc, tipo) {
+    for (const l of doc.lineas.slice(0, 80)) {
+      const m = l.texto.match(RE_NUMDOC);
+      if (m) { const v = validar(m[2], 'codigo'); if (v) return v; }
     }
+    if (!tipo?.comercial) return null;
+    for (const l of doc.lineas.slice(0, 15)) { const m = l.texto.match(/^#\s*(\S+)$/); if (m && validar(m[1], 'codigo')) return validar(m[1], 'codigo'); }
     return buscar(doc, CAMPOS.numero);
   }
-  // Una línea "de nombre": no es fecha, saludo, encabezado numerado ni "Campo: valor"
+  // Texto de la línea sin el número de renglón que traen transcripciones y escritos judiciales
+  const sinRenglon = l => l.texto.replace(/^\d{1,3}\s{2,}/, '');
+  // Una línea "de nombre": no es fecha, saludo, encabezado numerado, correo ni "Campo: valor"
   const lineaNombre = l => {
-    const t = l.textoN;
-    return /[a-z]{3}/.test(t) && !fechaDe(t) && !RE_KV.test(l.texto) && !/^\d+(\.\d+)*\.?\s/.test(t) && !/,\s*$/.test(t) &&
-      !/^(estimad|senor|apreciad|cordial|atentamente|pagina|original|copia)/.test(t) && t.replace(/[^0-9]/g, '').length < t.length * 0.3 && l.texto.length <= 100;
+    const x = sinRenglon(l), t = norm(x);
+    return /\p{L}{3}/u.test(t) && !fechaDe(t) && !RE_KV.test(x) && !/^\d+(\.\d+)*\.?\s/.test(t) && !/,\s*$/.test(t) && !/@|www\.|https?:/.test(t) &&
+      !/^(estimad|senor|apreciad|cordial|atentamente|dear|pagina|page|seite|original|copia|copy|\*)/.test(t) && t.replace(/[^0-9]/g, '').length < t.length * 0.3 && x.length <= 110;
   };
-  function tituloDoc(doc) {
+  // Título: la línea de letra más grande de la primera página (y las que la continúan)
+  function tituloInfo(doc) {
+    if (doc._titulo !== undefined) return doc._titulo;
     const p1 = doc.lineas.filter(l => l.pagina === 1);
-    if (!p1.length) return null;
-    const altos = p1.map(l => l.alto).sort((a, b) => a - b);
-    const normal = altos[Math.floor(altos.length / 2)];
-    // Solo cuenta como título una línea más grande que el texto normal o escrita en mayúsculas
-    const t = p1.slice(0, 15).find(l => lineaNombre(l) && (l.alto > normal * 1.15 || (l.texto === l.texto.toUpperCase() && l.texto.length > 8)));
-    return t ? t.texto : null;
+    const altos = doc.lineas.slice(0, 400).map(l => l.alto).sort((a, b) => a - b);
+    const normal = altos[Math.floor(altos.length / 2)] || 1;
+    const candidatas = p1.slice(0, 40).filter(lineaNombre);
+    if (!candidatas.length) return doc._titulo = null;
+    const max = Math.max(...candidatas.map(l => l.alto));
+    let i = p1.indexOf(candidatas.find(l => l.alto >= max * 0.95));
+    if (max <= normal * 1.1) {
+      const mayus = candidatas.find(l => { const x = sinRenglon(l); return x === x.toUpperCase() && x.length > 8; });
+      return doc._titulo = mayus ? { texto: sinRenglon(mayus).replace(/\s{2,}/g, ' '), i: p1.indexOf(mayus), alto: mayus.alto } : null;
+    }
+    const partes = [sinRenglon(p1[i])];
+    while (partes.length < 3 && p1[i + 1] && p1[i + 1].alto >= max * 0.9 && lineaNombre(p1[i + 1])) partes.push(sinRenglon(p1[++i]));
+    return doc._titulo = { texto: partes.join(' ').replace(/\s+/g, ' ').trim(), i, alto: max };
   }
-  function emisorDoc(doc, tipo) {
-    const v = buscar(doc, CAMPOS.emisor);
+  const RE_INSTITUCION = /\b(universidad|university|universite|universitat|universiteit|universita|college|institut[eo]?|instituto|facultad|faculty|fakultat|school of|escuela|department of|departamento de|departement|ministry|ministerio|secretaria|bureau|agency|agencia|administration|commission|comision|council|consejo|comite|committee|municipalite|municipalidad|municipio|alcaldia|gobierno|government|city of|ville de|office of)\b/;
+  function institucionDoc(doc) {
+    const v = buscar(doc, CAMPOS.institucion);
     if (v) return v;
-    // En facturas y similares la primera línea (si no es el nombre del tipo de documento) suele ser la empresa
-    const palabrasTipo = [...(tipo.titulo || []), 'informe', 'acta', 'contrato'];
-    for (const l of doc.lineas.slice(0, 4)) {
-      if (palabrasTipo.some(k => l.textoN.startsWith(k))) return null;
-      if (lineaNombre(l)) return l.celdas[0];
+    const celdas = doc.lineas.filter(l => l.pagina <= 2).slice(0, 80).flatMap(l => l.celdas.length <= 3 ? l.celdas : l.celdas.filter(c => /^(bureau|department|ministry|ministerio|university|universidad|universite|office|agency|agencia|secretar[ií]a|institut[eo]?)\s+(of|de|du|der|for)\s/i.test(c)))
+      .filter(c => RE_INSTITUCION.test(norm(c)) && c.length <= 80 && c.split(/\s+/).length <= 10 && /^\p{Lu}/u.test(c) && !/[,;:]$/.test(c) && !/\d{3,}/.test(c));
+    const propio = c => { const w = c.split(/\s+/).filter(x => !/^(of|de|del|la|le|les|du|des|the|and|y|et|und|der|die|für|for|van|von|di|da)$/i.test(x)); return w.filter(x => /^[\p{Lu}\d]/u.test(x)).length >= w.length * 0.6; };
+    celdas.splice(0, celdas.length, ...celdas.filter(propio));
+    const uni = celdas.find(c => /universi|college|school of|escuela|facultad|faculty/.test(norm(c)));
+    return uni || celdas[0] || null;
+  }
+  const NO_NOMBRE = new Set('report year fiscal date total page table summary section chapter department annual final contents introduction abstract figure notice program plan board meeting agenda university school college city county state national federal public service services company invoice order number name address street road avenue calle carrera rue the of for in on with using a an to by and data analysis results result study guide manual document example version edition'.split(' '));
+  const pareceNombre = t => {
+    const limpio = t.replace(/[,;]|\band\b|\by\b|\bet\b|\bund\b/g, ' ');
+    const palabras = limpio.split(/\s+/).filter(Boolean);
+    if (palabras.length < 2 || palabras.length > 12 || /\d|:|@/.test(t) || t.length > 90) return false;
+    if (palabras.some(p => NO_NOMBRE.has(norm(p)))) return false;
+    const mayus = palabras.filter(p => /^\p{Lu}/u.test(p) || /^(de|del|van|von|da|di|le|la)$/i.test(p)).length;
+    return mayus === palabras.length && !RE_INSTITUCION.test(norm(t));
+  };
+  function autorDoc(doc, tipo) {
+    const v = buscar(doc, CAMPOS.autor);
+    if (v || tipo?.comercial) return v;
+    for (const l of doc.lineas.filter(l => l.pagina <= 2).slice(0, 60)) {
+      const m = l.texto.match(/^(?:by|por|par|von|door|di|autor(?:es)?|author(?:s)?)\s*:?\s+(.{3,90})$/i);
+      if (m && pareceNombre(m[1])) return m[1].trim();
+    }
+    const t = tituloInfo(doc);
+    if (!t) return null;
+    const p1 = doc.lineas.filter(l => l.pagina === 1);
+    for (const l of p1.slice(t.i + 1, t.i + 7)) {
+      if (l.alto >= t.alto * 0.95) continue;
+      if (pareceNombre(l.texto)) return l.texto.replace(/\s{2,}/g, ' ');
+      const c = l.celdas.length <= 2 && l.celdas.find(c => pareceNombre(c) && !/[\/()]/.test(c));
+      if (c) return c;
     }
     return null;
   }
-  function resumenDoc(doc, tipo, datos) {
-    const f = datos.fecha ? ` del ${datos.fecha}` : '';
-    const items = doc.tablas.reduce((n, t) => n + t.filas.length, 0);
-    if (['factura', 'cotizacion', 'orden', 'nota', 'cobro'].includes(tipo.id)) {
-      const partes = [`${tipo.nombre}${datos.numero ? ' ' + datos.numero : ''}${f}`];
-      if (datos.emisor) partes.push(`de ${datos.emisor}`);
-      if (datos.cliente) partes.push(`para ${datos.cliente}`);
-      if (typeof datos.total === 'number') partes.push(`por ${pesos(datos.total)}`);
-      return partes.join(' ') + (items ? `; ${items} ítem${items === 1 ? '' : 's'}.` : '.');
+  // Emisor: etiqueta explícita, la razón social (S.A.S., Ltd, GmbH, B.V.…) que más se repite,
+  // el nombre junto a los datos legales (NIT, SIRET, KvK, "au capital"…) o el nombre de la primera línea
+  const RE_SUFIJO = /\b(s\.?\s?a\.?\s?s\.?|s\.a\.|ltda\.?|ltd\.?|limited|inc\.?|llc|l\.l\.c\.|corp\.?|corporation|gmbh|sarl|s\.?r\.?l\.?|s\.l\.|s\.p\.a\.|pvt\.? ltd\.?|private limited|plc|e\.i\.r\.l\.)(?![a-z])/i;
+  const RE_SUFIJO_MAY = /\b(SA|AG|KG|BV|NV|AB|OY|SAS|SPA|SARL)\b|\b(B\.V\.|N\.V\.)(?!\w)/;
+  const RE_LEGAL = /\b(siret|siren|rcs|kvk|iban|au capital|handelsregister|hrb|amtsgericht|registered office|company (reg|number)|nit|gstin|cin|vat reg|cif|nif|rfc)\b/i;
+  function emisorDoc(doc, tipo) {
+    const v = buscar(doc, CAMPOS.emisor);
+    if (v) return v;
+    const palabrasTipo = [...(tipo.titulo || []), 'invoice', 'factura', 'receipt', 'copy', 'copia', 'kopie'];
+    const quitarTipo = n => { for (const k of palabrasTipo) n = n.replace(new RegExp('^\\s*' + escRe(k) + '\\b[\\s.:\\-]*', 'i'), ''); return n.trim(); };
+    const todo = ' ' + doc.lineas.map(l => l.textoN).join(' ') + ' ';
+    const cands = [];
+    doc.lineas.filter(l => l.pagina <= 2 || l.pagina === doc.lineas.at(-1).pagina).slice(0, 200).forEach((l, i) => l.celdas.forEach(c => {
+      const m = c.match(RE_SUFIJO) || c.match(RE_SUFIJO_MAY);
+      if (!m) return;
+      let nombre = quitarTipo(c.slice(0, m.index + m[0].length).replace(/^.*?:\s*/, '').replace(/^.*\s[-–|·•]\s/, '').replace(/^.*[.!?]\s+(?=\p{Lu})/u, ''));
+      if (!/\p{L}{3}/u.test(nombre.replace(m[0], '')) || nombre.length > 70 || /@|www\./.test(nombre)) return;
+      const nucleo = norm(nombre).split(' ').slice(0, 2).join(' ');
+      cands.push({ nombre: nombre.replace(/[,;]$/, ''), veces: cuenta(todo, nucleo), i });
+    }));
+    if (cands.length) { cands.sort((a, b) => b.veces - a.veces || a.i - b.i); return cands[0].nombre; }
+    // Nombre junto a los datos legales: en la misma línea o justo encima
+    const junto = {};
+    doc.lineas.forEach((l, i) => {
+      if (!RE_LEGAL.test(l.textoN)) return;
+      for (const o of [doc.lineas[i - 1], doc.lineas[i - 2]]) {
+        const c = o && o.celdas.length === 1 && quitarTipo(o.celdas[0]);
+        if (c && lineaNombre(o) && c.length <= 40 && !/\d/.test(c) && !/\.$/.test(c) && c.split(/\s+/).length <= 5 && !esEtiqueta(c)) junto[c] = (junto[c] || 0) + 1 + cuenta(todo, norm(c));
+      }
+    });
+    const mejorJunto = Object.entries(junto).sort((a, b) => b[1] - a[1])[0];
+    if (mejorJunto) return mejorJunto[0];
+    if (!tipo.comercial) return institucionDoc(doc);
+    for (const l of doc.lineas.slice(0, 6)) {
+      const celda = l.celdas.map(quitarTipo).find(c => c && lineaNombre({ texto: c, textoN: norm(c) }) && !esEtiqueta(c));
+      if (celda) return celda;
     }
-    if (tipo.id === 'remision') return `Remisión${datos.numero ? ' ' + datos.numero : ''}${f}${datos.cliente ? ' para ' + datos.cliente : ''}${items ? `; ${items} ítem${items === 1 ? '' : 's'} despachados` : ''}.`;
-    // Informes y otros: primera frase de la sección de resumen/conclusiones, o del cuerpo
-    // Busca la sección más informativa: resumen > conclusiones > objeto > introducción
-    const orden = ['resumen', 'conclusion', 'objeto', 'objetivo', 'alcance', 'introduccion'];
-    const encabezado = new RegExp('^(\\d+(\\.\\d+)*\\.?\\s*)?(' + orden.join('|') + ')[a-z]*(\\s+(ejecutivo|general|y recomendaciones))?\\s*[:.-]?\\s*', 'i');
-    let i = -1;
-    for (const o of orden) { i = doc.lineas.findIndex(l => new RegExp('^(\\d+(\\.\\d+)*\\.?\\s*)?' + o).test(l.textoN) && l.texto.length < 200); if (i >= 0) break; }
-    const desde = i >= 0 ? i : Math.max(0, doc.lineas.findIndex(l => l.texto.length >= 50));
-    let texto = doc.lineas.slice(desde, desde + 8).map((l, j) => j === 0 && i >= 0 ? l.texto.slice(norm(l.texto).match(encabezado)?.[0].length || 0) : l.texto).join(' ');
-    texto = texto.replace(/\s+/g, ' ').trim();
-    const frase = (texto.match(/^.{40,280}?[.;](\s|$)/) || [texto.slice(0, 240)])[0].trim();
-    return (datos.titulo ? `${datos.titulo}. ` : '') + (frase ? frase : '');
+    return null;
+  }
+  function monedaDoc(doc, rawTotal) {
+    const m = rawTotal && monedaDe(rawTotal);
+    if (m && m !== '$') return m;
+    const conteo = {};
+    for (const l of doc.lineas.slice(0, 300)) { const x = monedaDe(l.texto); if (x) conteo[x] = (conteo[x] || 0) + 1; }
+    const orden = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
+    const mejor = orden.find(([k]) => k !== '$')?.[0];
+    return mejor && (!conteo['$'] || conteo[mejor] >= conteo['$']) ? mejor : (m || orden[0]?.[0] || null);
   }
 
-  function extraerCampo(doc, clave, tipo, datos) {
+  const SECCIONES = ['resumen ejecutivo', 'executive summary', 'resumen', 'abstract', 'summary', 'resumo', 'resume', 'zusammenfassung', 'kurzfassung', 'samenvatting', 'sommario', 'riassunto', 'sintesis', 'conclusiones', 'conclusions', 'conclusion', 'highlights', 'objeto', 'objetivo', 'purpose', 'introduccion', 'introduction', 'einleitung', 'inleiding', 'introduzione', 'introducao', 'preface', 'prefacio', 'vorwort', 'prologo', 'avant-propos'];
+  function resumenLibre(doc) {
+    let i = -1, sec = '';
+    const cand = doc.lineas.filter(l => l.pagina <= 15);
+    for (const s of SECCIONES) {
+      const re = new RegExp('^(\\d+(\\.\\d+)*\\.?\\s*)?' + escRe(s) + '\\b');
+      i = cand.findIndex(l => re.test(l.textoN) && l.texto.length < 200 && !/\.{3,}|\s(\d+|[ivxlc]+)$/i.test(l.texto));
+      if (i >= 0) { sec = s; break; }
+    }
+    let texto = '';
+    if (i >= 0) {
+      const primera = cand[i].texto.slice((norm(cand[i].texto).match(new RegExp('^(\\d+(\\.\\d+)*\\.?\\s*)?' + escRe(sec) + '[a-z]*\\s*[:.\\-—]?\\s*'))?.[0].length) || 0);
+      const cuerpoAlto = cand[i + 1]?.alto || cand[i].alto;
+      const sig = [];
+      for (const l of cand.slice(i + 1, i + 16)) {
+        if (sig.length && (l.alto > cuerpoAlto * 1.15 || /^(table of contents|contents|indice|inhaltsverzeichnis|sommaire|chapter|cap[ií]tulo|kapitel|keywords|palabras clave)\b/i.test(norm(l.texto)))) break;
+        if (!/^\s*\d+\s*$/.test(l.texto)) sig.push(l.texto);
+      }
+      texto = [primera, ...sig].join(' ');
+    } else {
+      let k = doc.lineas.findIndex(l => sinRenglon(l).length >= 60 && /\p{Ll}{3}/u.test(l.texto));
+      if (k < 0) k = 0;
+      texto = doc.lineas.slice(k, k + 10).map(sinRenglon).join(' ');
+    }
+    texto = texto.replace(/-\s+(\p{Ll})/gu, '$1').replace(/\s*\.{2,}/g, '…').replace(/\s+/g, ' ').trim();
+    const frases = texto.match(/[^.!?…]{20,}?[.!?…](\s|$)/g) || [texto.slice(0, 300)];
+    let r = '';
+    for (const f of frases) { if ((r + f).length > 380) break; r += f; }
+    return (r || frases[0].slice(0, 380)).trim();
+  }
+  function resumenDoc(doc, tipo, d) {
+    const f = d.fecha ? ` del ${d.fecha}` : '';
+    const items = doc.tablas.reduce((n, t) => n + t.filas.length, 0);
+    if (COMERCIALES.has(tipo.id)) {
+      const partes = [`${tipo.nombre}${d.numero ? ' ' + d.numero : ''}${f}`];
+      if (d.emisor) partes.push(`de ${d.emisor}`);
+      if (d.cliente) partes.push(`para ${d.cliente}`);
+      if (typeof d.total === 'number') partes.push(`por ${fmtMonto(d.total, d.moneda)}`);
+      return partes.join(' ') + (items ? `; ${items} ítem${items === 1 ? '' : 's'}.` : '.');
+    }
+    if (tipo.id === 'datos') {
+      const t = doc.tablas.slice().sort((a, b) => b.filas.length - a.filas.length)[0];
+      const cols = t ? t.columnas.filter(c => !/^Columna/.test(c)).slice(0, 6) : [];
+      return `${d.titulo ? d.titulo + '. ' : ''}Tabla de datos con ${items} fila${items === 1 ? '' : 's'}${cols.length ? '; columnas: ' + cols.join(', ') : ''}.`;
+    }
+    const cuerpo = resumenLibre(doc);
+    return [d.titulo && !norm(cuerpo).startsWith(norm(d.titulo)) ? d.titulo + '.' : '', cuerpo].filter(Boolean).join(' ');
+  }
+
+  function extraerCampo(doc, clave, tipo, datos, meta) {
     switch (clave) {
-      case 'numero': return numeroDoc(doc);
-      case 'titulo': return buscar(doc, CAMPOS.titulo) || tituloDoc(doc);
+      case 'numero': return numeroDoc(doc, tipo);
+      case 'titulo': return buscar(doc, CAMPOS.titulo) || tituloInfo(doc)?.texto || null;
       case 'emisor': return emisorDoc(doc, tipo);
       case 'proveedor': return buscar(doc, CAMPOS.proveedor) || emisorDoc(doc, tipo);
+      case 'autor': return autorDoc(doc, tipo);
+      case 'institucion': return institucionDoc(doc);
+      case 'idioma': return meta.idioma || null;
+      case 'paginas': return meta.paginas;
       case 'fecha': {
         const v = buscar(doc, CAMPOS.fecha);
         if (v) return v;
-        for (const l of doc.lineas) { if (CAMPOS.fecha.excluir.some(x => l.textoN.includes(x))) continue; const f = fechaDe(l.texto); if (f) return f; }
+        for (const l of doc.lineas.slice(0, 400)) {
+          if (CAMPOS.fecha.excluir.some(x => l.textoN.includes(x))) continue;
+          const f = fechaDe(l.texto);
+          if (f) return f;
+        }
+        for (const l of doc.lineas.filter(l => l.pagina <= 2)) { const f = fechaDe(l.texto, false, true); if (f) return f; }
         return null;
       }
       case 'nit': {
         const v = buscar(doc, CAMPOS.nit);
         if (v) return v;
-        for (const l of doc.lineas) { const m = l.texto.match(/\bNIT\b\.?\s*[:.]?\s*(\d[\d.\s]{4,14}\d(\s*-\s*\d)?)/i); if (m) return m[1].replace(/\s/g, ''); }
+        for (const l of doc.lineas) { const m = l.texto.match(/\b(?:NIT|GSTIN|VAT|BTW|TVA|USt-IdNr\.?)\b\.?\s*(?:no\.?|nr\.?|number)?\s*[:.]?\s*([A-Z]{0,4}\d[\dA-Z.\-\s]{4,18}[\dA-Z])/i); if (m && validar(m[1], 'nit')) return validar(m[1], 'nit'); }
         return null;
+      }
+      case 'total': {
+        const r = buscarCon(doc, CAMPOS.total);
+        datos._rawTotal = r?.raw;
+        return r?.v ?? null;
+      }
+      case 'moneda': {
+        if (!tipo.comercial && tipo.id !== 'contrato') return null;
+        if (!('_rawTotal' in datos)) extraerCampo(doc, 'total', tipo, datos, meta);
+        return buscar(doc, CAMPOS.moneda) && monedaDe(buscar(doc, CAMPOS.moneda)) || monedaDoc(doc, datos._rawTotal) || (typeof datos.total === 'number' || typeof datos._total === 'number' ? '(sin moneda)' : null);
       }
       case 'resumen': return resumenDoc(doc, tipo, datos);
       case 'cantidaditems': return doc.tablas.reduce((n, t) => n + t.filas.length, 0);
@@ -696,19 +1015,20 @@
   // Campo que la persona escribió y no está en el diccionario: se busca por su propia etiqueta
   function campoLibre(texto) {
     const n = norm(texto);
-    return { etiqueta: texto.trim().replace(/^./, c => c.toUpperCase()), tipo: /valor|total|precio|monto|costo|saldo|pago|iva|impuesto/.test(n) ? 'dinero' : /fecha/.test(n) ? 'fecha' : 'texto', syn: [n] };
+    return { etiqueta: texto.trim().replace(/^./, c => c.toUpperCase()), tipo: /valor|total|precio|monto|costo|saldo|pago|iva|impuesto|price|cost|amount/.test(n) ? 'dinero' : /fecha|date/.test(n) ? 'fecha' : 'texto', syn: [n] };
   }
   function interpretarPedido(txt) {
-    const partes = txt.split(/[,;\n]|\s+y\s+/).map(s => s.trim()).filter(Boolean);
+    const partes = txt.split(/[,;\n]|\s+y\s+|\s+and\s+/).map(s => s.trim()).filter(Boolean);
     const campos = [], vistos = new Set();
     for (const p of partes) {
-      const n = norm(p).replace(/^(el|la|los|las|su|sus)\s+/, '').replace(/[.:]$/, '');
+      const n = norm(p).replace(/^(el|la|los|las|su|sus|the)\s+/, '').replace(/[.:]$/, '');
       if (n in ALIAS && ALIAS[n] === null) continue;
-      const clave = ALIAS[n] ?? ALIAS[n.replace(/s$/, '')] ?? null;
+      const clave = ALIAS[n] ?? ALIAS[n.replace(/s$/, '')] ?? ALIAS[n.replace(/es$/, '')] ?? null;
       const id = clave || 'libre:' + n;
       if (vistos.has(id)) continue;
       vistos.add(id);
-      campos.push(clave ? { clave, etiqueta: CAMPOS[clave].etiqueta, tipo: CAMPOS[clave].tipo } : { clave: id, libre: campoLibre(p), etiqueta: campoLibre(p).etiqueta, tipo: campoLibre(p).tipo });
+      const libre = clave ? null : campoLibre(p);
+      campos.push(clave ? { clave, etiqueta: CAMPOS[clave].etiqueta, tipo: CAMPOS[clave].tipo } : { clave: id, libre, etiqueta: libre.etiqueta, tipo: libre.tipo });
     }
     return campos;
   }
@@ -719,21 +1039,25 @@
   async function leerArchivo(a, i, total) {
     const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await a.file.arrayBuffer()) }).promise;
     const n = Math.min(pdf.numPages, MAX_PAGINAS);
-    const paginas = []; let conOcr = 0;
+    const paginas = []; let conOcr = 0, sinLeer = 0, camposFormulario = 0;
     try {
+      try { const f = await pdf.getFieldObjects(); camposFormulario = f ? Object.keys(f).length : 0; } catch { }
       for (let p = 1; p <= n; p++) {
         if (cancelado) throw { cancel: true };
+        if (p % 20 === 0) estado(`Documento ${i + 1} de ${total}: página ${p} de ${n}…`);
         const pag = await pdf.getPage(p);
         let piezas = $('#forzarOcr').checked ? [] : await piezasTexto(pag);
         if (piezas.map(x => x.txt).join('').replace(/\s/g, '').length < 20) {
-          estado(`Documento ${i + 1} de ${total}: leyendo página escaneada ${p} de ${n}…`);
-          piezas = await piezasOcr(pag); conOcr++;
+          if (conOcr < MAX_OCR) {
+            estado(`Documento ${i + 1} de ${total}: leyendo página escaneada ${p} de ${n}…`);
+            piezas = await piezasOcr(pag); conOcr++;
+          } else sinLeer++;
         }
-        paginas.push(armarLineas(piezas));
+        paginas.push(porColumnas(armarLineas(piezas)));
         pag.cleanup();
       }
     } finally { pdf.destroy(); }
-    return { paginas, numPaginas: n, conOcr };
+    return { paginas, numPaginas: pdf.numPages ?? n, leidas: n, conOcr, sinLeer, camposFormulario };
   }
 
   $('#convertir').onclick = async () => {
@@ -748,32 +1072,40 @@
       a.estado = 'Leyendo…'; pintarArchivos();
       estado(`Leyendo documento ${i + 1} de ${archivos.length}: ${a.nombre}`); progreso(i / archivos.length);
       try {
-        const { paginas, numPaginas, conOcr } = await leerArchivo(a, i, archivos.length);
+        const { paginas, numPaginas, leidas, conOcr, sinLeer, camposFormulario } = await leerArchivo(a, i, archivos.length);
         const doc = analizar(paginas);
         if (!doc.lineas.length) throw { msg: 'Sin texto' };
-        const { tipo, confianza } = clasificar(doc, a.nombre);
+        const meta = { paginas: numPaginas, camposFormulario, idioma: detectarIdioma(doc.lineas.slice(0, 400).map(l => l.texto).join(' ')) };
+        idiomaActual = meta.idioma;
+        // ¿Día/mes o mes/día? Lo decide una fecha inequívoca del propio documento; si no hay, mes/día solo en inglés con dólares
+        let dm = 0, md = 0;
+        for (const l of doc.lineas.slice(0, 500)) for (const m of l.texto.matchAll(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\b/g)) { if (+m[1] > 12) dm++; else if (+m[2] > 12) md++; }
+        mesPrimero = md > dm || (md === dm && meta.idioma === 'Inglés' && doc.lineas.slice(0, 200).some(l => /\$|USD/.test(l.texto)));
+        const { tipo, confianza } = clasificar(doc, a.nombre, meta);
         const claves = pedido.length ? pedido.map(c => c.clave) : tipo.campos;
         const datos = {};
         for (const k of claves.filter(k => k !== 'resumen')) {
           const c = pedido.find(c => c.clave === k);
-          datos[k] = c?.libre ? buscar(doc, c.libre) : extraerCampo(doc, k, tipo, datos);
+          datos[k] = c?.libre ? buscar(doc, c.libre) : extraerCampo(doc, k, tipo, datos, meta);
         }
-        // datos base para el resumen y los totales, aunque no se hayan pedido
-        for (const k of ['numero', 'fecha', 'emisor', 'cliente', 'total', 'titulo']) if (!(k in datos) && (k !== 'total' || tipo.campos.includes('total'))) datos['_' + k] = extraerCampo(doc, k, tipo, datos);
-        const base = k => datos[k] ?? datos['_' + k];
-        const vistaResumen = { numero: base('numero'), fecha: base('fecha'), emisor: base('emisor'), cliente: base('cliente'), total: base('total'), titulo: tipo.id === 'informe' || tipo.id === 'otro' ? base('titulo') : null };
-        datos.resumen = resumenDoc(doc, tipo, vistaResumen);
-        docs.push({ archivo: a.nombre, paginas: numPaginas, conOcr, tipo, confianza, datos, doc });
-        a.estado = tipo.nombre + (conOcr ? ' · OCR' : ''); a.clase = 'ok';
+        // Datos base para el resumen, los totales y los duplicados, aunque no se hayan pedido
+        const baseCampos = COMERCIALES.has(tipo.id) || tipo.id === 'contrato' ? ['numero', 'fecha', 'emisor', 'cliente', 'total', 'moneda'] : ['titulo', 'fecha'];
+        for (const k of baseCampos) if (!(k in datos)) datos['_' + k] = extraerCampo(doc, k, tipo, datos, meta);
+        const b = k => datos[k] ?? datos['_' + k];
+        datos.resumen = resumenDoc(doc, tipo, { numero: b('numero'), fecha: b('fecha'), emisor: b('emisor'), cliente: b('cliente'), total: b('total'), moneda: b('moneda'), titulo: b('titulo') });
+        docs.push({ archivo: a.nombre, paginas: numPaginas, conOcr, sinLeer, tipo, confianza, datos, doc, idioma: meta.idioma });
+        a.estado = tipo.nombre + (conOcr ? ' · OCR' : '') + (leidas < numPaginas ? ` · ${leidas} de ${numPaginas} págs.` : '');
+        a.clase = 'ok';
       } catch (e) {
         if (e?.cancel) { a.estado = 'Detenido'; break; }
         console.error(a.nombre, e);
-        a.estado = e?.name === 'PasswordException' ? 'Con contraseña' : e?.msg || 'No se pudo leer';
+        a.estado = e?.name === 'PasswordException' ? 'Protegido con contraseña' : e?.name === 'InvalidPDFException' ? 'Archivo vacío o dañado' : e?.msg || 'No se pudo leer';
         a.clase = 'error';
         docs.push({ archivo: a.nombre, error: a.estado });
       }
       pintarArchivos();
     }
+    idiomaActual = '';
     progreso(null);
     if (!docs.some(d => !d.error)) { estado(cancelado ? 'Proceso detenido.' : 'No se pudo leer ningún documento.', 'error'); ocupado(false); return; }
     mostrar(construirLibro(docs, pedido));
@@ -786,43 +1118,50 @@
   // Libro de Excel
   // =====================================================================
   const colLetra = i => { let s = ''; for (i++; i; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + (i - 1) % 26) + s; return s; };
-  function filaTotal(columnas, filas, tipos, etiquetaCol = 0) {
-    const r = columnas.map(() => '');
-    r[etiquetaCol] = 'TOTAL';
-    let alguno = false;
-    tipos.forEach((t, j) => {
-      if (t !== 'dinero' || !filas.some(f => typeof f[j] === 'number')) return;
-      const suma = filas.reduce((s, f) => s + (typeof f[j] === 'number' ? f[j] : 0), 0);
-      r[j] = { t: 'n', v: suma, f: `SUM(${colLetra(j)}2:${colLetra(j)}${filas.length + 1})` };
-      alguno = true;
-    });
-    return alguno ? r : null;
+  // Filas de TOTAL: una por moneda si hay varias (con SUMIF), o una sola con SUM
+  function filasTotal(columnas, filas, tipos, etiquetaCol, colMoneda) {
+    const din = tipos.map((t, j) => t === 'dinero' && filas.some(f => typeof f[j] === 'number') ? j : -1).filter(j => j >= 0);
+    if (!din.length) return [];
+    const monedas = colMoneda >= 0 ? [...new Set(filas.map(f => f[colMoneda]).filter(Boolean))] : [];
+    const ult = filas.length + 1;
+    const fila = (etq, fn) => { const r = columnas.map(() => ''); r[etiquetaCol] = etq; din.forEach(j => r[j] = fn(j)); return r; };
+    if (monedas.length) return monedas.map(m => fila(`TOTAL ${m}`, j => ({
+      t: 'n', v: filas.reduce((s, f) => s + (f[colMoneda] === m && typeof f[j] === 'number' ? f[j] : 0), 0),
+      f: `SUMIF(${colLetra(colMoneda)}2:${colLetra(colMoneda)}${ult},"${m}",${colLetra(j)}2:${colLetra(j)}${ult})` })));
+    return [fila(monedas[0] ? `TOTAL ${monedas[0]}` : 'TOTAL', j => ({ t: 'n', v: filas.reduce((s, f) => s + (typeof f[j] === 'number' ? f[j] : 0), 0), f: `SUM(${colLetra(j)}2:${colLetra(j)}${ult})` }))];
   }
   function hojaDocs(nombre, lista, claves, etiquetas, tipos) {
-    const columnas = ['Archivo', 'Tipo', ...etiquetas, 'Resumen', 'Por revisar'];
-    const tiposCol = ['texto', 'texto', ...tipos, 'texto', 'texto'];
-    const faltan = [];
+    const columnas = ['Archivo', 'Tipo', 'Idioma', ...etiquetas, 'Resumen', 'Por revisar'];
+    const tiposCol = ['texto', 'texto', 'texto', ...tipos, 'texto', 'texto'];
+    let faltantes = 0;
     const filas = lista.map(d => {
       const vals = claves.map(k => d.datos[k] ?? '');
       const f = etiquetas.filter((_, j) => vals[j] === '' || vals[j] === null);
       if (d.confianza === 'baja') f.unshift('tipo de documento');
-      faltan.push(f.length);
-      return [d.archivo, d.tipo.nombre, ...vals, d.datos.resumen || '', f.join(', ')];
+      if (d.sinLeer) f.push(`${d.sinLeer} páginas escaneadas sin leer`);
+      if (f.length) faltantes++;
+      return [d.archivo, d.tipo.nombre, d.idioma || '', ...vals, d.datos.resumen || '', f.join(', ')];
     });
-    const total = filaTotal(columnas, filas, tiposCol, 1);
-    return { nombre, columnas, filas: total ? [...filas, total] : filas, tipos: tiposCol, conTotal: !!total, faltantes: faltan.filter(Boolean).length };
+    const totales = filasTotal(columnas, filas, tiposCol, 1, columnas.indexOf('Moneda'));
+    return { nombre, columnas, filas: [...filas, ...totales], tipos: tiposCol, nTotales: totales.length, faltantes };
   }
 
   function construirLibro(docs, pedido) {
     const ok = docs.filter(d => !d.error), errores = docs.filter(d => d.error);
     const hojas = [];
     const grupos = [...TIPOS, OTRO].map(t => ({ t, docs: ok.filter(d => d.tipo === t) })).filter(g => g.docs.length);
-    const totalDe = d => { const v = d.datos.total ?? d.datos._total; return typeof v === 'number' ? v : null; };
+    const tot = d => { const v = d.datos.total ?? d.datos._total; return typeof v === 'number' ? v : null; };
+    const mon = d => d.datos.moneda ?? d.datos._moneda ?? '';
 
     // --- Hojas de datos ---
-    let hojasDatos = [];
+    const hojasDatos = [];
     if (pedido.length) {
-      const cs = pedido.filter(c => c.clave !== 'resumen');
+      const cs = pedido.filter(c => c.clave !== 'resumen' && c.clave !== 'idioma');
+      const iDin = cs.findIndex(c => c.tipo === 'dinero');
+      if (iDin >= 0 && !cs.some(c => c.clave === 'moneda')) {
+        cs.splice(iDin + 1, 0, { clave: 'moneda', etiqueta: CAMPOS.moneda.etiqueta, tipo: 'texto' });
+        for (const d of ok) if (!('moneda' in d.datos)) d.datos.moneda = d.datos._moneda ?? null;
+      }
       hojasDatos.push(hojaDocs('Datos solicitados', ok, cs.map(c => c.clave), cs.map(c => c.etiqueta), cs.map(c => c.tipo)));
     } else {
       for (const g of grupos) {
@@ -831,59 +1170,70 @@
       }
     }
 
+    // --- Totales por tipo y moneda (nunca se suman monedas distintas) ---
+    const sumas = {};   // tipo -> moneda -> {n, suma}
+    for (const d of ok) { const v = tot(d); if (v === null) continue; const m = mon(d) || 'sin moneda'; ((sumas[d.tipo.id] ??= {})[m] ??= { n: 0, suma: 0 }); sumas[d.tipo.id][m].n++; sumas[d.tipo.id][m].suma += v; }
+    const textoSumas = id => Object.entries(sumas[id] || {}).map(([m, x]) => fmtMonto(x.suma, m === 'sin moneda' ? '' : m)).join(' + ');
+
     // --- Resumen ---
     const partesTipo = grupos.map(g => `${g.docs.length} ${(g.docs.length === 1 ? g.t.nombre : g.t.plural).toLowerCase()}`);
     const lista = partesTipo.length > 1 ? partesTipo.slice(0, -1).join(', ') + ' y ' + partesTipo.at(-1) : partesTipo[0];
-    const conDinero = grupos.filter(g => g.docs.some(d => totalDe(d) !== null));
-    const frasesDinero = conDinero.map(g => `${g.t.plural.toLowerCase()} suman ${pesos(g.docs.reduce((s, d) => s + (totalDe(d) || 0), 0))}`);
+    const frasesDinero = grupos.filter(g => COMERCIALES.has(g.t.id) && sumas[g.t.id]).map(g => `${g.t.plural.toLowerCase()}, ${textoSumas(g.t.id)}`);
+    const idiomas = {};
+    ok.forEach(d => d.idioma && (idiomas[d.idioma] = (idiomas[d.idioma] || 0) + 1));
+    const textoIdiomas = Object.entries(idiomas).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k.toLowerCase()} (${n})`).join(', ');
     const clave = d => d.tipo.id + '|' + norm(d.datos.numero ?? d.datos._numero ?? '') + '|' + norm(d.datos.nit ?? d.datos.emisor ?? d.datos._emisor ?? '');
     const vistos = {}, duplicados = [];
-    for (const d of ok) { const n = d.datos.numero ?? d.datos._numero; if (!n) continue; const k = clave(d); if (vistos[k]) duplicados.push([d.tipo.nombre, n, vistos[k], d.archivo]); else vistos[k] = d.archivo; }
+    for (const d of ok) { if (!COMERCIALES.has(d.tipo.id)) continue; const n = d.datos.numero ?? d.datos._numero; if (!n) continue; const k = clave(d); if (vistos[k]) duplicados.push([d.tipo.nombre, n, vistos[k], d.archivo]); else vistos[k] = d.archivo; }
     const porRevisar = hojasDatos.reduce((s, h) => s + h.faltantes, 0);
-    const fechas = ok.map(d => d.datos.fecha ?? d.datos._fecha).filter(Boolean).sort();
+    const paginasTot = ok.reduce((s, d) => s + d.paginas, 0);
+    const largos = ok.filter(d => d.paginas >= 30).sort((a, b) => b.paginas - a.paginas);
     const texto = [
-      `Se procesaron ${docs.length} documento${docs.length === 1 ? '' : 's'}: ${lista || 'ninguno legible'}${errores.length ? ` y ${errores.length} que no se pudo leer` : ''}.`,
-      frasesDinero.length ? `Las ${frasesDinero.join('; las ')}.` : '',
-      fechas.length > 1 ? `Las fechas van del ${fechas[0]} al ${fechas.at(-1)}.` : '',
+      `Se procesaron ${docs.length} documento${docs.length === 1 ? '' : 's'} (${paginasTot.toLocaleString('es-CO')} páginas): ${lista || 'ninguno legible'}.`,
+      errores.length ? `${errores.length === 1 ? 'Uno no se pudo leer' : errores.length + ' no se pudieron leer'} (${errores.map(d => d.error.toLowerCase()).filter((v, i, a) => a.indexOf(v) === i).join(', ')}).` : '',
+      textoIdiomas && Object.keys(idiomas).length > 1 ? `Idiomas: ${textoIdiomas}.` : '',
+      frasesDinero.length ? `Sumas por tipo: ${frasesDinero.join('; ')}.` : '',
+      largos.length ? `El más extenso es «${largos[0].datos.titulo ?? largos[0].datos._titulo ?? largos[0].archivo}» (${largos[0].paginas} páginas).` : '',
       duplicados.length ? `Hay ${duplicados.length} posible${duplicados.length === 1 ? '' : 's'} duplicado${duplicados.length === 1 ? '' : 's'} (mismo número y emisor).` : '',
       porRevisar ? `${porRevisar} documento${porRevisar === 1 ? ' tiene' : 's tienen'} datos que no se encontraron: revisa la columna «Por revisar».` : 'Se encontraron todos los datos buscados.',
     ].filter(Boolean).join(' ');
 
-    const filasRes = grupos.map(g => {
-      const tot = g.docs.map(totalDe).filter(v => v !== null);
-      return [g.t.nombre, g.docs.length, tot.length ? tot.reduce((a, b) => a + b, 0) : '', g.docs.reduce((s, d) => s + d.paginas, 0)];
-    });
+    const filasRes = grupos.map(g => [g.t.nombre, g.docs.length, g.docs.reduce((s, d) => s + d.paginas, 0), textoSumas(g.t.id)]);
     if (errores.length) filasRes.push(['No se pudo leer', errores.length, '', '']);
-    const resumen = { nombre: 'Resumen', columnas: ['Tipo de documento', 'Cantidad', 'Suma de totales', 'Páginas'], tipos: ['texto', 'dinero', 'dinero', 'dinero'], filas: filasRes };
-    const tr = filaTotal(resumen.columnas, filasRes, resumen.tipos);
-    if (tr) { resumen.filas = [...filasRes, tr]; resumen.conTotal = true; }
-    resumen.pie = [[], ['Resumen', texto], ...(duplicados.length ? [[], ['Posibles duplicados'], ['Tipo', 'Número', 'Archivo', 'Repetido en'], ...duplicados] : []),
+    const resumen = { nombre: 'Resumen', columnas: ['Tipo de documento', 'Cantidad', 'Páginas', 'Suma de totales'], tipos: ['texto', 'numero', 'numero', 'texto'], filas: filasRes };
+    resumen.filas.push(['TOTAL', { t: 'n', v: ok.length + errores.length, f: `SUM(B2:B${filasRes.length + 1})` }, { t: 'n', v: paginasTot, f: `SUM(C2:C${filasRes.length + 1})` }, '']);
+    resumen.nTotales = 1;
+    const porMoneda = {};
+    for (const d of ok) if (COMERCIALES.has(d.tipo.id) && tot(d) !== null) { const m = mon(d) || 'sin moneda'; (porMoneda[m] ??= { n: 0, suma: 0 }); porMoneda[m].n++; porMoneda[m].suma += tot(d); }
+    resumen.pie = [[], ['Resumen', texto],
+      ...(Object.keys(porMoneda).length ? [[], ['Totales por moneda (documentos comerciales)'], ['Moneda', 'Documentos', 'Suma'], ...Object.entries(porMoneda).map(([m, x]) => [m, x.n, x.suma])] : []),
+      ...(duplicados.length ? [[], ['Posibles duplicados'], ['Tipo', 'Número', 'Archivo', 'Repetido en'], ...duplicados] : []),
       ...(errores.length ? [[], ['Archivos no leídos'], ...errores.map(d => [d.archivo, d.error])] : [])];
     hojas.push(resumen, ...hojasDatos);
 
-    // --- Ítems de todas las tablas ---
+    // --- Tablas: ítems de documentos comerciales (columnas unificadas) y tablas de los demás (una debajo de otra) ---
     if ($('#conItems').checked) {
-      const cols = [];
-      const filas = [];
-      for (const d of ok) for (const t of d.doc.tablas) {
+      const cols = [], filas = [];
+      for (const d of ok.filter(d => COMERCIALES.has(d.tipo.id))) for (const t of d.doc.tablas) {
         const idx = t.columnas.map(c => { const n = norm(c); let j = cols.findIndex(x => norm(x) === n); if (j < 0) { cols.push(c); j = cols.length - 1; } return j; });
-        for (const f of t.filas) {
-          const r = [];
-          f.forEach((v, j) => r[idx[j]] = convertir(v));
-          filas.push([d.archivo, d.tipo.nombre, d.datos.numero ?? d.datos._numero ?? '', t.pagina, ...r]);
-        }
+        for (const f of t.filas) { const r = []; f.forEach((v, j) => r[idx[j]] = convertir(v)); filas.push([d.archivo, d.tipo.nombre, d.datos.numero ?? d.datos._numero ?? '', t.pagina, ...r]); }
       }
       if (filas.length) {
         const ancho = 4 + cols.length;
         hojas.push({ nombre: 'Ítems', columnas: ['Archivo', 'Tipo', 'Número doc.', 'Página', ...cols], filas: filas.map(f => Array.from({ length: ancho }, (_, j) => f[j] ?? '')) });
       }
+      const apiladas = [];
+      for (const d of ok.filter(d => !COMERCIALES.has(d.tipo.id))) for (const t of d.doc.tablas) {
+        if (apiladas.length > 20000) break;
+        apiladas.push([`${d.archivo} · página ${t.pagina}`], t.columnas, ...t.filas.map(f => f.map(convertir)), []);
+      }
+      if (apiladas.length) hojas.push({ nombre: 'Tablas', columnas: ['Tablas encontradas en informes, listados y otros documentos'], filas: apiladas });
     }
     if ($('#conTexto').checked)
       hojas.push({ nombre: 'Texto', columnas: ['Archivo', 'Página', 'Texto'], filas: ok.flatMap(d => d.doc.lineas.map(l => [d.archivo, l.pagina, l.texto])) });
 
-    const cifras = [[docs.length, 'documentos'], ...grupos.slice(0, 5).map(g => [g.docs.length, g.t.plural.toLowerCase()])];
-    const totalFact = ok.filter(d => d.tipo.id === 'factura').map(totalDe).filter(v => v !== null);
-    if (totalFact.length) cifras.push([pesos(totalFact.reduce((a, b) => a + b, 0)), 'total facturas']);
+    const cifras = [[docs.length, 'documentos'], [paginasTot, 'páginas'], ...grupos.slice().sort((a, b) => b.docs.length - a.docs.length).slice(0, 4).map(g => [g.docs.length, g.t.plural.toLowerCase()])];
+    for (const [m, x] of Object.entries(sumas.factura || {}).slice(0, 2)) cifras.push([fmtMonto(x.suma, m === 'sin moneda' ? '' : m), 'total facturas']);
     return { titulo: docs.length === 1 ? docs[0].archivo.replace(/\.pdf$/i, '') : `${docs.length} documentos`, resumen: texto, cifras, hojas };
   }
 
@@ -891,13 +1241,14 @@
   // Vista previa
   // =====================================================================
   const EJEMPLO = {
-    titulo: 'Ejemplo: 3 documentos', cifras: [[3, 'documentos'], [2, 'facturas'], [1, 'remisión'], ['$ 2.128.000', 'total facturas']],
+    titulo: 'Ejemplo: 4 documentos', cifras: [[4, 'documentos'], [2, 'facturas'], [1, 'remisión'], [1, 'tesis'], ['COP 2.128.000', 'total facturas']],
     resumen: 'Así se ve un resultado: los documentos se clasifican, cada uno queda en una fila con los datos pedidos y al final va el TOTAL. Sube tus PDF para reemplazarlo.',
-    hojas: [{ nombre: 'Datos solicitados', columnas: ['Archivo', 'Tipo', 'Número', 'Fecha', 'Proveedor', 'Total', 'Por revisar'], tipos: ['texto', 'texto', 'codigo', 'fecha', 'texto', 'dinero', 'texto'], conTotal: true, filas: [
-      ['factura-2031.pdf', 'Factura', 'FE-2031', '2026-08-14', 'Suministros Médicos Andinos', 1428000, ''],
-      ['factura-0457.pdf', 'Factura', 'FV-0457', '2026-08-20', 'Ferretería El Tornillo', 700000, ''],
-      ['remision-88.pdf', 'Remisión', 'R-88', '2026-08-21', '', '', 'Proveedor, Total'],
-      ['', 'TOTAL', '', '', '', { t: 'n', v: 2128000 }, '']] }]
+    hojas: [{ nombre: 'Datos solicitados', columnas: ['Archivo', 'Tipo', 'Idioma', 'Número', 'Fecha', 'Emisor', 'Total', 'Moneda', 'Por revisar'], tipos: ['texto', 'texto', 'texto', 'codigo', 'fecha', 'texto', 'dinero', 'texto', 'texto'], nTotales: 1, filas: [
+      ['factura-2031.pdf', 'Factura', 'Español', 'FE-2031', '2026-08-14', 'Suministros Médicos Andinos S.A.S.', 1428000, 'COP', ''],
+      ['factura-0457.pdf', 'Factura', 'Español', 'FV-0457', '2026-08-20', 'Ferretería El Tornillo Ltda.', 700000, 'COP', ''],
+      ['remision-88.pdf', 'Remisión', 'Español', 'R-88', '2026-08-21', 'Suministros Médicos Andinos S.A.S.', '', '', 'Total, Moneda'],
+      ['tesis-maestria.pdf', 'Tesis', 'Español', '', '2025-11', 'Universidad Nacional de Colombia', '', '', 'Número, Total, Moneda'],
+      ['', 'TOTAL COP', '', '', '', '', { t: 'n', v: 2128000 }, '', '']] }]
   };
   function mostrar(datos) { libro = datos; esEjemplo = false; hojaActiva = Math.min(1, datos.hojas.length - 1); pintar(); }
   const valorCelda = v => (v && typeof v === 'object') ? v.v : v;
@@ -906,21 +1257,20 @@
     $('#cifras').innerHTML = libro.cifras.map(([n, t]) => `<div class="cifra"><b>${esc(typeof n === 'number' ? n.toLocaleString('es-CO') : n)}</b><span>${esc(t)}</span></div>`).join('');
     $('#resumen').textContent = libro.resumen;
     const h = libro.hojas[hojaActiva];
-    const ancho = Math.max(h.columnas.length, ...h.filas.map(f => f.length));
+    const ancho = Math.max(h.columnas.length, ...h.filas.slice(0, 1000).map(f => f.length));
     const cols = Array.from({ length: ancho }, (_, i) => h.columnas[i] ?? '');
     const iRev = h.columnas.indexOf('Por revisar');
-    const celda = (v, fila, j) => {
+    const n = h.filas.length, nt = h.nTotales || 0;
+    const celda = (v, i, j) => {
       v = valorCelda(v);
-      const falta = iRev >= 0 && (v === '' || v == null) && j > 1 && j < iRev && fila[1] !== 'TOTAL';
-      const esDinero = typeof v === 'number' && h.tipos?.[j] === 'dinero' && h.nombre !== 'Resumen' || (h.nombre === 'Resumen' && j === 2 && typeof v === 'number');
-      return `<td class="${typeof v === 'number' ? 'num' : ''}${falta ? ' falta' : ''}" title="${esc(v ?? '')}">${esc(typeof v === 'number' ? (esDinero ? pesos(v) : v.toLocaleString('es-CO')) : v ?? '')}</td>`;
+      const falta = iRev >= 0 && (v === '' || v == null) && j > 2 && j < iRev - 1 && i < n - nt;
+      return `<td class="${typeof v === 'number' ? 'num' : ''}${falta ? ' falta' : ''}" title="${esc(v ?? '')}">${esc(typeof v === 'number' ? fmtNum(v) : v ?? '')}</td>`;
     };
-    const n = h.filas.length;
     $('#tablaCaja').innerHTML = `<table><thead><tr><th class="fila"></th>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${
-      h.filas.slice(0, 1000).map((f, i) => `<tr class="${h.conTotal && i === n - 1 ? 'total' : ''}"><th class="fila">${i + 1}</th>${cols.map((_, j) => celda(f[j] ?? '', f, j)).join('')}</tr>`).join('')
+      h.filas.slice(0, 1000).map((f, i) => `<tr class="${i >= n - nt ? 'total' : ''}"><th class="fila">${i + 1}</th>${cols.map((_, j) => celda(f[j] ?? '', i, j)).join('')}</tr>`).join('')
     }</tbody></table>${n > 1000 ? `<p class="vacio">Vista previa de 1.000 de ${n.toLocaleString('es-CO')} filas. El Excel las incluye todas.</p>` : ''}`;
     $('#pestanas').innerHTML = libro.hojas.map((x, i) =>
-      `<button role="tab" aria-selected="${i === hojaActiva}" data-i="${i}">${esc(x.nombre)} · ${x.filas.length - (x.conTotal ? 1 : 0)}</button>`).join('');
+      `<button role="tab" aria-selected="${i === hojaActiva}" data-i="${i}">${esc(x.nombre)} · ${x.nombre === 'Tablas' ? x.filas.filter(f => f.length === 1).length : x.filas.length - (x.nTotales || 0)}</button>`).join('');
   }
   $('#pestanas').onclick = e => { const b = e.target.closest('button'); if (b) { hojaActiva = +b.dataset.i; pintar(); } };
 
@@ -932,16 +1282,16 @@
     for (const h of libro.hojas) {
       const filas = [h.columnas, ...h.filas, ...(h.pie || [])];
       const hoja = XLSX.utils.aoa_to_sheet(filas);
-      const ancho = Math.max(...filas.map(f => f.length));
+      const ancho = Math.max(...filas.slice(0, 2000).map(f => f.length));
       hoja['!cols'] = Array.from({ length: ancho }, (_, j) => ({
-        wch: Math.min(j === h.columnas.indexOf('Resumen') ? 80 : 50, Math.max(8, ...[h.columnas[j], ...h.filas.slice(0, 300).map(f => valorCelda(f[j]))].map(v => String(v ?? '').length + 2)))
+        wch: Math.min(j === h.columnas.indexOf('Resumen') ? 90 : 50, Math.max(8, ...[h.columnas[j], ...h.filas.slice(0, 300).map(f => valorCelda(f[j]))].map(v => String(v ?? '').length + 2)))
       }));
-      // Formato de moneda para las columnas de dinero
+      // Formato numérico para las columnas de dinero
       (h.tipos || []).forEach((t, j) => {
-        if (t !== 'dinero' || (h.nombre === 'Resumen' && j !== 2)) return;
-        for (let r = 1; r <= h.filas.length; r++) { const c = hoja[colLetra(j) + (r + 1)]; if (c && c.t === 'n') c.z = '"$"#,##0'; }
+        if (t !== 'dinero') return;
+        for (let r = 1; r <= h.filas.length; r++) { const c = hoja[colLetra(j) + (r + 1)]; if (c && c.t === 'n') c.z = '#,##0.00'; }
       });
-      if (h.filas.length) hoja['!autofilter'] = { ref: `A1:${colLetra(h.columnas.length - 1)}${h.filas.length + 1 - (h.conTotal ? 1 : 0)}` };
+      if (h.nombre !== 'Tablas' && h.filas.length) hoja['!autofilter'] = { ref: `A1:${colLetra(h.columnas.length - 1)}${h.filas.length + 1 - (h.nTotales || 0)}` };
       XLSX.utils.book_append_sheet(wb, hoja, h.nombre.replace(/[\[\]:*?/\\]/g, ' ').slice(0, 31));
     }
     const nombre = archivos.length === 1 ? archivos[0].nombre.replace(/\.pdf$/i, '') : `documentos-${new Date().toISOString().slice(0, 10)}`;
@@ -954,6 +1304,7 @@
     catch { estado('El navegador no permitió copiar. Descarga el Excel en su lugar.', 'error'); }
   };
 
+  if (/[?&]debug\b/.test(location.search)) window.__motor = { analizar, armarLineas, porColumnas, piezasTexto, tituloInfo, autorDoc, emisorDoc, institucionDoc, clasificar, buscarCon, CAMPOS, TIPOS, dineroDe, fechaDe };
   libro = EJEMPLO; hojaActiva = 0; pintar(); ocupado(false);
 })();
 </script>
