@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PDF a Excel</title>
-<meta name="description" content="Sube uno o muchos PDF: los clasifica (facturas, remisiones, informes…), extrae los datos que pidas y arma un Excel con resumen y totales. Gratis, sin cuenta y sin subir tus archivos.">
+<title>Facturas DIAN a Excel</title>
+<meta name="description" content="Para contadores: sube los ZIP o XML de las facturas electrónicas DIAN (y también PDF o fotos) y obtén el libro de compras o ventas, resumen por proveedor, IVA por tarifa y retenciones en Excel. Gratis, sin cuenta y sin subir tus archivos.">
 
 <!--
   ============================================================
@@ -114,37 +114,38 @@
   details.nota ul{margin:8px 0 0;padding-left:18px;display:grid;gap:4px}
 </style>
 </head>
-<body>
+<body data-modo="contadores">
 
 <div class="envoltura">
   <nav class="secciones" aria-label="Secciones">
-    <a href="../pdf-a-excel/" aria-current="page">Documentos en general</a>
-    <a href="../contadores/">Contadores · Facturas DIAN</a>
+    <a href="../pdf-a-excel/">Documentos en general</a>
+    <a href="../contadores/" aria-current="page">Contadores · Facturas DIAN</a>
   </nav>
   <header>
-    <h1>Muchos PDF, <em>un solo Excel</em></h1>
-    <p>Sube 1, 10 o 50 documentos —facturas, recibos, remisiones, informes, tesis, artículos, libros, normas, formularios, cartas, planos, listados…— en español, inglés, francés, alemán, neerlandés, portugués o italiano. La herramienta los clasifica, saca los datos que pidas de cada uno y arma un Excel con un resumen, los totales por moneda y el detalle.</p>
-    <div class="sellos"><span class="sello">Gratis</span><span class="sello">Sin cuenta</span><span class="sello">Tus PDF no salen de tu dispositivo</span></div>
+    <h1>Facturas electrónicas, <em>libro contable en Excel</em></h1>
+    <p>Sube los ZIP que llegan al correo con cada factura electrónica (o sus XML) y también PDF o fotos de facturas. Obtienes el libro de compras o ventas, el resumen por proveedor, el IVA por tarifa y las retenciones —ReteFuente, ReteIVA y ReteICA—, listos para revisar y cruzar con tu contabilidad.</p>
+    <div class="sellos"><span class="sello">Gratis</span><span class="sello">Sin cuenta</span><span class="sello">Tus facturas no salen de tu dispositivo</span><span class="sello">XML de la DIAN: datos exactos</span></div>
   </header>
 
   <div class="rejilla">
     <section class="panel" aria-label="Documentos">
       <label class="soltar" id="zona" for="entrada">
         <b>Elegir o soltar documentos</b>
-        <span>PDF, fotos o capturas (JPG, PNG, WEBP), Word (.docx), Excel (.xlsx, .xls, .ods, .csv) y facturas electrónicas (ZIP o XML). Puedes seleccionar varios a la vez.</span>
+        <span>ZIP o XML de facturas electrónicas de la DIAN (recomendado: datos exactos), además de PDF, fotos, Word o Excel. Puedes seleccionar muchos a la vez.</span>
         <input type="file" id="entrada" accept="application/pdf,.pdf,.zip,.xml,.xlsx,.xlsm,.xls,.ods,.csv,.docx,image/*,.png,.jpg,.jpeg,.webp,.bmp,.gif" multiple hidden>
       </label>
       <ul class="archivos" id="archivos" aria-label="Archivos cargados"></ul>
 
       <label class="campo" for="pedido">¿Qué datos necesitas de cada documento?
-        <small>Sepáralos con comas, o pregunta: «¿de qué son las facturas?», «¿de qué tratan las tesis?». Déjalo vacío para que elija los datos según el tipo de documento.</small>
-        <textarea id="pedido" placeholder="Ej.: número, fecha, proveedor, NIT, total"></textarea>
+        <small>Déjalo vacío para obtener el libro contable completo. También puedes pedir datos concretos separados por comas o preguntar «¿de qué son las facturas?».</small>
+        <textarea id="pedido" placeholder="Ej.: número, fecha, NIT, proveedor, IVA, retefuente, total"></textarea>
       </label>
       <div class="presets" id="presets" aria-label="Sugerencias">
-        <button type="button" data-v="número, fecha, proveedor, NIT, cliente, concepto, categoría, subtotal, IVA, retención, total, moneda">Facturas</button>
-        <button type="button" data-v="número, fecha, cliente, dirección, ciudad, transportador, placa">Remisiones</button>
-        <button type="button" data-v="título, autor, institución, fecha, páginas, temas, resumen">Informes y tesis</button>
-        <button type="button" data-v="">Automático</button>
+        <button type="button" data-v="">Libro completo</button>
+        <button type="button" data-v="número, fecha, NIT, proveedor, subtotal, IVA, INC, retefuente, reteiva, reteica, total">IVA y retenciones</button>
+        <button type="button" data-v="número, fecha, NIT, proveedor, total, forma de pago, fecha de vencimiento">Cartera y vencimientos</button>
+        <button type="button" data-v="número, fecha, NIT, proveedor, total, CUFE">Con CUFE</button>
+        <button type="button" data-v="número, proveedor, concepto, categoría, total">¿En qué se gastó?</button>
       </div>
 
       <label class="opcion" for="conItems"><input type="checkbox" id="conItems" checked>
@@ -163,6 +164,10 @@
       <div class="estado" id="estado" role="status" aria-live="polite"></div>
       <p class="aviso-equipo" id="avisoEquipo" hidden>Tu equipo tiene poca memoria o un procesador básico. Los PDF con texto, Word y Excel se leerán normal, pero las fotos y los PDF escaneados pueden tardar alrededor de 1 minuto por página. Se usará un modo más liviano. Cierra otras pestañas y programas para que vaya más rápido.</p>
 
+      <details class="nota" open>
+        <summary>¿Dónde encuentro el ZIP o el XML?</summary>
+        Cada factura electrónica llega al correo con un archivo <b>.zip</b> que trae el PDF y el XML. Descárgalos y súbelos tal cual, sin descomprimir: la herramienta toma el XML (datos exactos: NIT, CUFE, IVA por tarifa, retenciones) y descarta el PDF repetido. Si solo tienes el PDF o una foto, también sirve, pero esos datos se leen del documento y conviene revisarlos.
+      </details>
       <p class="nota">Funciona con reglas, no con inteligencia artificial: reconoce los formatos habituales en varios idiomas («Total:», «Invoice No.», «Rechnungsdatum», «NIT», «VAT»…). Los datos que no encuentra quedan marcados en la columna <b>Por revisar</b>.</p>
       <details class="nota">
         <summary>¿Qué computador necesito? ¿Por qué a veces tarda?</summary>
@@ -193,9 +198,9 @@
   </div>
 </div>
 
-<script src="lib/pdf.min.js"></script>
-<script src="lib/xlsx.full.min.js"></script>
-<script src="lib/tesseract.min.js"></script>
-<script src="motor.js?v=10"></script>
+<script src="../pdf-a-excel/lib/pdf.min.js"></script>
+<script src="../pdf-a-excel/lib/xlsx.full.min.js"></script>
+<script src="../pdf-a-excel/lib/tesseract.min.js"></script>
+<script src="../pdf-a-excel/motor.js?v=10"></script>
 </body>
 </html>
