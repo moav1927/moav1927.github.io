@@ -4,16 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PDF a Excel</title>
-<meta name="description" content="Convierte cualquier PDF en una hoja de Excel organizada. Gratis, sin cuenta y sin subir tus archivos: todo ocurre en tu navegador.">
+<meta name="description" content="Sube uno o muchos PDF: los clasifica (facturas, remisiones, informes…), extrae los datos que pidas y arma un Excel con resumen y totales. Gratis, sin cuenta y sin subir tus archivos.">
 
 <!--
   ============================================================
   PDF A EXCEL — funciona 100 % en el navegador
   ------------------------------------------------------------
-  - No usa servidores ni cuentas: el PDF nunca sale del equipo.
+  - No usa servidores, IA externa ni cuentas: los PDF nunca salen del equipo.
   - Librerías incluidas en ./lib (sin depender de CDNs):
       pdf.js 3.11.174 (leer PDF), SheetJS 0.18.5 (crear .xlsx),
       tesseract.js 5.1.1 + idioma español (OCR para PDF escaneados).
+  - Clasificación y extracción por reglas: ver TIPOS y CAMPOS más abajo
+    para agregar tipos de documento o sinónimos de campos.
   ============================================================
 -->
 
@@ -26,35 +28,49 @@
     --papel:#eff1ee; --papel-2:#e5e9e5; --blanco:#fbfcfa;
     --tinta:#10303a; --tinta-2:#2e5765; --gris:#5b6c70;
     --laton:#9c7326; --laton-2:#bd9440;
-    --linea:#c6cec8; --rejilla:#dde3df; --error:#a3402b; --ok:#2f6b3f;
+    --linea:#c6cec8; --rejilla:#dde3df; --error:#a3402b; --ok:#2f6b3f; --aviso:#f6efdc;
   }
   *{box-sizing:border-box}
   @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important}}
   body{margin:0;background:var(--papel);color:var(--tinta);
     font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
-  h1,h2{font-family:"Literata",Georgia,serif;font-weight:500;margin:0;text-wrap:balance}
+  h1,h2,h3{font-family:"Literata",Georgia,serif;font-weight:500;margin:0;text-wrap:balance}
   button,input,textarea{font:inherit;color:inherit}
   :focus-visible{outline:2px solid var(--laton);outline-offset:2px}
 
-  .envoltura{max-width:1180px;margin:0 auto;padding:0 16px}
+  .envoltura{max-width:1200px;margin:0 auto;padding:0 16px}
   header{padding-block:32px 24px;display:grid;gap:8px}
   h1{font-size:clamp(1.9rem,4.2vw,2.7rem);line-height:1.1}
   h1 em{font-style:normal;color:var(--laton)}
-  header p{margin:0;color:var(--gris);max-width:64ch}
+  header p{margin:0;color:var(--gris);max-width:68ch}
   .sellos{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
   .sello{font-size:.78rem;border:1px solid var(--linea);border-radius:99px;padding:2px 10px;color:var(--tinta-2);background:var(--blanco)}
 
-  .rejilla{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start;padding-bottom:48px}
-  @media (max-width:840px){.rejilla{grid-template-columns:1fr}}
+  .rejilla{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:20px;align-items:start;padding-bottom:48px}
+  @media (max-width:880px){.rejilla{grid-template-columns:1fr}}
 
   .panel{display:grid;gap:14px}
-  .soltar{border:1.5px dashed var(--linea);border-radius:10px;background:var(--blanco);padding:22px 18px;
-    display:grid;gap:6px;justify-items:start;cursor:pointer;transition:border-color .15s}
+  .soltar{border:1.5px dashed var(--linea);border-radius:10px;background:var(--blanco);padding:20px 18px;
+    display:grid;gap:4px;justify-items:start;cursor:pointer;transition:border-color .15s}
   .soltar:hover,.soltar.sobre{border-color:var(--laton)}
   .soltar b{font-weight:600}
   .soltar span{color:var(--gris);font-size:.9rem}
-  .archivo{font-family:"IBM Plex Mono",monospace;font-size:.82rem;color:var(--tinta-2)!important;word-break:break-all}
-  .opcion{display:flex;gap:8px;align-items:flex-start;font-size:.9rem;color:var(--tinta-2)}
+  .archivos{list-style:none;margin:0;padding:0;max-height:220px;overflow:auto;border:1px solid var(--linea);border-radius:8px;background:var(--blanco)}
+  .archivos:empty{display:none}
+  .archivos li{display:flex;gap:8px;justify-content:space-between;align-items:center;padding:5px 10px;border-bottom:1px solid var(--rejilla);font-size:.82rem}
+  .archivos li:last-child{border-bottom:0}
+  .archivos .nom{font-family:"IBM Plex Mono",monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .archivos .est{flex:none;color:var(--gris);font-size:.75rem}
+  .archivos .est.ok{color:var(--ok)} .archivos .est.error{color:var(--error)}
+  .archivos button{flex:none;border:0;background:none;color:var(--gris);cursor:pointer;padding:0 2px;font-size:1rem;line-height:1}
+
+  label.campo{display:grid;gap:6px;font-size:.9rem;font-weight:500}
+  label.campo small{font-weight:400;color:var(--gris)}
+  textarea{background:var(--blanco);border:1px solid var(--linea);border-radius:8px;padding:9px 10px;resize:vertical;min-height:64px;width:100%}
+  .presets{display:flex;flex-wrap:wrap;gap:6px}
+  .presets button{border:1px solid var(--linea);background:var(--blanco);border-radius:99px;padding:2px 10px;font-size:.78rem;cursor:pointer;color:var(--tinta-2)}
+  .presets button:hover{border-color:var(--laton)}
+  .opcion{display:flex;gap:8px;align-items:flex-start;font-size:.88rem;color:var(--tinta-2)}
   .opcion input{margin-top:4px}
   .botones{display:flex;flex-wrap:wrap;gap:8px}
   .btn{border:1px solid var(--tinta);background:var(--tinta);color:var(--blanco);border-radius:6px;padding:9px 16px;font-weight:600;cursor:pointer}
@@ -70,12 +86,17 @@
   .libro-cab h2{font-size:1.25rem;word-break:break-word}
   .chip{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--linea);
     border-radius:99px;padding:2px 8px;color:var(--gris);margin-left:8px;vertical-align:middle}
-  .resumen{padding:0 16px;margin:12px 0 0;color:var(--gris);font-size:.92rem;max-width:80ch}
+  .cifras{display:flex;flex-wrap:wrap;gap:8px 28px;padding:14px 16px 0}
+  .cifra b{display:block;font-family:"Literata",serif;font-weight:500;font-size:1.5rem;line-height:1.2;font-variant-numeric:tabular-nums}
+  .cifra span{font-size:.8rem;color:var(--gris)}
+  .resumen{padding:0 16px;margin:12px 0 0;color:var(--tinta-2);font-size:.93rem;max-width:90ch}
   .tabla-caja{overflow:auto;max-height:540px;margin-top:12px;border-top:1px solid var(--rejilla)}
   table{border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-variant-numeric:tabular-nums;min-width:100%}
   th,td{border:1px solid var(--rejilla);padding:5px 10px;text-align:left;white-space:nowrap;max-width:380px;overflow:hidden;text-overflow:ellipsis}
   thead th{position:sticky;top:0;background:var(--papel-2);font-weight:500}
   td.num{text-align:right}
+  td.falta{background:var(--aviso)}
+  tr.total td{font-weight:600;border-top:2px solid var(--tinta-2)}
   th.fila{color:var(--gris);font-weight:400;background:var(--papel);text-align:right;width:1%}
   tbody tr:hover td{background:#f6efdc}
   .pestanas{display:flex;gap:2px;overflow-x:auto;background:var(--papel);border-top:1px solid var(--linea);padding:0 8px}
@@ -88,32 +109,48 @@
 
 <div class="envoltura">
   <header>
-    <h1>Del PDF a <em>Excel</em>, sin subir nada</h1>
-    <p>Sube una factura, un extracto, un listado o un informe. La herramienta encuentra los datos clave («Campo: valor»), reconstruye las tablas y lo organiza en hojas de Excel. Si el PDF está escaneado, lee el texto de la imagen (OCR).</p>
-    <div class="sellos"><span class="sello">Gratis</span><span class="sello">Sin cuenta</span><span class="sello">Tu PDF no sale de tu dispositivo</span></div>
+    <h1>Muchos PDF, <em>un solo Excel</em></h1>
+    <p>Sube 1, 10 o 50 documentos: facturas, remisiones, informes, cotizaciones… La herramienta los clasifica, saca los datos que pidas de cada uno y arma un Excel con un resumen, los totales y el detalle.</p>
+    <div class="sellos"><span class="sello">Gratis</span><span class="sello">Sin cuenta</span><span class="sello">Tus PDF no salen de tu dispositivo</span></div>
   </header>
 
   <div class="rejilla">
-    <section class="panel" aria-label="Documento">
+    <section class="panel" aria-label="Documentos">
       <label class="soltar" id="zona" for="entrada">
-        <b>Elegir o soltar un PDF</b>
-        <span>Hasta 60 páginas por documento.</span>
-        <span class="archivo" id="nombreArchivo"></span>
-        <input type="file" id="entrada" accept="application/pdf,.pdf" hidden>
+        <b>Elegir o soltar PDF</b>
+        <span>Puedes seleccionar varios a la vez.</span>
+        <input type="file" id="entrada" accept="application/pdf,.pdf" multiple hidden>
       </label>
+      <ul class="archivos" id="archivos" aria-label="Archivos cargados"></ul>
 
+      <label class="campo" for="pedido">¿Qué datos necesitas de cada documento?
+        <small>Sepáralos con comas. Déjalo vacío para que elija los datos según el tipo de documento.</small>
+        <textarea id="pedido" placeholder="Ej.: número, fecha, proveedor, NIT, total"></textarea>
+      </label>
+      <div class="presets" id="presets" aria-label="Sugerencias">
+        <button type="button" data-v="número, fecha, proveedor, NIT, subtotal, IVA, total">Facturas</button>
+        <button type="button" data-v="número, fecha, cliente, dirección, ciudad, transportador, placa">Remisiones</button>
+        <button type="button" data-v="título, fecha, proyecto, autor, resumen">Informes</button>
+        <button type="button" data-v="">Automático</button>
+      </div>
+
+      <label class="opcion" for="conItems"><input type="checkbox" id="conItems" checked>
+        <span>Incluir una hoja con las tablas de todos los documentos (productos, ítems, ensayos…).</span></label>
+      <label class="opcion" for="conTexto"><input type="checkbox" id="conTexto">
+        <span>Incluir una hoja con todo el texto, línea por línea.</span></label>
       <label class="opcion" for="forzarOcr"><input type="checkbox" id="forzarOcr">
-        <span>Leer como documento escaneado (OCR). Se activa solo cuando una página no tiene texto; márcalo si el resultado sale vacío o con letras raras.</span></label>
+        <span>Leer todo como escaneado (OCR). Normalmente se activa solo en las páginas sin texto.</span></label>
 
       <div class="botones">
-        <button class="btn" id="convertir" disabled>Convertir</button>
+        <button class="btn" id="convertir" disabled>Procesar documentos</button>
         <button class="btn sec" id="detener" hidden>Detener</button>
+        <button class="btn sec" id="limpiar" hidden>Quitar todos</button>
       </div>
       <progress id="progreso" max="1" value="0" hidden></progress>
       <div class="estado" id="estado" role="status" aria-live="polite"></div>
 
-      <p class="nota">Cómo organiza los datos: <b>Datos generales</b> con los pares «Campo: valor», una hoja por cada <b>tabla</b> detectada (las que siguen en otra página se unen) y <b>Texto</b> con todo el contenido línea por línea, para que no se pierda nada. Los números se convierten a números y las fechas dd/mm/aaaa a aaaa-mm-dd.</p>
-      <p class="nota">El OCR descarga una vez unos 6 MB (el motor y el idioma español); después queda guardado en el navegador.</p>
+      <p class="nota">Funciona con reglas, no con inteligencia artificial: reconoce los formatos habituales («Total:», «NIT», «Factura No.»…). Los datos que no encuentra quedan marcados en la columna <b>Por revisar</b>.</p>
+      <p class="nota">Si un PDF está escaneado, la primera vez se descargan unos 6 MB para leer el texto de la imagen; después quedan guardados en el navegador.</p>
     </section>
 
     <section class="libro" aria-label="Resultado">
@@ -124,6 +161,7 @@
           <button class="btn" id="descargar" disabled>Descargar Excel</button>
         </div>
       </div>
+      <div class="cifras" id="cifras"></div>
       <p class="resumen" id="resumen"></p>
       <div class="tabla-caja" id="tablaCaja"></div>
       <div class="pestanas" id="pestanas" role="tablist" aria-label="Hojas"></div>
@@ -141,54 +179,152 @@
   const base = new URL('./lib/', location.href).href;
   pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js';
 
-  const EJEMPLO = {
-    titulo: 'Factura de ejemplo',
-    resumen: 'Así se ve un resultado. Sube tu PDF para reemplazarlo.',
-    hojas: [
-      { nombre: 'Datos generales', columnas: ['Campo', 'Valor', 'Página'], filas: [
-        ['Proveedor', 'Suministros Médicos Andinos S.A.S.', 1], ['NIT', '900123456-7', 1],
-        ['Factura', 'FE-2031', 1], ['Fecha', '2026-08-14', 1], ['Total', 1428000, 1] ] },
-      { nombre: 'Tabla 1', columnas: ['Producto', 'Cantidad', 'Precio unitario', 'Subtotal'], filas: [
-        ['Jeringa 5 ml (caja x100)', 4, 62000, 248000], ['Guantes de nitrilo talla M', 10, 38000, 380000],
-        ['Lidocaína 2% (frasco 50 ml)', 20, 32000, 640000], ['Gasa estéril 10x10', 8, 20000, 160000] ] }
-    ]
+  const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const pesos = n => '$ ' + Math.round(n).toLocaleString('es-CO');
+
+  // =====================================================================
+  // TIPOS DE DOCUMENTO: palabras clave (sin tildes). Las del título pesan más.
+  // =====================================================================
+  const TIPOS = [
+    { id: 'factura', nombre: 'Factura', plural: 'Facturas',
+      titulo: ['factura electronica de venta', 'factura de venta', 'factura electronica', 'factura'],
+      claves: ['cufe', 'resolucion dian', 'iva', 'subtotal', 'total a pagar', 'base gravable', 'retencion', 'forma de pago', 'fecha de vencimiento'],
+      campos: ['numero', 'fecha', 'emisor', 'nit', 'cliente', 'subtotal', 'iva', 'total'] },
+    { id: 'remision', nombre: 'Remisión', plural: 'Remisiones',
+      titulo: ['remision', 'nota de entrega', 'guia de despacho', 'orden de despacho', 'nota de remision'],
+      claves: ['despacho', 'despachado', 'recibido por', 'recibi conforme', 'entregado por', 'transportador', 'conductor', 'placa', 'destino', 'bultos'],
+      campos: ['numero', 'fecha', 'emisor', 'cliente', 'direccion', 'ciudad', 'transportador', 'placa'] },
+    { id: 'informe', nombre: 'Informe', plural: 'Informes',
+      titulo: ['informe tecnico', 'informe de', 'informe', 'reporte tecnico', 'memoria de calculo', 'estudio de'],
+      claves: ['introduccion', 'objetivo', 'alcance', 'metodologia', 'conclusiones', 'recomendaciones', 'anexo', 'ingenieria', 'ensayo', 'resultados', 'elaborado por', 'revisado por'],
+      campos: ['titulo', 'fecha', 'proyecto', 'cliente', 'autor', 'resumen'] },
+    { id: 'cotizacion', nombre: 'Cotización', plural: 'Cotizaciones',
+      titulo: ['cotizacion', 'propuesta economica', 'oferta comercial', 'presupuesto'],
+      claves: ['validez de la oferta', 'validez', 'tiempo de entrega', 'condiciones comerciales'],
+      campos: ['numero', 'fecha', 'emisor', 'cliente', 'subtotal', 'iva', 'total'] },
+    { id: 'orden', nombre: 'Orden de compra', plural: 'Órdenes de compra',
+      titulo: ['orden de compra', 'orden de servicio', 'purchase order'],
+      claves: ['proveedor', 'fecha de entrega', 'autorizado por', 'condiciones de pago'],
+      campos: ['numero', 'fecha', 'emisor', 'proveedor', 'subtotal', 'iva', 'total'] },
+    { id: 'nota', nombre: 'Nota crédito/débito', plural: 'Notas crédito/débito',
+      titulo: ['nota credito', 'nota debito', 'nota de credito', 'nota de debito'],
+      claves: ['factura referencia', 'concepto'],
+      campos: ['numero', 'fecha', 'emisor', 'cliente', 'total'] },
+    { id: 'cobro', nombre: 'Cuenta de cobro', plural: 'Cuentas de cobro',
+      titulo: ['cuenta de cobro'], claves: ['debe a', 'la suma de', 'por concepto de'],
+      campos: ['numero', 'fecha', 'emisor', 'cliente', 'total'] },
+    { id: 'extracto', nombre: 'Extracto', plural: 'Extractos',
+      titulo: ['extracto', 'estado de cuenta'], claves: ['saldo anterior', 'saldo final', 'saldo actual', 'movimientos', 'retiros', 'consignaciones'],
+      campos: ['emisor', 'fecha', 'cliente', 'saldo'] },
+    { id: 'contrato', nombre: 'Contrato', plural: 'Contratos',
+      titulo: ['contrato', 'otrosi'], claves: ['clausula', 'las partes', 'contratante', 'contratista', 'objeto del contrato', 'plazo'],
+      campos: ['titulo', 'fecha', 'cliente', 'total'] },
+    { id: 'acta', nombre: 'Acta', plural: 'Actas',
+      titulo: ['acta de', 'acta'], claves: ['asistentes', 'orden del dia', 'compromisos', 'se da inicio'],
+      campos: ['titulo', 'fecha', 'proyecto', 'resumen'] },
+    { id: 'certificado', nombre: 'Certificado', plural: 'Certificados',
+      titulo: ['certificado', 'certificacion', 'constancia'], claves: ['certifica', 'hace constar', 'se expide'],
+      campos: ['titulo', 'fecha', 'emisor', 'cliente'] },
+    { id: 'laboratorio', nombre: 'Resultado clínico', plural: 'Resultados clínicos',
+      titulo: ['resultado de laboratorio', 'resultados de laboratorio', 'historia clinica', 'examen'],
+      claves: ['paciente', 'valor de referencia', 'resultado', 'unidad', 'diagnostico', 'medico'],
+      campos: ['paciente', 'fecha', 'emisor', 'resumen'] },
+  ];
+  const OTRO = { id: 'otro', nombre: 'Sin clasificar', plural: 'Sin clasificar', campos: ['titulo', 'fecha', 'emisor', 'total'] };
+
+  // =====================================================================
+  // CAMPOS: sinónimos de la etiqueta (sin tildes) y tipo de valor esperado
+  // =====================================================================
+  const CAMPOS = {
+    numero: { etiqueta: 'Número', tipo: 'codigo', syn: ['factura electronica de venta no', 'factura de venta no', 'factura no', 'factura n', 'no factura', 'numero de factura', 'remision no', 'no remision', 'numero de remision', 'cotizacion no', 'orden de compra no', 'numero de orden', 'nota credito no', 'cuenta de cobro no', 'consecutivo', 'documento no', 'numero', 'no', 'nro', 'n'] },
+    fecha: { etiqueta: 'Fecha', tipo: 'fecha', syn: ['fecha de emision', 'fecha de expedicion', 'fecha factura', 'fecha de elaboracion', 'fecha de generacion', 'fecha de despacho', 'fecha de entrega', 'fecha del informe', 'fecha'], excluir: ['vencimiento', 'nacimiento'] },
+    vencimiento: { etiqueta: 'Fecha de vencimiento', tipo: 'fecha', syn: ['fecha de vencimiento', 'vencimiento', 'fecha limite de pago', 'pagar antes de'] },
+    emisor: { etiqueta: 'Emisor', tipo: 'texto', syn: ['razon social', 'emisor', 'vendedor', 'empresa', 'expedido por', 'prestador', 'laboratorio', 'institucion'] },
+    proveedor: { etiqueta: 'Proveedor', tipo: 'texto', syn: ['proveedor', 'razon social', 'vendedor', 'emisor', 'contratista'] },
+    nit: { etiqueta: 'NIT', tipo: 'nit', syn: ['nit', 'nit emisor', 'rut', 'cc/nit', 'identificacion tributaria'] },
+    cliente: { etiqueta: 'Cliente', tipo: 'texto', syn: ['cliente', 'senor(es)', 'senores', 'senor', 'adquiriente', 'adquirente', 'comprador', 'facturar a', 'facturado a', 'destinatario', 'entregar a', 'contratante', 'dirigido a', 'nombre del cliente'] },
+    nitcliente: { etiqueta: 'NIT cliente', tipo: 'nit', syn: ['nit cliente', 'nit adquiriente', 'nit comprador', 'cc/nit cliente'] },
+    direccion: { etiqueta: 'Dirección', tipo: 'texto', syn: ['direccion de entrega', 'direccion de despacho', 'direccion', 'dir'] },
+    ciudad: { etiqueta: 'Ciudad', tipo: 'texto', syn: ['ciudad', 'municipio', 'ciudad destino', 'destino'] },
+    telefono: { etiqueta: 'Teléfono', tipo: 'texto', syn: ['telefono', 'tel', 'celular', 'movil'] },
+    correo: { etiqueta: 'Correo', tipo: 'correo', syn: ['correo electronico', 'correo', 'email', 'e-mail'] },
+    subtotal: { etiqueta: 'Subtotal', tipo: 'dinero', syn: ['subtotal', 'sub total', 'valor antes de iva', 'base gravable', 'total bruto'] },
+    iva: { etiqueta: 'IVA', tipo: 'dinero', syn: ['iva 19%', 'iva', 'valor iva', 'total iva', 'impuesto'], excluir: ['sin iva', 'antes de iva', 'base', 'regimen', 'responsable', '%$'] },
+    descuento: { etiqueta: 'Descuento', tipo: 'dinero', syn: ['descuento', 'descuentos', 'dcto'] },
+    retencion: { etiqueta: 'Retención', tipo: 'dinero', syn: ['retencion en la fuente', 'retefuente', 'retencion', 'reteica', 'reteiva'] },
+    total: { etiqueta: 'Total', tipo: 'dinero', ultimo: true, syn: ['total a pagar', 'valor total', 'neto a pagar', 'total factura', 'total general', 'gran total', 'valor a pagar', 'total cotizacion', 'total'], excluir: ['subtotal', 'sub total', 'total items', 'total unidades', 'total bultos', 'total iva', 'total cantidad', 'total paginas', 'total bruto'] },
+    saldo: { etiqueta: 'Saldo', tipo: 'dinero', ultimo: true, syn: ['saldo final', 'saldo actual', 'nuevo saldo', 'saldo'] },
+    formapago: { etiqueta: 'Forma de pago', tipo: 'texto', syn: ['forma de pago', 'medio de pago', 'condiciones de pago', 'metodo de pago'] },
+    transportador: { etiqueta: 'Transportador', tipo: 'texto', syn: ['transportador', 'transportadora', 'conductor', 'empresa transportadora'] },
+    placa: { etiqueta: 'Placa', tipo: 'texto', syn: ['placa', 'placa vehiculo'] },
+    titulo: { etiqueta: 'Título', tipo: 'texto', syn: ['titulo', 'asunto', 'referencia', 'nombre del informe'] },
+    proyecto: { etiqueta: 'Proyecto', tipo: 'texto', syn: ['proyecto', 'obra', 'nombre del proyecto', 'contrato'] },
+    autor: { etiqueta: 'Autor', tipo: 'texto', syn: ['elaborado por', 'preparado por', 'autor', 'responsable', 'ingeniero', 'firma'] },
+    paciente: { etiqueta: 'Paciente', tipo: 'texto', syn: ['paciente', 'nombre del paciente', 'nombre'] },
+    resumen: { etiqueta: 'Resumen', tipo: 'resumen', syn: [] },
+    cantidaditems: { etiqueta: 'Ítems', tipo: 'items', syn: [] },
+  };
+  // Palabras que la persona puede escribir y a qué campo apuntan
+  const ALIAS = {
+    'numero': 'numero', 'no': 'numero', 'n': 'numero', 'nro': 'numero', 'consecutivo': 'numero', 'numero de factura': 'numero', 'numero factura': 'numero', 'factura': 'numero', 'numero de remision': 'numero', 'id': 'numero',
+    'fecha': 'fecha', 'fecha de emision': 'fecha', 'fecha factura': 'fecha', 'fecha de vencimiento': 'vencimiento', 'vencimiento': 'vencimiento',
+    'emisor': 'emisor', 'empresa': 'emisor', 'razon social': 'emisor', 'proveedor': 'proveedor', 'vendedor': 'proveedor',
+    'nit': 'nit', 'nit proveedor': 'nit', 'nit emisor': 'nit', 'rut': 'nit', 'nit cliente': 'nitcliente',
+    'cliente': 'cliente', 'comprador': 'cliente', 'adquiriente': 'cliente', 'destinatario': 'cliente',
+    'direccion': 'direccion', 'ciudad': 'ciudad', 'telefono': 'telefono', 'correo': 'correo', 'email': 'correo',
+    'subtotal': 'subtotal', 'base': 'subtotal', 'iva': 'iva', 'impuesto': 'iva', 'descuento': 'descuento', 'retencion': 'retencion', 'retefuente': 'retencion',
+    'total': 'total', 'valor total': 'total', 'valor': 'total', 'monto': 'total', 'total a pagar': 'total', 'valor a pagar': 'total', 'el total': 'total',
+    'saldo': 'saldo', 'forma de pago': 'formapago', 'medio de pago': 'formapago',
+    'transportador': 'transportador', 'conductor': 'transportador', 'placa': 'placa',
+    'titulo': 'titulo', 'asunto': 'titulo', 'proyecto': 'proyecto', 'obra': 'proyecto', 'autor': 'autor', 'elaborado por': 'autor', 'responsable': 'autor',
+    'paciente': 'paciente', 'resumen': 'resumen', 'descripcion': 'resumen', 'items': 'cantidaditems', 'cantidad de items': 'cantidaditems', 'productos': 'cantidaditems',
+    'tipo': null, 'tipo de documento': null, 'archivo': null, 'nombre del archivo': null,
   };
 
-  let pdfDoc = null, nombreBase = 'datos', cancelado = false, ocrWorker = null;
-  let libro = EJEMPLO, esEjemplo = true, hojaActiva = 0;
+  // =====================================================================
+  // Estado
+  // =====================================================================
+  let archivos = [];   // {file, nombre, estado, clase}
+  let libro = null, hojaActiva = 0, esEjemplo = true, cancelado = false, ocrWorker = null;
 
   const estado = (txt, tipo = '') => { const e = $('#estado'); e.textContent = txt; e.className = 'estado ' + tipo; };
   const progreso = v => { const p = $('#progreso'); p.hidden = v === null; if (v !== null) p.value = v; };
   function ocupado(si) {
-    $('#convertir').disabled = si || !pdfDoc;
+    $('#convertir').disabled = si || !archivos.length;
     $('#detener').hidden = !si;
+    $('#limpiar').hidden = si || !archivos.length;
     $('#descargar').disabled = si || esEjemplo;
     $('#entrada').disabled = si;
+    pintarArchivos();
   }
 
-  // ---------- Cargar PDF ----------
-  async function cargar(archivo) {
-    if (!archivo) return;
-    if (!/pdf$/i.test(archivo.type) && !/\.pdf$/i.test(archivo.name)) return estado('Ese archivo no es un PDF.', 'error');
-    estado('Abriendo el PDF…');
-    try {
-      pdfDoc = await pdfjsLib.getDocument({ data: new Uint8Array(await archivo.arrayBuffer()) }).promise;
-      nombreBase = archivo.name.replace(/\.pdf$/i, '') || 'datos';
-      $('#nombreArchivo').textContent = `${archivo.name} · ${pdfDoc.numPages} página${pdfDoc.numPages === 1 ? '' : 's'}`;
-      estado(pdfDoc.numPages > MAX_PAGINAS ? `Se leerán las primeras ${MAX_PAGINAS} páginas.` : 'Listo. Pulsa «Convertir».');
-    } catch (e) {
-      pdfDoc = null;
-      estado(e?.name === 'PasswordException' ? 'El PDF tiene contraseña. Quítala y vuelve a subirlo.' : 'No se pudo abrir el PDF. ¿Está dañado?', 'error');
-    }
+  // ---------- Archivos ----------
+  function agregar(lista) {
+    const nuevos = [...lista].filter(f => /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name));
+    const omitidos = lista.length - nuevos.length;
+    for (const f of nuevos) if (!archivos.some(a => a.nombre === f.name && a.file.size === f.size))
+      archivos.push({ file: f, nombre: f.name, estado: 'Pendiente', clase: '' });
+    estado(`${archivos.length} documento${archivos.length === 1 ? '' : 's'} listo${archivos.length === 1 ? '' : 's'} para procesar.` + (omitidos ? ` Se omitieron ${omitidos} archivo(s) que no son PDF.` : ''));
     ocupado(false);
   }
-  $('#entrada').onchange = e => cargar(e.target.files[0]);
+  function pintarArchivos() {
+    const trabajando = !$('#detener').hidden;
+    $('#archivos').innerHTML = archivos.map((a, i) =>
+      `<li><span class="nom" title="${esc(a.nombre)}">${esc(a.nombre)}</span><span class="est ${a.clase}">${esc(a.estado)}</span>${trabajando ? '' : `<button type="button" data-i="${i}" aria-label="Quitar ${esc(a.nombre)}">×</button>`}</li>`).join('');
+  }
+  $('#archivos').onclick = e => { const b = e.target.closest('button'); if (b) { archivos.splice(+b.dataset.i, 1); ocupado(false); } };
+  $('#limpiar').onclick = () => { archivos = []; estado(''); ocupado(false); };
+  $('#entrada').onchange = e => { agregar(e.target.files); e.target.value = ''; };
   const zona = $('#zona');
   zona.addEventListener('dragover', e => { e.preventDefault(); zona.classList.add('sobre'); });
   zona.addEventListener('dragleave', () => zona.classList.remove('sobre'));
-  zona.addEventListener('drop', e => { e.preventDefault(); zona.classList.remove('sobre'); cargar(e.dataTransfer.files[0]); });
+  zona.addEventListener('drop', e => { e.preventDefault(); zona.classList.remove('sobre'); agregar(e.dataTransfer.files); });
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if (b) $('#pedido').value = b.dataset.v; };
 
-  // ---------- Lectura: piezas de texto con posición (y crece hacia abajo) ----------
+  // =====================================================================
+  // Lectura de PDF: piezas de texto con posición (y crece hacia abajo)
+  // =====================================================================
   async function piezasTexto(pag) {
     const alto = pag.getViewport({ scale: 1 }).height;
     const { items } = await pag.getTextContent();
@@ -197,29 +333,23 @@
       return { x: it.transform[4], fin: it.transform[4] + it.width, y: alto - it.transform[5], alto: h, txt: it.str };
     });
   }
-
   async function obtenerOcr() {
     if (ocrWorker) return ocrWorker;
-    estado('Preparando el lector de texto escaneado (solo la primera vez tarda más)…');
-    ocrWorker = await Tesseract.createWorker('spa', 1, {
-      workerPath: base + 'worker.min.js', corePath: base + 'tesseract-core', langPath: base + 'lang',
-      logger: m => { if (m.status === 'recognizing text') progreso(m.progress); }
-    });
+    estado('Preparando el lector de documentos escaneados (solo la primera vez tarda más)…');
+    ocrWorker = await Tesseract.createWorker('spa', 1, { workerPath: base + 'worker.min.js', corePath: base + 'tesseract-core', langPath: base + 'lang' });
     return ocrWorker;
   }
-
-  async function piezasOcr(pag, n, total) {
+  async function piezasOcr(pag) {
     const vp = pag.getViewport({ scale: 1 });
-    const escala = Math.min(3, 2400 / Math.max(vp.width, vp.height) * 1.2);
+    const escala = Math.min(3, 2880 / Math.max(vp.width, vp.height));
     const v = pag.getViewport({ scale: escala });
     const c = document.createElement('canvas');
     c.width = Math.round(v.width); c.height = Math.round(v.height);
     const ctx = c.getContext('2d');
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
     await pag.render({ canvasContext: ctx, viewport: v }).promise;
-    const w = await obtenerOcr();
-    estado(`Leyendo texto escaneado: página ${n} de ${total}…`);
-    const { data } = await w.recognize(c);
+    const { data } = await (await obtenerOcr()).recognize(c);
+    c.width = c.height = 0;
     return (data.words || []).filter(p => p.text.trim() && p.confidence > 20).map(p => ({
       x: p.bbox.x0 / escala, fin: p.bbox.x1 / escala, y: p.bbox.y1 / escala,
       alto: Math.max(4, (p.bbox.y1 - p.bbox.y0) / escala), txt: p.text
@@ -232,7 +362,7 @@
     const lineas = [];
     for (const p of piezas) {
       const l = lineas.find(l => Math.abs(l.y - p.y) < Math.max(l.alto, p.alto) * 0.5);
-      if (l) l.piezas.push(p); else lineas.push({ y: p.y, alto: p.alto, piezas: [p] });
+      if (l) { l.piezas.push(p); l.alto = Math.max(l.alto, p.alto); } else lineas.push({ y: p.y, alto: p.alto, piezas: [p] });
     }
     lineas.sort((a, b) => a.y - b.y);
     return lineas.map(l => {
@@ -245,16 +375,18 @@
         else celdas.push(ult = { x: p.x, fin: p.fin, txt: p.txt });
       }
       celdas.forEach(c => c.txt = c.txt.replace(/\s+/g, ' ').trim());
-      return { y: l.y, celdas: celdas.filter(c => c.txt) };
+      return { y: l.y, alto: l.alto, celdas: celdas.filter(c => c.txt) };
     }).filter(l => l.celdas.length);
   }
 
-  // ---------- Conversión de valores ----------
+  // =====================================================================
+  // Valores
+  // =====================================================================
   function convertir(v) {
     if (typeof v !== 'string') return v;
     const t = v.trim();
-    let m = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
-    if (m && +m[1] <= 31 && +m[2] <= 12) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    const f = fechaDe(t, true);
+    if (f) return f;
     let s = t.replace(/^(US\$|COP|USD|EUR|\$|€)\s*/i, '').replace(/\s*(COP|USD|EUR|€)$/i, '').replace(/\s/g, '');
     const neg = /^\(.*\)$/.test(s) || /^-/.test(s);
     s = s.replace(/^[(-]|\)$/g, '');
@@ -268,21 +400,46 @@
     return n === null || isNaN(n) ? v : (neg ? -n : n);
   }
   const esNumerico = t => typeof convertir(t) === 'number';
+  function dineroDe(s) {
+    const m = String(s).match(/-?\(?\s*(?:US\$|\$|COP)?\s*\d[\d.,]*\d\)?|-?\$?\s*\d/g);
+    if (!m) return null;
+    for (const tok of m) { const n = convertir(tok.replace(/\s/g, '')); if (typeof n === 'number' && !(/^\d{1,2}$/.test(tok.trim()) && m.length > 1)) return n; }
+    return null;
+  }
+  const MESES = { ene: 1, enero: 1, feb: 2, febrero: 2, mar: 3, marzo: 3, abr: 4, abril: 4, may: 5, mayo: 5, jun: 6, junio: 6, jul: 7, julio: 7, ago: 8, agosto: 8, sep: 9, sept: 9, septiembre: 9, set: 9, oct: 10, octubre: 10, nov: 11, noviembre: 11, dic: 12, diciembre: 12,
+    jan: 1, january: 1, february: 2, march: 3, apr: 4, april: 4, june: 6, july: 7, aug: 8, august: 8, september: 9, october: 10, november: 11, dec: 12, december: 12 };
+  function fechaDe(s, exacta = false) {
+    const t = norm(s);
+    const iso = (a, m, d) => (a >= 1990 && a <= 2100 && m >= 1 && m <= 12 && d >= 1 && d <= 31) ? `${a}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` : null;
+    const pats = [
+      [/(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/, m => iso(+m[1], +m[2], +m[3])],
+      [/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/, m => iso(+m[3], +m[2], +m[1]) || iso(+m[3], +m[1], +m[2])],
+      [/(\d{1,2})\s*(?:de\s+)?([a-z]{3,10})\.?\s*(?:de\s+|del\s+)?(\d{4})/, m => MESES[m[2]] && iso(+m[3], MESES[m[2]], +m[1])],
+      [/([a-z]{3,10})\.?\s+(\d{1,2}),?\s+(?:de\s+)?(\d{4})/, m => MESES[m[1]] && iso(+m[3], MESES[m[1]], +m[2])],
+    ];
+    for (const [re, fn] of pats) {
+      const m = t.match(exacta ? new RegExp('^' + re.source + '$') : re);
+      if (m) { const r = fn(m); if (r) return r; }
+    }
+    return null;
+  }
 
-  // ---------- Organización: datos clave-valor, tablas y texto ----------
+  // =====================================================================
+  // Análisis de un documento: líneas, pares clave-valor y tablas
+  // =====================================================================
   const RE_KV = /^([^:]{2,45}?)\s*:\s*(.+)$/;
   function clavesValor(celdas) {
     const pares = [];
     for (let i = 0; i < celdas.length; i++) {
       const t = celdas[i].txt;
       if (/:$/.test(t) && t.length <= 46 && celdas[i + 1] && !/:$/.test(celdas[i + 1].txt)) { pares.push([t.slice(0, -1).trim(), celdas[++i].txt]); continue; }
+      if (/:$/.test(t) && t.length <= 46 && !celdas[i + 1]) continue;
       const m = t.match(RE_KV);
       if (m && !/^\d{1,2}$/.test(m[1]) && !/https?$/i.test(m[1])) pares.push([m[1].trim(), m[2].trim()]);
       else return null;
     }
     return pares.length ? pares : null;
   }
-
   function columnasDeBloque(filas) {
     const cuenta = {};
     filas.forEach(f => cuenta[f.celdas.length] = (cuenta[f.celdas.length] || 0) + 1);
@@ -294,9 +451,7 @@
         if (k) { k.x = Math.min(k.x, c.x); k.fin = Math.max(k.fin, c.fin); } else cols.push({ x: c.x, fin: c.fin });
       }
     cols.sort((a, b) => a.x - b.x);
-    // une columnas que quedaron solapadas tras crecer
-    cols = cols.reduce((acc, k) => { const u = acc[acc.length - 1]; if (u && k.x < u.fin) u.fin = Math.max(u.fin, k.fin); else acc.push({ ...k }); return acc; }, []);
-    return cols;
+    return cols.reduce((acc, k) => { const u = acc[acc.length - 1]; if (u && k.x < u.fin) u.fin = Math.max(u.fin, k.fin); else acc.push({ ...k }); return acc; }, []);
   }
   function ubicar(filas, cols) {
     return filas.map(f => {
@@ -315,117 +470,491 @@
     });
   }
 
-  function organizar(paginas) {
-    const kv = [], texto = [], tablas = [];
-    paginas.forEach((lineas, ip) => {
+  function analizar(paginas) {
+    const kv = [], lineas = [], tablas = [];
+    paginas.forEach((ls, ip) => {
       const pagina = ip + 1;
       let bloque = [];
       const cerrar = () => {
         if (bloque.length >= 2) {
           const cols = columnasDeBloque(bloque);
-          let filas = ubicar(bloque, cols);
+          const filas = ubicar(bloque, cols);
           const cab = filas[0].every(v => !v || !esNumerico(v)) && filas[0].filter(Boolean).length >= 2;
           const columnas = cab ? filas.shift().map((v, i) => v || `Columna ${i + 1}`) : cols.map((_, i) => `Columna ${i + 1}`);
+          // Encabezado + una sola fila = etiquetas arriba y valores abajo (ej.: Fecha | NIT | Total)
+          if (cab && filas.length === 1) columnas.forEach((c, i) => filas[0][i] && kv.push({ label: c, labelN: norm(c).replace(/[:.#]+$/, ''), valor: filas[0][i], pagina, pos: lineas.length }));
+          // Filas "etiqueta | valor" sin encabezado (ej.: Subtotal / IVA / TOTAL) son datos, no una tabla
+          if (!cab && cols.length <= 3 && filas.every(f => esEtiqueta(f[0]) && f.slice(1).some(Boolean))) {
+            filas.forEach(f => kv.push({ label: f[0], labelN: norm(f[0]).replace(/[:.#]+$/, ''), valor: f.slice(1).filter(Boolean).join(' '), pagina, pos: lineas.length }));
+            bloque = []; return;
+          }
           const previa = tablas[tablas.length - 1];
           if (previa && previa.columnas.length === columnas.length &&
               (previa.columnas.join('|') === columnas.join('|') || (!cab && previa.pagina < pagina)))
             previa.filas.push(...filas);
-          else tablas.push({ columnas, filas, pagina });
+          else if (filas.length) tablas.push({ columnas, filas, pagina });
         }
         bloque = [];
       };
-      for (const l of lineas) {
-        texto.push([pagina, l.celdas.map(c => c.txt).join('   ')]);
+      for (const l of ls) {
+        const texto = l.celdas.map(c => c.txt).join('   ');
+        lineas.push({ pagina, texto, textoN: norm(texto), celdas: l.celdas.map(c => c.txt), cx: l.celdas, alto: l.alto });
         const pares = clavesValor(l.celdas);
-        if (pares) { cerrar(); pares.forEach(([k, v]) => kv.push([k, convertir(v), pagina])); continue; }
+        if (pares) { cerrar(); pares.forEach(([k, v]) => kv.push({ label: k, labelN: norm(k).replace(/[:.#]+$/, ''), valor: v, pagina, pos: lineas.length - 1 })); continue; }
         if (l.celdas.length >= 2) {
-          const u = bloque[bloque.length - 1];
-          if (u && l.y - u.y > 60) cerrar();
+          const u = bloque[bloque.length - 1], u2 = bloque[bloque.length - 2];
+          const hueco = u ? l.y - u.y : 0;
+          // Corta la tabla si hay un espacio grande, o si cambia el número de columnas tras un espacio mayor al habitual
+          if (u && (hueco > 60 || (u2 && l.celdas.length !== u.celdas.length && hueco > (u.y - u2.y) * 1.3))) cerrar();
           bloque.push(l);
         } else cerrar();
       }
       cerrar();
     });
-
-    const hojas = [];
-    if (kv.length) hojas.push({ nombre: 'Datos generales', columnas: ['Campo', 'Valor', 'Página'], filas: kv });
-    tablas.forEach((t, i) => hojas.push({ nombre: `Tabla ${i + 1}`, columnas: t.columnas, filas: t.filas.map(f => f.map(convertir)) }));
-    hojas.push({ nombre: 'Texto', columnas: ['Página', 'Texto'], filas: texto });
-    return { hojas, n: { kv: kv.length, tablas: tablas.length, lineas: texto.length } };
+    // Filtra "tablas" que en realidad son pares etiqueta/valor sueltos
+    const utiles = tablas.filter(t => t.filas.length >= 1 && !(t.filas.length === 1 && t.columnas.every(c => !/^Columna/.test(c))));
+    return { kv, lineas, tablas: utiles };
   }
 
-  // ---------- Convertir ----------
-  $('#convertir').onclick = async () => {
-    cancelado = false; ocupado(true);
-    const total = Math.min(pdfDoc.numPages, MAX_PAGINAS);
+  // =====================================================================
+  // Clasificación
+  // =====================================================================
+  function clasificar(doc, nombreArchivo) {
+    const inicio = doc.lineas.filter(l => l.pagina === 1).slice(0, 14);
+    const altoMax = Math.max(...inicio.map(l => l.alto), 1);
+    const cuerpo = ' ' + doc.lineas.filter(l => l.pagina <= 3).map(l => l.textoN).join(' \n ') + ' ';
+    const archivoN = norm(nombreArchivo).replace(/[_\-.]+/g, ' ');
+    const cuenta = (txt, k) => (txt.match(new RegExp('(^|[^a-z])' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-z]|$)', 'g')) || []).length;
+    let mejor = OTRO, pMejor = 0, segundo = 0;
+    for (const t of TIPOS) {
+      let p = 0;
+      for (const k of t.titulo) {
+        for (const l of inicio) if (cuenta(' ' + l.textoN + ' ', k)) { p += 6 + (l.alto >= altoMax * 0.9 ? 4 : 0) + k.split(' ').length; break; }
+        if (cuenta(' ' + archivoN + ' ', k)) p += 4;
+        p += Math.min(3, cuenta(cuerpo, k));
+      }
+      for (const k of t.claves) p += Math.min(2, cuenta(cuerpo, k)) * 1.5;
+      if (p > pMejor) { segundo = pMejor; pMejor = p; mejor = t; } else if (p > segundo) segundo = p;
+    }
+    if (pMejor < 6) return { tipo: OTRO, confianza: 'baja' };
+    return { tipo: mejor, confianza: pMejor - segundo >= 6 ? 'alta' : 'media' };
+  }
+
+  // =====================================================================
+  // Extracción de campos
+  // =====================================================================
+  function validar(valor, tipo) {
+    const v = String(valor ?? '').trim();
+    if (!v) return null;
+    switch (tipo) {
+      case 'dinero': return dineroDe(v.replace(/\d+([.,]\d+)?\s*%/g, ' '));
+      case 'fecha': return fechaDe(v);
+      case 'nit': { const m = v.match(/\d[\d.\s]{4,14}\d(\s*-\s*\d)?/); return m ? m[0].replace(/\s/g, '') : null; }
+      case 'correo': { const m = v.match(/[\w.+-]+@[\w-]+\.[\w.]+/); return m ? m[0] : null; }
+      case 'codigo': {
+        const m = v.replace(/^(n[°ºo]\.?|no\.?|nro\.?|numero|#)\s*[:.]?\s*/i, '').match(/^[A-Za-z]{0,6}[\s-]?\d[\w\-\/]*/);
+        return m && !fechaDe(m[0], true) && !/^pag/i.test(m[0]) ? m[0].trim() : null;
+      }
+      default: return v.length > 1 && v.length <= 140 && /[a-zñáéíóú]/i.test(v) ? v.replace(/\s+/g, ' ') : null;
+    }
+  }
+  const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const ETIQUETAS = new Set(Object.values(CAMPOS).flatMap(c => c.syn).filter(s => s.length > 2).concat(['forma de pago', 'cantidad', 'descripcion', 'codigo', 'valor unitario']));
+  const esEtiqueta = t => /:\s*$/.test(t) || ETIQUETAS.has(norm(t).replace(/[:.#]+$/, '').replace(/\s*\d+([.,]\d+)?\s*%$/, ''));
+  function puntajeEtiqueta(labelN, campo) {
+    const l = labelN.replace(/[()]/g, '').replace(/\s*(no|n[°º]|#)\.?$/, m => m);
+    if (campo.excluir?.some(x => l.includes(x))) return 0;
+    let mejor = 0;
+    campo.syn.forEach((s, i) => {
+      const peso = 1 + (campo.syn.length - i) / campo.syn.length;   // los primeros sinónimos son más específicos
+      if (l === s) mejor = Math.max(mejor, 4 * peso);
+      else if (s.length > 2 && l.startsWith(s + ' ')) mejor = Math.max(mejor, 2.5 * peso);
+      else if (s.length > 3 && new RegExp('(^|\\s)' + s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|\\s)').test(l)) mejor = Math.max(mejor, 1.5 * peso);
+    });
+    return mejor;
+  }
+
+  function buscar(doc, campo) {
+    const cand = [];
+    for (const kv of doc.kv) {
+      const p = puntajeEtiqueta(kv.labelN, campo);
+      if (!p) continue;
+      const v = validar(kv.valor, campo.tipo);
+      if (v !== null) cand.push({ v, p: p + 1, pos: kv.pos });
+    }
+    // Etiqueta al inicio de una celda; el valor va en el resto de la celda, en la celda
+    // de la derecha o justo debajo (formatos con etiquetas arriba y valores abajo)
+    doc.lineas.forEach((l, pos) => l.cx.forEach((c, i) => {
+      const cn = norm(c.txt);
+      for (const s of campo.syn) {
+        if (s.length < 3 && !/^(no|nro|n)$/.test(s)) continue;
+        const m = cn.match(new RegExp('^' + escRe(s) + '(?![a-z0-9])(?:\\s*\\d+(?:[.,]\\d+)?\\s*%)?\\s*([:#°º.]*)\\s*(.*)$'));
+        if (!m) continue;
+        if (campo.excluir?.some(x => cn.startsWith(x))) return;
+        let v = null;
+        if (m[2]) {
+          // En texto libre exige separador ("Cliente: X"); así "Laboratorio Dental" no se corta en "Dental"
+          if (campo.tipo !== 'texto' || /[:#]/.test(m[1])) v = validar(c.txt.slice(c.txt.length - m[2].length), campo.tipo);
+        } else {
+          const sig = l.cx[i + 1];
+          if (sig && !esEtiqueta(sig.txt)) v = validar(sig.txt, campo.tipo);
+          const abajo = doc.lineas[pos + 1];
+          if (v === null && abajo && abajo.pagina === l.pagina) {
+            const d = abajo.cx.find(o => o.x < c.fin + 4 && o.fin > c.x - 4);
+            if (d && !esEtiqueta(d.txt)) v = validar(d.txt, campo.tipo);
+          }
+        }
+        if (v !== null) { cand.push({ v, p: puntajeEtiqueta(s, campo) * 0.8, pos }); return; }
+      }
+    }));
+    if (!cand.length) return null;
+    cand.sort((a, b) => b.p - a.p || (campo.ultimo ? b.pos - a.pos : a.pos - b.pos));
+    return cand[0].v;
+  }
+
+  function numeroDoc(doc) {
+    const re = /(factura(?:\s+electr[oó]nica)?(?:\s+de\s+venta)?|remisi[oó]n|cotizaci[oó]n|orden\s+de\s+(?:compra|servicio)|nota\s+(?:cr[eé]dito|d[eé]bito)|cuenta\s+de\s+cobro|documento)\s*(?:n[°ºo]\.?|no\.?|nro\.?|n[uú]mero|#)?\s*[:.]?\s*([A-Z]{0,6}[\s-]?\d[\w\-\/]*)/i;
+    for (const l of doc.lineas.slice(0, 60)) {
+      const m = l.texto.match(re);
+      if (m && /\d/.test(m[2]) && !fechaDe(m[2], true) && !/^pag/i.test(m[2])) return m[2].trim();
+    }
+    return buscar(doc, CAMPOS.numero);
+  }
+  // Una línea "de nombre": no es fecha, saludo, encabezado numerado ni "Campo: valor"
+  const lineaNombre = l => {
+    const t = l.textoN;
+    return /[a-z]{3}/.test(t) && !fechaDe(t) && !RE_KV.test(l.texto) && !/^\d+(\.\d+)*\.?\s/.test(t) && !/,\s*$/.test(t) &&
+      !/^(estimad|senor|apreciad|cordial|atentamente|pagina|original|copia)/.test(t) && t.replace(/[^0-9]/g, '').length < t.length * 0.3 && l.texto.length <= 100;
+  };
+  function tituloDoc(doc) {
+    const p1 = doc.lineas.filter(l => l.pagina === 1);
+    if (!p1.length) return null;
+    const altos = p1.map(l => l.alto).sort((a, b) => a - b);
+    const normal = altos[Math.floor(altos.length / 2)];
+    // Solo cuenta como título una línea más grande que el texto normal o escrita en mayúsculas
+    const t = p1.slice(0, 15).find(l => lineaNombre(l) && (l.alto > normal * 1.15 || (l.texto === l.texto.toUpperCase() && l.texto.length > 8)));
+    return t ? t.texto : null;
+  }
+  function emisorDoc(doc, tipo) {
+    const v = buscar(doc, CAMPOS.emisor);
+    if (v) return v;
+    // En facturas y similares la primera línea (si no es el nombre del tipo de documento) suele ser la empresa
+    const palabrasTipo = [...(tipo.titulo || []), 'informe', 'acta', 'contrato'];
+    for (const l of doc.lineas.slice(0, 4)) {
+      if (palabrasTipo.some(k => l.textoN.startsWith(k))) return null;
+      if (lineaNombre(l)) return l.celdas[0];
+    }
+    return null;
+  }
+  function resumenDoc(doc, tipo, datos) {
+    const f = datos.fecha ? ` del ${datos.fecha}` : '';
+    const items = doc.tablas.reduce((n, t) => n + t.filas.length, 0);
+    if (['factura', 'cotizacion', 'orden', 'nota', 'cobro'].includes(tipo.id)) {
+      const partes = [`${tipo.nombre}${datos.numero ? ' ' + datos.numero : ''}${f}`];
+      if (datos.emisor) partes.push(`de ${datos.emisor}`);
+      if (datos.cliente) partes.push(`para ${datos.cliente}`);
+      if (typeof datos.total === 'number') partes.push(`por ${pesos(datos.total)}`);
+      return partes.join(' ') + (items ? `; ${items} ítem${items === 1 ? '' : 's'}.` : '.');
+    }
+    if (tipo.id === 'remision') return `Remisión${datos.numero ? ' ' + datos.numero : ''}${f}${datos.cliente ? ' para ' + datos.cliente : ''}${items ? `; ${items} ítem${items === 1 ? '' : 's'} despachados` : ''}.`;
+    // Informes y otros: primera frase de la sección de resumen/conclusiones, o del cuerpo
+    // Busca la sección más informativa: resumen > conclusiones > objeto > introducción
+    const orden = ['resumen', 'conclusion', 'objeto', 'objetivo', 'alcance', 'introduccion'];
+    const encabezado = new RegExp('^(\\d+(\\.\\d+)*\\.?\\s*)?(' + orden.join('|') + ')[a-z]*(\\s+(ejecutivo|general|y recomendaciones))?\\s*[:.-]?\\s*', 'i');
+    let i = -1;
+    for (const o of orden) { i = doc.lineas.findIndex(l => new RegExp('^(\\d+(\\.\\d+)*\\.?\\s*)?' + o).test(l.textoN) && l.texto.length < 200); if (i >= 0) break; }
+    const desde = i >= 0 ? i : Math.max(0, doc.lineas.findIndex(l => l.texto.length >= 50));
+    let texto = doc.lineas.slice(desde, desde + 8).map((l, j) => j === 0 && i >= 0 ? l.texto.slice(norm(l.texto).match(encabezado)?.[0].length || 0) : l.texto).join(' ');
+    texto = texto.replace(/\s+/g, ' ').trim();
+    const frase = (texto.match(/^.{40,280}?[.;](\s|$)/) || [texto.slice(0, 240)])[0].trim();
+    return (datos.titulo ? `${datos.titulo}. ` : '') + (frase ? frase : '');
+  }
+
+  function extraerCampo(doc, clave, tipo, datos) {
+    switch (clave) {
+      case 'numero': return numeroDoc(doc);
+      case 'titulo': return buscar(doc, CAMPOS.titulo) || tituloDoc(doc);
+      case 'emisor': return emisorDoc(doc, tipo);
+      case 'proveedor': return buscar(doc, CAMPOS.proveedor) || emisorDoc(doc, tipo);
+      case 'fecha': {
+        const v = buscar(doc, CAMPOS.fecha);
+        if (v) return v;
+        for (const l of doc.lineas) { if (CAMPOS.fecha.excluir.some(x => l.textoN.includes(x))) continue; const f = fechaDe(l.texto); if (f) return f; }
+        return null;
+      }
+      case 'nit': {
+        const v = buscar(doc, CAMPOS.nit);
+        if (v) return v;
+        for (const l of doc.lineas) { const m = l.texto.match(/\bNIT\b\.?\s*[:.]?\s*(\d[\d.\s]{4,14}\d(\s*-\s*\d)?)/i); if (m) return m[1].replace(/\s/g, ''); }
+        return null;
+      }
+      case 'resumen': return resumenDoc(doc, tipo, datos);
+      case 'cantidaditems': return doc.tablas.reduce((n, t) => n + t.filas.length, 0);
+      default: return CAMPOS[clave] ? buscar(doc, CAMPOS[clave]) : null;
+    }
+  }
+  // Campo que la persona escribió y no está en el diccionario: se busca por su propia etiqueta
+  function campoLibre(texto) {
+    const n = norm(texto);
+    return { etiqueta: texto.trim().replace(/^./, c => c.toUpperCase()), tipo: /valor|total|precio|monto|costo|saldo|pago|iva|impuesto/.test(n) ? 'dinero' : /fecha/.test(n) ? 'fecha' : 'texto', syn: [n] };
+  }
+  function interpretarPedido(txt) {
+    const partes = txt.split(/[,;\n]|\s+y\s+/).map(s => s.trim()).filter(Boolean);
+    const campos = [], vistos = new Set();
+    for (const p of partes) {
+      const n = norm(p).replace(/^(el|la|los|las|su|sus)\s+/, '').replace(/[.:]$/, '');
+      if (n in ALIAS && ALIAS[n] === null) continue;
+      const clave = ALIAS[n] ?? ALIAS[n.replace(/s$/, '')] ?? null;
+      const id = clave || 'libre:' + n;
+      if (vistos.has(id)) continue;
+      vistos.add(id);
+      campos.push(clave ? { clave, etiqueta: CAMPOS[clave].etiqueta, tipo: CAMPOS[clave].tipo } : { clave: id, libre: campoLibre(p), etiqueta: campoLibre(p).etiqueta, tipo: campoLibre(p).tipo });
+    }
+    return campos;
+  }
+
+  // =====================================================================
+  // Proceso de todos los archivos
+  // =====================================================================
+  async function leerArchivo(a, i, total) {
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await a.file.arrayBuffer()) }).promise;
+    const n = Math.min(pdf.numPages, MAX_PAGINAS);
     const paginas = []; let conOcr = 0;
     try {
-      for (let n = 1; n <= total; n++) {
+      for (let p = 1; p <= n; p++) {
         if (cancelado) throw { cancel: true };
-        estado(`Leyendo página ${n} de ${total}…`); progreso(n / total);
-        const pag = await pdfDoc.getPage(n);
+        const pag = await pdf.getPage(p);
         let piezas = $('#forzarOcr').checked ? [] : await piezasTexto(pag);
-        if (piezas.map(p => p.txt).join('').replace(/\s/g, '').length < 20) {
-          piezas = await piezasOcr(pag, n, total); conOcr++;
+        if (piezas.map(x => x.txt).join('').replace(/\s/g, '').length < 20) {
+          estado(`Documento ${i + 1} de ${total}: leyendo página escaneada ${p} de ${n}…`);
+          piezas = await piezasOcr(pag); conOcr++;
         }
         paginas.push(armarLineas(piezas));
+        pag.cleanup();
       }
-      const { hojas, n } = organizar(paginas);
-      if (!n.lineas) throw { msg: 'No se encontró texto en el documento.' };
-      mostrar({
-        titulo: nombreBase,
-        resumen: `${total} página${total === 1 ? '' : 's'}${conOcr ? ` (${conOcr} leída${conOcr === 1 ? '' : 's'} con OCR)` : ''}: ` +
-          `${n.kv} dato${n.kv === 1 ? '' : 's'} general${n.kv === 1 ? '' : 'es'}, ${n.tablas} tabla${n.tablas === 1 ? '' : 's'} y ${n.lineas} líneas de texto. Revisa las hojas antes de usarlas.`,
-        hojas
-      });
-      estado('Listo. Revisa las hojas y descarga el Excel.', 'ok');
-    } catch (e) {
-      if (e?.cancel) estado('Conversión detenida.');
-      else { console.error(e); estado(e?.msg || 'Algo falló al leer el documento. Prueba marcando «Leer como documento escaneado».', 'error'); }
+    } finally { pdf.destroy(); }
+    return { paginas, numPaginas: n, conOcr };
+  }
+
+  $('#convertir').onclick = async () => {
+    cancelado = false;
+    archivos.forEach(a => { a.estado = 'Pendiente'; a.clase = ''; });
+    ocupado(true);
+    const pedido = interpretarPedido($('#pedido').value);
+    const docs = [];
+    for (let i = 0; i < archivos.length; i++) {
+      if (cancelado) break;
+      const a = archivos[i];
+      a.estado = 'Leyendo…'; pintarArchivos();
+      estado(`Leyendo documento ${i + 1} de ${archivos.length}: ${a.nombre}`); progreso(i / archivos.length);
+      try {
+        const { paginas, numPaginas, conOcr } = await leerArchivo(a, i, archivos.length);
+        const doc = analizar(paginas);
+        if (!doc.lineas.length) throw { msg: 'Sin texto' };
+        const { tipo, confianza } = clasificar(doc, a.nombre);
+        const claves = pedido.length ? pedido.map(c => c.clave) : tipo.campos;
+        const datos = {};
+        for (const k of claves.filter(k => k !== 'resumen')) {
+          const c = pedido.find(c => c.clave === k);
+          datos[k] = c?.libre ? buscar(doc, c.libre) : extraerCampo(doc, k, tipo, datos);
+        }
+        // datos base para el resumen y los totales, aunque no se hayan pedido
+        for (const k of ['numero', 'fecha', 'emisor', 'cliente', 'total', 'titulo']) if (!(k in datos) && (k !== 'total' || tipo.campos.includes('total'))) datos['_' + k] = extraerCampo(doc, k, tipo, datos);
+        const base = k => datos[k] ?? datos['_' + k];
+        const vistaResumen = { numero: base('numero'), fecha: base('fecha'), emisor: base('emisor'), cliente: base('cliente'), total: base('total'), titulo: tipo.id === 'informe' || tipo.id === 'otro' ? base('titulo') : null };
+        datos.resumen = resumenDoc(doc, tipo, vistaResumen);
+        docs.push({ archivo: a.nombre, paginas: numPaginas, conOcr, tipo, confianza, datos, doc });
+        a.estado = tipo.nombre + (conOcr ? ' · OCR' : ''); a.clase = 'ok';
+      } catch (e) {
+        if (e?.cancel) { a.estado = 'Detenido'; break; }
+        console.error(a.nombre, e);
+        a.estado = e?.name === 'PasswordException' ? 'Con contraseña' : e?.msg || 'No se pudo leer';
+        a.clase = 'error';
+        docs.push({ archivo: a.nombre, error: a.estado });
+      }
+      pintarArchivos();
     }
-    progreso(null); ocupado(false);
+    progreso(null);
+    if (!docs.some(d => !d.error)) { estado(cancelado ? 'Proceso detenido.' : 'No se pudo leer ningún documento.', 'error'); ocupado(false); return; }
+    mostrar(construirLibro(docs, pedido));
+    estado(cancelado ? `Proceso detenido: se incluyen los ${docs.length} documentos leídos.` : 'Listo. Revisa las hojas y descarga el Excel.', cancelado ? '' : 'ok');
+    ocupado(false);
   };
   $('#detener').onclick = () => { cancelado = true; estado('Deteniendo…'); };
 
-  // ---------- Vista previa ----------
-  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  function mostrar(datos) { libro = datos; esEjemplo = false; hojaActiva = 0; pintar(); }
+  // =====================================================================
+  // Libro de Excel
+  // =====================================================================
+  const colLetra = i => { let s = ''; for (i++; i; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + (i - 1) % 26) + s; return s; };
+  function filaTotal(columnas, filas, tipos, etiquetaCol = 0) {
+    const r = columnas.map(() => '');
+    r[etiquetaCol] = 'TOTAL';
+    let alguno = false;
+    tipos.forEach((t, j) => {
+      if (t !== 'dinero' || !filas.some(f => typeof f[j] === 'number')) return;
+      const suma = filas.reduce((s, f) => s + (typeof f[j] === 'number' ? f[j] : 0), 0);
+      r[j] = { t: 'n', v: suma, f: `SUM(${colLetra(j)}2:${colLetra(j)}${filas.length + 1})` };
+      alguno = true;
+    });
+    return alguno ? r : null;
+  }
+  function hojaDocs(nombre, lista, claves, etiquetas, tipos) {
+    const columnas = ['Archivo', 'Tipo', ...etiquetas, 'Resumen', 'Por revisar'];
+    const tiposCol = ['texto', 'texto', ...tipos, 'texto', 'texto'];
+    const faltan = [];
+    const filas = lista.map(d => {
+      const vals = claves.map(k => d.datos[k] ?? '');
+      const f = etiquetas.filter((_, j) => vals[j] === '' || vals[j] === null);
+      if (d.confianza === 'baja') f.unshift('tipo de documento');
+      faltan.push(f.length);
+      return [d.archivo, d.tipo.nombre, ...vals, d.datos.resumen || '', f.join(', ')];
+    });
+    const total = filaTotal(columnas, filas, tiposCol, 1);
+    return { nombre, columnas, filas: total ? [...filas, total] : filas, tipos: tiposCol, conTotal: !!total, faltantes: faltan.filter(Boolean).length };
+  }
+
+  function construirLibro(docs, pedido) {
+    const ok = docs.filter(d => !d.error), errores = docs.filter(d => d.error);
+    const hojas = [];
+    const grupos = [...TIPOS, OTRO].map(t => ({ t, docs: ok.filter(d => d.tipo === t) })).filter(g => g.docs.length);
+    const totalDe = d => { const v = d.datos.total ?? d.datos._total; return typeof v === 'number' ? v : null; };
+
+    // --- Hojas de datos ---
+    let hojasDatos = [];
+    if (pedido.length) {
+      const cs = pedido.filter(c => c.clave !== 'resumen');
+      hojasDatos.push(hojaDocs('Datos solicitados', ok, cs.map(c => c.clave), cs.map(c => c.etiqueta), cs.map(c => c.tipo)));
+    } else {
+      for (const g of grupos) {
+        const claves = g.t.campos.filter(k => k !== 'resumen');
+        hojasDatos.push(hojaDocs(g.t.plural.slice(0, 31), g.docs, claves, claves.map(k => CAMPOS[k].etiqueta), claves.map(k => CAMPOS[k].tipo)));
+      }
+    }
+
+    // --- Resumen ---
+    const partesTipo = grupos.map(g => `${g.docs.length} ${(g.docs.length === 1 ? g.t.nombre : g.t.plural).toLowerCase()}`);
+    const lista = partesTipo.length > 1 ? partesTipo.slice(0, -1).join(', ') + ' y ' + partesTipo.at(-1) : partesTipo[0];
+    const conDinero = grupos.filter(g => g.docs.some(d => totalDe(d) !== null));
+    const frasesDinero = conDinero.map(g => `${g.t.plural.toLowerCase()} suman ${pesos(g.docs.reduce((s, d) => s + (totalDe(d) || 0), 0))}`);
+    const clave = d => d.tipo.id + '|' + norm(d.datos.numero ?? d.datos._numero ?? '') + '|' + norm(d.datos.nit ?? d.datos.emisor ?? d.datos._emisor ?? '');
+    const vistos = {}, duplicados = [];
+    for (const d of ok) { const n = d.datos.numero ?? d.datos._numero; if (!n) continue; const k = clave(d); if (vistos[k]) duplicados.push([d.tipo.nombre, n, vistos[k], d.archivo]); else vistos[k] = d.archivo; }
+    const porRevisar = hojasDatos.reduce((s, h) => s + h.faltantes, 0);
+    const fechas = ok.map(d => d.datos.fecha ?? d.datos._fecha).filter(Boolean).sort();
+    const texto = [
+      `Se procesaron ${docs.length} documento${docs.length === 1 ? '' : 's'}: ${lista || 'ninguno legible'}${errores.length ? ` y ${errores.length} que no se pudo leer` : ''}.`,
+      frasesDinero.length ? `Las ${frasesDinero.join('; las ')}.` : '',
+      fechas.length > 1 ? `Las fechas van del ${fechas[0]} al ${fechas.at(-1)}.` : '',
+      duplicados.length ? `Hay ${duplicados.length} posible${duplicados.length === 1 ? '' : 's'} duplicado${duplicados.length === 1 ? '' : 's'} (mismo número y emisor).` : '',
+      porRevisar ? `${porRevisar} documento${porRevisar === 1 ? ' tiene' : 's tienen'} datos que no se encontraron: revisa la columna «Por revisar».` : 'Se encontraron todos los datos buscados.',
+    ].filter(Boolean).join(' ');
+
+    const filasRes = grupos.map(g => {
+      const tot = g.docs.map(totalDe).filter(v => v !== null);
+      return [g.t.nombre, g.docs.length, tot.length ? tot.reduce((a, b) => a + b, 0) : '', g.docs.reduce((s, d) => s + d.paginas, 0)];
+    });
+    if (errores.length) filasRes.push(['No se pudo leer', errores.length, '', '']);
+    const resumen = { nombre: 'Resumen', columnas: ['Tipo de documento', 'Cantidad', 'Suma de totales', 'Páginas'], tipos: ['texto', 'dinero', 'dinero', 'dinero'], filas: filasRes };
+    const tr = filaTotal(resumen.columnas, filasRes, resumen.tipos);
+    if (tr) { resumen.filas = [...filasRes, tr]; resumen.conTotal = true; }
+    resumen.pie = [[], ['Resumen', texto], ...(duplicados.length ? [[], ['Posibles duplicados'], ['Tipo', 'Número', 'Archivo', 'Repetido en'], ...duplicados] : []),
+      ...(errores.length ? [[], ['Archivos no leídos'], ...errores.map(d => [d.archivo, d.error])] : [])];
+    hojas.push(resumen, ...hojasDatos);
+
+    // --- Ítems de todas las tablas ---
+    if ($('#conItems').checked) {
+      const cols = [];
+      const filas = [];
+      for (const d of ok) for (const t of d.doc.tablas) {
+        const idx = t.columnas.map(c => { const n = norm(c); let j = cols.findIndex(x => norm(x) === n); if (j < 0) { cols.push(c); j = cols.length - 1; } return j; });
+        for (const f of t.filas) {
+          const r = [];
+          f.forEach((v, j) => r[idx[j]] = convertir(v));
+          filas.push([d.archivo, d.tipo.nombre, d.datos.numero ?? d.datos._numero ?? '', t.pagina, ...r]);
+        }
+      }
+      if (filas.length) {
+        const ancho = 4 + cols.length;
+        hojas.push({ nombre: 'Ítems', columnas: ['Archivo', 'Tipo', 'Número doc.', 'Página', ...cols], filas: filas.map(f => Array.from({ length: ancho }, (_, j) => f[j] ?? '')) });
+      }
+    }
+    if ($('#conTexto').checked)
+      hojas.push({ nombre: 'Texto', columnas: ['Archivo', 'Página', 'Texto'], filas: ok.flatMap(d => d.doc.lineas.map(l => [d.archivo, l.pagina, l.texto])) });
+
+    const cifras = [[docs.length, 'documentos'], ...grupos.slice(0, 5).map(g => [g.docs.length, g.t.plural.toLowerCase()])];
+    const totalFact = ok.filter(d => d.tipo.id === 'factura').map(totalDe).filter(v => v !== null);
+    if (totalFact.length) cifras.push([pesos(totalFact.reduce((a, b) => a + b, 0)), 'total facturas']);
+    return { titulo: docs.length === 1 ? docs[0].archivo.replace(/\.pdf$/i, '') : `${docs.length} documentos`, resumen: texto, cifras, hojas };
+  }
+
+  // =====================================================================
+  // Vista previa
+  // =====================================================================
+  const EJEMPLO = {
+    titulo: 'Ejemplo: 3 documentos', cifras: [[3, 'documentos'], [2, 'facturas'], [1, 'remisión'], ['$ 2.128.000', 'total facturas']],
+    resumen: 'Así se ve un resultado: los documentos se clasifican, cada uno queda en una fila con los datos pedidos y al final va el TOTAL. Sube tus PDF para reemplazarlo.',
+    hojas: [{ nombre: 'Datos solicitados', columnas: ['Archivo', 'Tipo', 'Número', 'Fecha', 'Proveedor', 'Total', 'Por revisar'], tipos: ['texto', 'texto', 'codigo', 'fecha', 'texto', 'dinero', 'texto'], conTotal: true, filas: [
+      ['factura-2031.pdf', 'Factura', 'FE-2031', '2026-08-14', 'Suministros Médicos Andinos', 1428000, ''],
+      ['factura-0457.pdf', 'Factura', 'FV-0457', '2026-08-20', 'Ferretería El Tornillo', 700000, ''],
+      ['remision-88.pdf', 'Remisión', 'R-88', '2026-08-21', '', '', 'Proveedor, Total'],
+      ['', 'TOTAL', '', '', '', { t: 'n', v: 2128000 }, '']] }]
+  };
+  function mostrar(datos) { libro = datos; esEjemplo = false; hojaActiva = Math.min(1, datos.hojas.length - 1); pintar(); }
+  const valorCelda = v => (v && typeof v === 'object') ? v.v : v;
   function pintar() {
     $('#titulo').innerHTML = esc(libro.titulo) + (esEjemplo ? '<span class="chip">Ejemplo</span>' : '');
+    $('#cifras').innerHTML = libro.cifras.map(([n, t]) => `<div class="cifra"><b>${esc(typeof n === 'number' ? n.toLocaleString('es-CO') : n)}</b><span>${esc(t)}</span></div>`).join('');
     $('#resumen').textContent = libro.resumen;
     const h = libro.hojas[hojaActiva];
     const ancho = Math.max(h.columnas.length, ...h.filas.map(f => f.length));
     const cols = Array.from({ length: ancho }, (_, i) => h.columnas[i] ?? '');
-    const celda = v => `<td class="${typeof v === 'number' ? 'num' : ''}" title="${esc(v)}">${esc(typeof v === 'number' ? v.toLocaleString('es-CO') : v)}</td>`;
+    const iRev = h.columnas.indexOf('Por revisar');
+    const celda = (v, fila, j) => {
+      v = valorCelda(v);
+      const falta = iRev >= 0 && (v === '' || v == null) && j > 1 && j < iRev && fila[1] !== 'TOTAL';
+      const esDinero = typeof v === 'number' && h.tipos?.[j] === 'dinero' && h.nombre !== 'Resumen' || (h.nombre === 'Resumen' && j === 2 && typeof v === 'number');
+      return `<td class="${typeof v === 'number' ? 'num' : ''}${falta ? ' falta' : ''}" title="${esc(v ?? '')}">${esc(typeof v === 'number' ? (esDinero ? pesos(v) : v.toLocaleString('es-CO')) : v ?? '')}</td>`;
+    };
+    const n = h.filas.length;
     $('#tablaCaja').innerHTML = `<table><thead><tr><th class="fila"></th>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${
-      h.filas.slice(0, 1000).map((f, i) => `<tr><th class="fila">${i + 1}</th>${cols.map((_, j) => celda(f[j] ?? '')).join('')}</tr>`).join('')
-    }</tbody></table>${h.filas.length > 1000 ? `<p class="vacio">Vista previa de 1.000 de ${h.filas.length.toLocaleString('es-CO')} filas. El Excel las incluye todas.</p>` : ''}`;
+      h.filas.slice(0, 1000).map((f, i) => `<tr class="${h.conTotal && i === n - 1 ? 'total' : ''}"><th class="fila">${i + 1}</th>${cols.map((_, j) => celda(f[j] ?? '', f, j)).join('')}</tr>`).join('')
+    }</tbody></table>${n > 1000 ? `<p class="vacio">Vista previa de 1.000 de ${n.toLocaleString('es-CO')} filas. El Excel las incluye todas.</p>` : ''}`;
     $('#pestanas').innerHTML = libro.hojas.map((x, i) =>
-      `<button role="tab" aria-selected="${i === hojaActiva}" data-i="${i}">${esc(x.nombre)} · ${x.filas.length}</button>`).join('');
+      `<button role="tab" aria-selected="${i === hojaActiva}" data-i="${i}">${esc(x.nombre)} · ${x.filas.length - (x.conTotal ? 1 : 0)}</button>`).join('');
   }
   $('#pestanas').onclick = e => { const b = e.target.closest('button'); if (b) { hojaActiva = +b.dataset.i; pintar(); } };
 
-  // ---------- Exportar ----------
+  // =====================================================================
+  // Exportar
+  // =====================================================================
   $('#descargar').onclick = () => {
     const wb = XLSX.utils.book_new();
     for (const h of libro.hojas) {
-      const hoja = XLSX.utils.aoa_to_sheet([h.columnas, ...h.filas]);
-      const ancho = Math.max(h.columnas.length, ...h.filas.map(f => f.length));
+      const filas = [h.columnas, ...h.filas, ...(h.pie || [])];
+      const hoja = XLSX.utils.aoa_to_sheet(filas);
+      const ancho = Math.max(...filas.map(f => f.length));
       hoja['!cols'] = Array.from({ length: ancho }, (_, j) => ({
-        wch: Math.min(60, Math.max(8, ...[h.columnas[j], ...h.filas.slice(0, 300).map(f => f[j])].map(v => String(v ?? '').length + 2)))
+        wch: Math.min(j === h.columnas.indexOf('Resumen') ? 80 : 50, Math.max(8, ...[h.columnas[j], ...h.filas.slice(0, 300).map(f => valorCelda(f[j]))].map(v => String(v ?? '').length + 2)))
       }));
-      XLSX.utils.book_append_sheet(wb, hoja, h.nombre.slice(0, 31));
+      // Formato de moneda para las columnas de dinero
+      (h.tipos || []).forEach((t, j) => {
+        if (t !== 'dinero' || (h.nombre === 'Resumen' && j !== 2)) return;
+        for (let r = 1; r <= h.filas.length; r++) { const c = hoja[colLetra(j) + (r + 1)]; if (c && c.t === 'n') c.z = '"$"#,##0'; }
+      });
+      if (h.filas.length) hoja['!autofilter'] = { ref: `A1:${colLetra(h.columnas.length - 1)}${h.filas.length + 1 - (h.conTotal ? 1 : 0)}` };
+      XLSX.utils.book_append_sheet(wb, hoja, h.nombre.replace(/[\[\]:*?/\\]/g, ' ').slice(0, 31));
     }
-    XLSX.writeFile(wb, (nombreBase.replace(/[\\/:*?"<>|]/g, '').trim() || 'datos') + '.xlsx');
+    const nombre = archivos.length === 1 ? archivos[0].nombre.replace(/\.pdf$/i, '') : `documentos-${new Date().toISOString().slice(0, 10)}`;
+    XLSX.writeFile(wb, nombre.replace(/[\\/:*?"<>|]/g, '').trim() + '.xlsx');
   };
   $('#copiar').onclick = async () => {
     const h = libro.hojas[hojaActiva];
-    const tsv = [h.columnas, ...h.filas].map(f => f.map(v => String(v ?? '').replace(/[\t\n]/g, ' ')).join('\t')).join('\n');
+    const tsv = [h.columnas, ...h.filas].map(f => f.map(v => String(valorCelda(v) ?? '').replace(/[\t\n]/g, ' ')).join('\t')).join('\n');
     try { await navigator.clipboard.writeText(tsv); estado(`Hoja «${h.nombre}» copiada. Pégala en Excel o Google Sheets.`, 'ok'); }
     catch { estado('El navegador no permitió copiar. Descarga el Excel en su lugar.', 'error'); }
   };
 
-  pintar(); ocupado(false);
+  libro = EJEMPLO; hojaActiva = 0; pintar(); ocupado(false);
 })();
 </script>
 </body>
