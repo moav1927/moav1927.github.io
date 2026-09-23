@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF a Excel</title>
+<meta name="description" content="Convierte cualquier PDF en una hoja de Excel organizada. Gratis, sin cuenta y sin subir tus archivos: todo ocurre en tu navegador.">
+
+<!--
+  ============================================================
+  PDF A EXCEL — funciona 100 % en el navegador
+  ------------------------------------------------------------
+  - No usa servidores ni cuentas: el PDF nunca sale del equipo.
+  - Librerías incluidas en ./lib (sin depender de CDNs):
+      pdf.js 3.11.174 (leer PDF), SheetJS 0.18.5 (crear .xlsx),
+      tesseract.js 5.1.1 + idioma español (OCR para PDF escaneados).
+  ============================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --papel:#eff1ee; --papel-2:#e5e9e5; --blanco:#fbfcfa;
+    --tinta:#10303a; --tinta-2:#2e5765; --gris:#5b6c70;
+    --laton:#9c7326; --laton-2:#bd9440;
+    --linea:#c6cec8; --rejilla:#dde3df; --error:#a3402b; --ok:#2f6b3f;
+  }
+  *{box-sizing:border-box}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important}}
+  body{margin:0;background:var(--papel);color:var(--tinta);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  h1,h2{font-family:"Literata",Georgia,serif;font-weight:500;margin:0;text-wrap:balance}
+  button,input,textarea{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--laton);outline-offset:2px}
+
+  .envoltura{max-width:1180px;margin:0 auto;padding:0 16px}
+  header{padding-block:32px 24px;display:grid;gap:8px}
+  h1{font-size:clamp(1.9rem,4.2vw,2.7rem);line-height:1.1}
+  h1 em{font-style:normal;color:var(--laton)}
+  header p{margin:0;color:var(--gris);max-width:64ch}
+  .sellos{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .sello{font-size:.78rem;border:1px solid var(--linea);border-radius:99px;padding:2px 10px;color:var(--tinta-2);background:var(--blanco)}
+
+  .rejilla{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start;padding-bottom:48px}
+  @media (max-width:840px){.rejilla{grid-template-columns:1fr}}
+
+  .panel{display:grid;gap:14px}
+  .soltar{border:1.5px dashed var(--linea);border-radius:10px;background:var(--blanco);padding:22px 18px;
+    display:grid;gap:6px;justify-items:start;cursor:pointer;transition:border-color .15s}
+  .soltar:hover,.soltar.sobre{border-color:var(--laton)}
+  .soltar b{font-weight:600}
+  .soltar span{color:var(--gris);font-size:.9rem}
+  .archivo{font-family:"IBM Plex Mono",monospace;font-size:.82rem;color:var(--tinta-2)!important;word-break:break-all}
+  .opcion{display:flex;gap:8px;align-items:flex-start;font-size:.9rem;color:var(--tinta-2)}
+  .opcion input{margin-top:4px}
+  .botones{display:flex;flex-wrap:wrap;gap:8px}
+  .btn{border:1px solid var(--tinta);background:var(--tinta);color:var(--blanco);border-radius:6px;padding:9px 16px;font-weight:600;cursor:pointer}
+  .btn.sec{background:transparent;color:var(--tinta);border-color:var(--linea);font-weight:500}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .estado{font-size:.9rem;color:var(--gris);min-height:1.5em}
+  .estado.error{color:var(--error)} .estado.ok{color:var(--ok)}
+  progress{width:100%;height:6px;accent-color:var(--laton)}
+  .nota{font-size:.82rem;color:var(--gris);border-top:1px solid var(--linea);padding-top:12px;margin:0}
+
+  .libro{background:var(--blanco);border:1px solid var(--linea);border-radius:10px;overflow:hidden;display:grid;min-width:0}
+  .libro-cab{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--linea)}
+  .libro-cab h2{font-size:1.25rem;word-break:break-word}
+  .chip{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--linea);
+    border-radius:99px;padding:2px 8px;color:var(--gris);margin-left:8px;vertical-align:middle}
+  .resumen{padding:0 16px;margin:12px 0 0;color:var(--gris);font-size:.92rem;max-width:80ch}
+  .tabla-caja{overflow:auto;max-height:540px;margin-top:12px;border-top:1px solid var(--rejilla)}
+  table{border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-variant-numeric:tabular-nums;min-width:100%}
+  th,td{border:1px solid var(--rejilla);padding:5px 10px;text-align:left;white-space:nowrap;max-width:380px;overflow:hidden;text-overflow:ellipsis}
+  thead th{position:sticky;top:0;background:var(--papel-2);font-weight:500}
+  td.num{text-align:right}
+  th.fila{color:var(--gris);font-weight:400;background:var(--papel);text-align:right;width:1%}
+  tbody tr:hover td{background:#f6efdc}
+  .pestanas{display:flex;gap:2px;overflow-x:auto;background:var(--papel);border-top:1px solid var(--linea);padding:0 8px}
+  .pestanas button{border:0;border-bottom:3px solid transparent;background:transparent;padding:8px 14px;font-size:.85rem;cursor:pointer;white-space:nowrap;color:var(--gris)}
+  .pestanas button[aria-selected="true"]{color:var(--tinta);border-bottom-color:var(--laton);background:var(--blanco);font-weight:600}
+  .vacio{padding:32px 16px;color:var(--gris);text-align:center}
+</style>
+</head>
+<body>
+
+<div class="envoltura">
+  <header>
+    <h1>Del PDF a <em>Excel</em>, sin subir nada</h1>
+    <p>Sube una factura, un extracto, un listado o un informe. La herramienta encuentra los datos clave («Campo: valor»), reconstruye las tablas y lo organiza en hojas de Excel. Si el PDF está escaneado, lee el texto de la imagen (OCR).</p>
+    <div class="sellos"><span class="sello">Gratis</span><span class="sello">Sin cuenta</span><span class="sello">Tu PDF no sale de tu dispositivo</span></div>
+  </header>
+
+  <div class="rejilla">
+    <section class="panel" aria-label="Documento">
+      <label class="soltar" id="zona" for="entrada">
+        <b>Elegir o soltar un PDF</b>
+        <span>Hasta 60 páginas por documento.</span>
+        <span class="archivo" id="nombreArchivo"></span>
+        <input type="file" id="entrada" accept="application/pdf,.pdf" hidden>
+      </label>
+
+      <label class="opcion" for="forzarOcr"><input type="checkbox" id="forzarOcr">
+        <span>Leer como documento escaneado (OCR). Se activa solo cuando una página no tiene texto; márcalo si el resultado sale vacío o con letras raras.</span></label>
+
+      <div class="botones">
+        <button class="btn" id="convertir" disabled>Convertir</button>
+        <button class="btn sec" id="detener" hidden>Detener</button>
+      </div>
+      <progress id="progreso" max="1" value="0" hidden></progress>
+      <div class="estado" id="estado" role="status" aria-live="polite"></div>
+
+      <p class="nota">Cómo organiza los datos: <b>Datos generales</b> con los pares «Campo: valor», una hoja por cada <b>tabla</b> detectada (las que siguen en otra página se unen) y <b>Texto</b> con todo el contenido línea por línea, para que no se pierda nada. Los números se convierten a números y las fechas dd/mm/aaaa a aaaa-mm-dd.</p>
+      <p class="nota">El OCR descarga una vez unos 6 MB (el motor y el idioma español); después queda guardado en el navegador.</p>
+    </section>
+
+    <section class="libro" aria-label="Resultado">
+      <div class="libro-cab">
+        <h2 id="titulo"></h2>
+        <div class="botones">
+          <button class="btn sec" id="copiar">Copiar hoja</button>
+          <button class="btn" id="descargar" disabled>Descargar Excel</button>
+        </div>
+      </div>
+      <p class="resumen" id="resumen"></p>
+      <div class="tabla-caja" id="tablaCaja"></div>
+      <div class="pestanas" id="pestanas" role="tablist" aria-label="Hojas"></div>
+    </section>
+  </div>
+</div>
+
+<script src="lib/pdf.min.js"></script>
+<script src="lib/xlsx.full.min.js"></script>
+<script src="lib/tesseract.min.js"></script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const MAX_PAGINAS = 60;
+  const base = new URL('./lib/', location.href).href;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js';
+
+  const EJEMPLO = {
+    titulo: 'Factura de ejemplo',
+    resumen: 'Así se ve un resultado. Sube tu PDF para reemplazarlo.',
+    hojas: [
+      { nombre: 'Datos generales', columnas: ['Campo', 'Valor', 'Página'], filas: [
+        ['Proveedor', 'Suministros Médicos Andinos S.A.S.', 1], ['NIT', '900123456-7', 1],
+        ['Factura', 'FE-2031', 1], ['Fecha', '2026-08-14', 1], ['Total', 1428000, 1] ] },
+      { nombre: 'Tabla 1', columnas: ['Producto', 'Cantidad', 'Precio unitario', 'Subtotal'], filas: [
+        ['Jeringa 5 ml (caja x100)', 4, 62000, 248000], ['Guantes de nitrilo talla M', 10, 38000, 380000],
+        ['Lidocaína 2% (frasco 50 ml)', 20, 32000, 640000], ['Gasa estéril 10x10', 8, 20000, 160000] ] }
+    ]
+  };
+
+  let pdfDoc = null, nombreBase = 'datos', cancelado = false, ocrWorker = null;
+  let libro = EJEMPLO, esEjemplo = true, hojaActiva = 0;
+
+  const estado = (txt, tipo = '') => { const e = $('#estado'); e.textContent = txt; e.className = 'estado ' + tipo; };
+  const progreso = v => { const p = $('#progreso'); p.hidden = v === null; if (v !== null) p.value = v; };
+  function ocupado(si) {
+    $('#convertir').disabled = si || !pdfDoc;
+    $('#detener').hidden = !si;
+    $('#descargar').disabled = si || esEjemplo;
+    $('#entrada').disabled = si;
+  }
+
+  // ---------- Cargar PDF ----------
+  async function cargar(archivo) {
+    if (!archivo) return;
+    if (!/pdf$/i.test(archivo.type) && !/\.pdf$/i.test(archivo.name)) return estado('Ese archivo no es un PDF.', 'error');
+    estado('Abriendo el PDF…');
+    try {
+      pdfDoc = await pdfjsLib.getDocument({ data: new Uint8Array(await archivo.arrayBuffer()) }).promise;
+      nombreBase = archivo.name.replace(/\.pdf$/i, '') || 'datos';
+      $('#nombreArchivo').textContent = `${archivo.name} · ${pdfDoc.numPages} página${pdfDoc.numPages === 1 ? '' : 's'}`;
+      estado(pdfDoc.numPages > MAX_PAGINAS ? `Se leerán las primeras ${MAX_PAGINAS} páginas.` : 'Listo. Pulsa «Convertir».');
+    } catch (e) {
+      pdfDoc = null;
+      estado(e?.name === 'PasswordException' ? 'El PDF tiene contraseña. Quítala y vuelve a subirlo.' : 'No se pudo abrir el PDF. ¿Está dañado?', 'error');
+    }
+    ocupado(false);
+  }
+  $('#entrada').onchange = e => cargar(e.target.files[0]);
+  const zona = $('#zona');
+  zona.addEventListener('dragover', e => { e.preventDefault(); zona.classList.add('sobre'); });
+  zona.addEventListener('dragleave', () => zona.classList.remove('sobre'));
+  zona.addEventListener('drop', e => { e.preventDefault(); zona.classList.remove('sobre'); cargar(e.dataTransfer.files[0]); });
+
+  // ---------- Lectura: piezas de texto con posición (y crece hacia abajo) ----------
+  async function piezasTexto(pag) {
+    const alto = pag.getViewport({ scale: 1 }).height;
+    const { items } = await pag.getTextContent();
+    return items.filter(it => it.str.trim()).map(it => {
+      const h = Math.abs(it.transform[3]) || Math.abs(it.transform[0]) || 10;
+      return { x: it.transform[4], fin: it.transform[4] + it.width, y: alto - it.transform[5], alto: h, txt: it.str };
+    });
+  }
+
+  async function obtenerOcr() {
+    if (ocrWorker) return ocrWorker;
+    estado('Preparando el lector de texto escaneado (solo la primera vez tarda más)…');
+    ocrWorker = await Tesseract.createWorker('spa', 1, {
+      workerPath: base + 'worker.min.js', corePath: base + 'tesseract-core', langPath: base + 'lang',
+      logger: m => { if (m.status === 'recognizing text') progreso(m.progress); }
+    });
+    return ocrWorker;
+  }
+
+  async function piezasOcr(pag, n, total) {
+    const vp = pag.getViewport({ scale: 1 });
+    const escala = Math.min(3, 2400 / Math.max(vp.width, vp.height) * 1.2);
+    const v = pag.getViewport({ scale: escala });
+    const c = document.createElement('canvas');
+    c.width = Math.round(v.width); c.height = Math.round(v.height);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    await pag.render({ canvasContext: ctx, viewport: v }).promise;
+    const w = await obtenerOcr();
+    estado(`Leyendo texto escaneado: página ${n} de ${total}…`);
+    const { data } = await w.recognize(c);
+    return (data.words || []).filter(p => p.text.trim() && p.confidence > 20).map(p => ({
+      x: p.bbox.x0 / escala, fin: p.bbox.x1 / escala, y: p.bbox.y1 / escala,
+      alto: Math.max(4, (p.bbox.y1 - p.bbox.y0) / escala), txt: p.text
+    }));
+  }
+
+  // Agrupa piezas en líneas y cada línea en celdas separadas por espacios amplios
+  function armarLineas(piezas) {
+    piezas.sort((a, b) => a.y - b.y || a.x - b.x);
+    const lineas = [];
+    for (const p of piezas) {
+      const l = lineas.find(l => Math.abs(l.y - p.y) < Math.max(l.alto, p.alto) * 0.5);
+      if (l) l.piezas.push(p); else lineas.push({ y: p.y, alto: p.alto, piezas: [p] });
+    }
+    lineas.sort((a, b) => a.y - b.y);
+    return lineas.map(l => {
+      l.piezas.sort((a, b) => a.x - b.x);
+      const celdas = [];
+      let ult = null;
+      for (const p of l.piezas) {
+        const hueco = ult ? p.x - ult.fin : Infinity;
+        if (hueco < p.alto * 0.9) { ult.txt += (hueco > p.alto * 0.12 && !/\s$/.test(ult.txt) ? ' ' : '') + p.txt; ult.fin = Math.max(ult.fin, p.fin); }
+        else celdas.push(ult = { x: p.x, fin: p.fin, txt: p.txt });
+      }
+      celdas.forEach(c => c.txt = c.txt.replace(/\s+/g, ' ').trim());
+      return { y: l.y, celdas: celdas.filter(c => c.txt) };
+    }).filter(l => l.celdas.length);
+  }
+
+  // ---------- Conversión de valores ----------
+  function convertir(v) {
+    if (typeof v !== 'string') return v;
+    const t = v.trim();
+    let m = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    if (m && +m[1] <= 31 && +m[2] <= 12) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    let s = t.replace(/^(US\$|COP|USD|EUR|\$|€)\s*/i, '').replace(/\s*(COP|USD|EUR|€)$/i, '').replace(/\s/g, '');
+    const neg = /^\(.*\)$/.test(s) || /^-/.test(s);
+    s = s.replace(/^[(-]|\)$/g, '');
+    if (/^0\d/.test(s) || s.replace(/\D/g, '').length > 15) return v;
+    let n = null;
+    if (/^\d+$/.test(s)) n = +s;
+    else if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) n = +s.replace(/\./g, '').replace(',', '.');
+    else if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) n = +s.replace(/,/g, '');
+    else if (/^\d+,\d+$/.test(s)) n = +s.replace(',', '.');
+    else if (/^\d+\.\d+$/.test(s)) n = +s;
+    return n === null || isNaN(n) ? v : (neg ? -n : n);
+  }
+  const esNumerico = t => typeof convertir(t) === 'number';
+
+  // ---------- Organización: datos clave-valor, tablas y texto ----------
+  const RE_KV = /^([^:]{2,45}?)\s*:\s*(.+)$/;
+  function clavesValor(celdas) {
+    const pares = [];
+    for (let i = 0; i < celdas.length; i++) {
+      const t = celdas[i].txt;
+      if (/:$/.test(t) && t.length <= 46 && celdas[i + 1] && !/:$/.test(celdas[i + 1].txt)) { pares.push([t.slice(0, -1).trim(), celdas[++i].txt]); continue; }
+      const m = t.match(RE_KV);
+      if (m && !/^\d{1,2}$/.test(m[1]) && !/https?$/i.test(m[1])) pares.push([m[1].trim(), m[2].trim()]);
+      else return null;
+    }
+    return pares.length ? pares : null;
+  }
+
+  function columnasDeBloque(filas) {
+    const cuenta = {};
+    filas.forEach(f => cuenta[f.celdas.length] = (cuenta[f.celdas.length] || 0) + 1);
+    const moda = +Object.entries(cuenta).sort((a, b) => b[1] - a[1] || b[0] - a[0])[0][0];
+    let cols = [];
+    for (const f of filas.filter(f => f.celdas.length === moda))
+      for (const c of f.celdas) {
+        const k = cols.find(k => c.x < k.fin && c.fin > k.x);
+        if (k) { k.x = Math.min(k.x, c.x); k.fin = Math.max(k.fin, c.fin); } else cols.push({ x: c.x, fin: c.fin });
+      }
+    cols.sort((a, b) => a.x - b.x);
+    // une columnas que quedaron solapadas tras crecer
+    cols = cols.reduce((acc, k) => { const u = acc[acc.length - 1]; if (u && k.x < u.fin) u.fin = Math.max(u.fin, k.fin); else acc.push({ ...k }); return acc; }, []);
+    return cols;
+  }
+  function ubicar(filas, cols) {
+    return filas.map(f => {
+      const r = Array(cols.length).fill('');
+      for (const c of f.celdas) {
+        const centro = (c.x + c.fin) / 2;
+        let mejor = 0, dist = Infinity;
+        cols.forEach((k, i) => {
+          const solape = Math.min(c.fin, k.fin) - Math.max(c.x, k.x);
+          const d = solape > 0 ? -solape : Math.min(Math.abs(centro - k.x), Math.abs(centro - k.fin));
+          if (d < dist) { dist = d; mejor = i; }
+        });
+        r[mejor] = r[mejor] ? r[mejor] + ' ' + c.txt : c.txt;
+      }
+      return r;
+    });
+  }
+
+  function organizar(paginas) {
+    const kv = [], texto = [], tablas = [];
+    paginas.forEach((lineas, ip) => {
+      const pagina = ip + 1;
+      let bloque = [];
+      const cerrar = () => {
+        if (bloque.length >= 2) {
+          const cols = columnasDeBloque(bloque);
+          let filas = ubicar(bloque, cols);
+          const cab = filas[0].every(v => !v || !esNumerico(v)) && filas[0].filter(Boolean).length >= 2;
+          const columnas = cab ? filas.shift().map((v, i) => v || `Columna ${i + 1}`) : cols.map((_, i) => `Columna ${i + 1}`);
+          const previa = tablas[tablas.length - 1];
+          if (previa && previa.columnas.length === columnas.length &&
+              (previa.columnas.join('|') === columnas.join('|') || (!cab && previa.pagina < pagina)))
+            previa.filas.push(...filas);
+          else tablas.push({ columnas, filas, pagina });
+        }
+        bloque = [];
+      };
+      for (const l of lineas) {
+        texto.push([pagina, l.celdas.map(c => c.txt).join('   ')]);
+        const pares = clavesValor(l.celdas);
+        if (pares) { cerrar(); pares.forEach(([k, v]) => kv.push([k, convertir(v), pagina])); continue; }
+        if (l.celdas.length >= 2) {
+          const u = bloque[bloque.length - 1];
+          if (u && l.y - u.y > 60) cerrar();
+          bloque.push(l);
+        } else cerrar();
+      }
+      cerrar();
+    });
+
+    const hojas = [];
+    if (kv.length) hojas.push({ nombre: 'Datos generales', columnas: ['Campo', 'Valor', 'Página'], filas: kv });
+    tablas.forEach((t, i) => hojas.push({ nombre: `Tabla ${i + 1}`, columnas: t.columnas, filas: t.filas.map(f => f.map(convertir)) }));
+    hojas.push({ nombre: 'Texto', columnas: ['Página', 'Texto'], filas: texto });
+    return { hojas, n: { kv: kv.length, tablas: tablas.length, lineas: texto.length } };
+  }
+
+  // ---------- Convertir ----------
+  $('#convertir').onclick = async () => {
+    cancelado = false; ocupado(true);
+    const total = Math.min(pdfDoc.numPages, MAX_PAGINAS);
+    const paginas = []; let conOcr = 0;
+    try {
+      for (let n = 1; n <= total; n++) {
+        if (cancelado) throw { cancel: true };
+        estado(`Leyendo página ${n} de ${total}…`); progreso(n / total);
+        const pag = await pdfDoc.getPage(n);
+        let piezas = $('#forzarOcr').checked ? [] : await piezasTexto(pag);
+        if (piezas.map(p => p.txt).join('').replace(/\s/g, '').length < 20) {
+          piezas = await piezasOcr(pag, n, total); conOcr++;
+        }
+        paginas.push(armarLineas(piezas));
+      }
+      const { hojas, n } = organizar(paginas);
+      if (!n.lineas) throw { msg: 'No se encontró texto en el documento.' };
+      mostrar({
+        titulo: nombreBase,
+        resumen: `${total} página${total === 1 ? '' : 's'}${conOcr ? ` (${conOcr} leída${conOcr === 1 ? '' : 's'} con OCR)` : ''}: ` +
+          `${n.kv} dato${n.kv === 1 ? '' : 's'} general${n.kv === 1 ? '' : 'es'}, ${n.tablas} tabla${n.tablas === 1 ? '' : 's'} y ${n.lineas} líneas de texto. Revisa las hojas antes de usarlas.`,
+        hojas
+      });
+      estado('Listo. Revisa las hojas y descarga el Excel.', 'ok');
+    } catch (e) {
+      if (e?.cancel) estado('Conversión detenida.');
+      else { console.error(e); estado(e?.msg || 'Algo falló al leer el documento. Prueba marcando «Leer como documento escaneado».', 'error'); }
+    }
+    progreso(null); ocupado(false);
+  };
+  $('#detener').onclick = () => { cancelado = true; estado('Deteniendo…'); };
+
+  // ---------- Vista previa ----------
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function mostrar(datos) { libro = datos; esEjemplo = false; hojaActiva = 0; pintar(); }
+  function pintar() {
+    $('#titulo').innerHTML = esc(libro.titulo) + (esEjemplo ? '<span class="chip">Ejemplo</span>' : '');
+    $('#resumen').textContent = libro.resumen;
+    const h = libro.hojas[hojaActiva];
+    const ancho = Math.max(h.columnas.length, ...h.filas.map(f => f.length));
+    const cols = Array.from({ length: ancho }, (_, i) => h.columnas[i] ?? '');
+    const celda = v => `<td class="${typeof v === 'number' ? 'num' : ''}" title="${esc(v)}">${esc(typeof v === 'number' ? v.toLocaleString('es-CO') : v)}</td>`;
+    $('#tablaCaja').innerHTML = `<table><thead><tr><th class="fila"></th>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${
+      h.filas.slice(0, 1000).map((f, i) => `<tr><th class="fila">${i + 1}</th>${cols.map((_, j) => celda(f[j] ?? '')).join('')}</tr>`).join('')
+    }</tbody></table>${h.filas.length > 1000 ? `<p class="vacio">Vista previa de 1.000 de ${h.filas.length.toLocaleString('es-CO')} filas. El Excel las incluye todas.</p>` : ''}`;
+    $('#pestanas').innerHTML = libro.hojas.map((x, i) =>
+      `<button role="tab" aria-selected="${i === hojaActiva}" data-i="${i}">${esc(x.nombre)} · ${x.filas.length}</button>`).join('');
+  }
+  $('#pestanas').onclick = e => { const b = e.target.closest('button'); if (b) { hojaActiva = +b.dataset.i; pintar(); } };
+
+  // ---------- Exportar ----------
+  $('#descargar').onclick = () => {
+    const wb = XLSX.utils.book_new();
+    for (const h of libro.hojas) {
+      const hoja = XLSX.utils.aoa_to_sheet([h.columnas, ...h.filas]);
+      const ancho = Math.max(h.columnas.length, ...h.filas.map(f => f.length));
+      hoja['!cols'] = Array.from({ length: ancho }, (_, j) => ({
+        wch: Math.min(60, Math.max(8, ...[h.columnas[j], ...h.filas.slice(0, 300).map(f => f[j])].map(v => String(v ?? '').length + 2)))
+      }));
+      XLSX.utils.book_append_sheet(wb, hoja, h.nombre.slice(0, 31));
+    }
+    XLSX.writeFile(wb, (nombreBase.replace(/[\\/:*?"<>|]/g, '').trim() || 'datos') + '.xlsx');
+  };
+  $('#copiar').onclick = async () => {
+    const h = libro.hojas[hojaActiva];
+    const tsv = [h.columnas, ...h.filas].map(f => f.map(v => String(v ?? '').replace(/[\t\n]/g, ' ')).join('\t')).join('\n');
+    try { await navigator.clipboard.writeText(tsv); estado(`Hoja «${h.nombre}» copiada. Pégala en Excel o Google Sheets.`, 'ok'); }
+    catch { estado('El navegador no permitió copiar. Descarga el Excel en su lugar.', 'error'); }
+  };
+
+  pintar(); ocupado(false);
+})();
+</script>
+</body>
+</html>
