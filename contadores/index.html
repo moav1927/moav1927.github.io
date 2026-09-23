@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../pdf-a-excel/estilo.css?v=11">
+<link rel="stylesheet" href="../pdf-a-excel/estilo.css?v=12">
 </head>
 <body data-modo="contadores">
 <div class="envoltura">
@@ -102,17 +102,16 @@
   </main>
 
   <aside class="ayuda" aria-label="Ayuda">
-      <details open>
-        <summary>¿Dónde encuentro el ZIP o el XML?</summary>
-        <p>Cada factura electrónica llega al correo con un <b>.zip</b> que trae el PDF y el XML. Súbelo tal cual: se toma el XML (NIT, CUFE, IVA por tarifa y retenciones exactos) y se descarta el PDF repetido. Con solo el PDF o una foto también sirve, pero conviene revisar esos datos.</p>
+      <details>
+        <summary>¿Dónde encuentro el ZIP o el XML?<span class="breve">Viene adjunto en el correo de cada factura electrónica. Súbelo sin descomprimir.</span><span class="mas">Ver detalles</span></summary>
+        <p>El <b>.zip</b> trae el PDF y el XML de la factura. Se toma el XML (NIT, CUFE, IVA por tarifa y retenciones exactos) y se descarta el PDF repetido. Con solo el PDF o una foto también sirve, pero conviene revisar esos datos.</p>
       </details>
       <div class="tarjeta">
         <h3>Tus archivos no se suben</h3>
         <p>La página lee los documentos dentro de tu navegador. Nada se envía a un servidor, no hay cuenta y no se guarda nada al cerrar.</p>
       </div>
       <details>
-        <summary>¿Qué computador necesito?</summary>
-        Todo se procesa en tu propio equipo, así que la velocidad depende de él:
+        <summary>¿Qué computador necesito?<span class="breve">PDF con texto, Word, Excel y XML van rápido en casi cualquier equipo. Las fotos y los escaneados son más lentos: ideal 8 GB de RAM; con 4 GB también funciona, con paciencia.</span><span class="mas">Ver detalles</span></summary>
         <ul>
           <li><b>PDF con texto, Word, Excel y XML:</b> segundos en casi cualquier equipo, incluso con 50 archivos.</li>
           <li><b>Fotos y PDF escaneados (OCR):</b> la parte pesada. Con 8 GB de RAM y 4 núcleos, unos 3 a 10 segundos por página; con 4 GB, de 30 segundos a 1 minuto.</li>
@@ -121,8 +120,8 @@
         </ul>
       </details>
       <details>
-        <summary>¿Cómo lee los documentos?</summary>
-        <p>Con reglas, no con inteligencia artificial: reconoce los formatos habituales en varios idiomas («Total:», «Invoice No.», «NIT», «Escala», «Drawn by»…). Lo que no encuentra queda marcado en la columna <b>Por revisar</b> y en amarillo en la vista previa. Las fotos y escaneados se leen con OCR: la primera vez se descargan unos 6 MB que quedan guardados en el navegador.</p>
+        <summary>¿Cómo lee los documentos?<span class="breve">Con reglas, sin inteligencia artificial: busca etiquetas como «Total», «NIT» o «Escala». Lo que no encuentra queda en amarillo y en la columna «Por revisar».</span><span class="mas">Ver detalles</span></summary>
+        <p>Reconoce los formatos habituales en varios idiomas («Total:», «Invoice No.», «NIT», «Escala», «Drawn by»…). Las fotos y escaneados se leen con OCR: la primera vez se descargan unos 6 MB que quedan guardados en el navegador.</p>
       </details>
   </aside>
 </div>
@@ -130,6 +129,6 @@
 <script src="../pdf-a-excel/lib/pdf.min.js"></script>
 <script src="../pdf-a-excel/lib/xlsx.full.min.js"></script>
 <script src="../pdf-a-excel/lib/tesseract.min.js"></script>
-<script src="../pdf-a-excel/motor.js?v=11"></script>
+<script src="../pdf-a-excel/motor.js?v=12"></script>
 </body>
 </html>
