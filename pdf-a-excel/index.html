@@ -4,198 +4,128 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PDF a Excel</title>
-<meta name="description" content="Sube uno o muchos PDF: los clasifica (facturas, remisiones, informes…), extrae los datos que pidas y arma un Excel con resumen y totales. Gratis, sin cuenta y sin subir tus archivos.">
-
+<meta name="description" content="Sube uno o muchos documentos (PDF, fotos, Word, Excel, planos, facturas electrónicas): los clasifica, extrae los datos que pidas y arma un Excel con resumen y totales. Gratis, sin cuenta y sin subir tus archivos.">
 <!--
   ============================================================
   PDF A EXCEL — funciona 100 % en el navegador
   ------------------------------------------------------------
-  - No usa servidores, IA externa ni cuentas: los PDF nunca salen del equipo.
-  - Librerías incluidas en ./lib (sin depender de CDNs):
+  - No usa servidores, IA externa ni cuentas: los archivos nunca salen del equipo.
+  - Librerías incluidas en /pdf-a-excel/lib (sin depender de CDNs):
       pdf.js 3.11.174 (leer PDF), SheetJS 0.18.5 (crear .xlsx),
-      tesseract.js 5.1.1 + idioma español (OCR para PDF escaneados),
+      tesseract.js 5.1.1 + idioma español (OCR para escaneados),
       mammoth 1.8.0 (Word) y fflate 0.8.2 (ZIP de facturas electrónicas).
-  - El motor está en motor.js (lo comparte la página /contadores/).
-  - Clasificación y extracción por reglas: ver TIPOS y CAMPOS en motor.js
-    para agregar tipos de documento o sinónimos de campos.
+  - El motor está en /pdf-a-excel/motor.js y los estilos en /pdf-a-excel/estilo.css
+    (los comparten las dos páginas). Estas páginas se generan desde una plantilla.
+  - Clasificación y extracción por reglas: ver TIPOS, CAMPOS y ROTULO en motor.js.
   ============================================================
 -->
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
-
-<style>
-  :root{
-    --papel:#eff1ee; --papel-2:#e5e9e5; --blanco:#fbfcfa;
-    --tinta:#10303a; --tinta-2:#2e5765; --gris:#5b6c70;
-    --laton:#9c7326; --laton-2:#bd9440;
-    --linea:#c6cec8; --rejilla:#dde3df; --error:#a3402b; --ok:#2f6b3f; --aviso:#f6efdc;
-  }
-  *{box-sizing:border-box}
-  @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important}}
-  body{margin:0;background:var(--papel);color:var(--tinta);
-    font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
-  h1,h2,h3{font-family:"Literata",Georgia,serif;font-weight:500;margin:0;text-wrap:balance}
-  button,input,textarea{font:inherit;color:inherit}
-  :focus-visible{outline:2px solid var(--laton);outline-offset:2px}
-
-  .envoltura{max-width:1200px;margin:0 auto;padding:0 16px}
-  header{padding-block:32px 24px;display:grid;gap:8px}
-  h1{font-size:clamp(1.9rem,4.2vw,2.7rem);line-height:1.1}
-  h1 em{font-style:normal;color:var(--laton)}
-  header p{margin:0;color:var(--gris);max-width:68ch}
-  .sellos{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-  .sello{font-size:.78rem;border:1px solid var(--linea);border-radius:99px;padding:2px 10px;color:var(--tinta-2);background:var(--blanco)}
-
-  .rejilla{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:20px;align-items:start;padding-bottom:48px}
-  @media (max-width:880px){.rejilla{grid-template-columns:1fr}}
-
-  .panel{display:grid;gap:14px}
-  .soltar{border:1.5px dashed var(--linea);border-radius:10px;background:var(--blanco);padding:20px 18px;
-    display:grid;gap:4px;justify-items:start;cursor:pointer;transition:border-color .15s}
-  .soltar:hover,.soltar.sobre{border-color:var(--laton)}
-  .soltar b{font-weight:600}
-  .soltar span{color:var(--gris);font-size:.9rem}
-  .archivos{list-style:none;margin:0;padding:0;max-height:220px;overflow:auto;border:1px solid var(--linea);border-radius:8px;background:var(--blanco)}
-  .archivos:empty{display:none}
-  .archivos li{display:flex;gap:8px;justify-content:space-between;align-items:center;padding:5px 10px;border-bottom:1px solid var(--rejilla);font-size:.82rem}
-  .archivos li:last-child{border-bottom:0}
-  .archivos .nom{font-family:"IBM Plex Mono",monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-  .archivos .est{flex:none;color:var(--gris);font-size:.75rem}
-  .archivos .est.ok{color:var(--ok)} .archivos .est.error{color:var(--error)}
-  .archivos button{flex:none;border:0;background:none;color:var(--gris);cursor:pointer;padding:0 2px;font-size:1rem;line-height:1}
-
-  label.campo{display:grid;gap:6px;font-size:.9rem;font-weight:500}
-  label.campo small{font-weight:400;color:var(--gris)}
-  textarea{background:var(--blanco);border:1px solid var(--linea);border-radius:8px;padding:9px 10px;resize:vertical;min-height:64px;width:100%}
-  .presets{display:flex;flex-wrap:wrap;gap:6px}
-  .presets button{border:1px solid var(--linea);background:var(--blanco);border-radius:99px;padding:2px 10px;font-size:.78rem;cursor:pointer;color:var(--tinta-2)}
-  .presets button:hover{border-color:var(--laton)}
-  .opcion{display:flex;gap:8px;align-items:flex-start;font-size:.88rem;color:var(--tinta-2)}
-  .opcion input{margin-top:4px}
-  .botones{display:flex;flex-wrap:wrap;gap:8px}
-  .btn{border:1px solid var(--tinta);background:var(--tinta);color:var(--blanco);border-radius:6px;padding:9px 16px;font-weight:600;cursor:pointer}
-  .btn.sec{background:transparent;color:var(--tinta);border-color:var(--linea);font-weight:500}
-  .btn:disabled{opacity:.45;cursor:not-allowed}
-  .estado{font-size:.9rem;color:var(--gris);min-height:1.5em}
-  .estado.error{color:var(--error)} .estado.ok{color:var(--ok)}
-  progress{width:100%;height:6px;accent-color:var(--laton)}
-  .nota{font-size:.82rem;color:var(--gris);border-top:1px solid var(--linea);padding-top:12px;margin:0}
-
-  .libro{background:var(--blanco);border:1px solid var(--linea);border-radius:10px;overflow:hidden;display:grid;min-width:0}
-  .libro-cab{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--linea)}
-  .libro-cab h2{font-size:1.25rem;word-break:break-word}
-  .chip{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--linea);
-    border-radius:99px;padding:2px 8px;color:var(--gris);margin-left:8px;vertical-align:middle}
-  .cifras{display:flex;flex-wrap:wrap;gap:8px 28px;padding:14px 16px 0}
-  .cifra b{display:block;font-family:"Literata",serif;font-weight:500;font-size:1.5rem;line-height:1.2;font-variant-numeric:tabular-nums}
-  .cifra span{font-size:.8rem;color:var(--gris)}
-  .resumen{padding:0 16px;margin:12px 0 0;color:var(--tinta-2);font-size:.93rem;max-width:90ch}
-  .tabla-caja{overflow:auto;max-height:540px;margin-top:12px;border-top:1px solid var(--rejilla)}
-  table{border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-variant-numeric:tabular-nums;min-width:100%}
-  th,td{border:1px solid var(--rejilla);padding:5px 10px;text-align:left;white-space:nowrap;max-width:380px;overflow:hidden;text-overflow:ellipsis}
-  thead th{position:sticky;top:0;background:var(--papel-2);font-weight:500}
-  td.num{text-align:right}
-  td.falta{background:var(--aviso)}
-  tr.total td{font-weight:600;border-top:2px solid var(--tinta-2)}
-  th.fila{color:var(--gris);font-weight:400;background:var(--papel);text-align:right;width:1%}
-  tbody tr:hover td{background:#f6efdc}
-  .pestanas{display:flex;gap:2px;overflow-x:auto;background:var(--papel);border-top:1px solid var(--linea);padding:0 8px}
-  .pestanas button{border:0;border-bottom:3px solid transparent;background:transparent;padding:8px 14px;font-size:.85rem;cursor:pointer;white-space:nowrap;color:var(--gris)}
-  .pestanas button[aria-selected="true"]{color:var(--tinta);border-bottom-color:var(--laton);background:var(--blanco);font-weight:600}
-  .vacio{padding:32px 16px;color:var(--gris);text-align:center}
-  .secciones{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--linea);padding-top:14px}
-  .secciones a{padding:8px 14px;border:1px solid transparent;border-bottom:0;border-radius:8px 8px 0 0;color:var(--gris);text-decoration:none;font-size:.9rem;margin-bottom:-1px}
-  .secciones a:hover{color:var(--tinta)}
-  .secciones a[aria-current="page"]{background:var(--blanco);border-color:var(--linea);color:var(--tinta);font-weight:600}
-  .aviso-equipo{font-size:.85rem;background:var(--aviso);border:1px solid #e3d3a8;border-radius:8px;padding:10px 12px;margin:0;color:var(--tinta-2)}
-  details.nota summary{cursor:pointer;color:var(--tinta-2);font-weight:500}
-  details.nota ul{margin:8px 0 0;padding-left:18px;display:grid;gap:4px}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=11">
 </head>
 <body>
-
 <div class="envoltura">
-  <nav class="secciones" aria-label="Secciones">
-    <a href="../pdf-a-excel/" aria-current="page">Documentos en general</a>
-    <a href="../contadores/">Contadores · Facturas DIAN</a>
-  </nav>
+  <div class="barra">
+    <a class="marca" href="../pdf-a-excel/"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="1" width="20" height="20" rx="4" fill="#2d5f4a"/><path d="M1 8h20M1 14h20M8 8v13M15 8v13" stroke="#e3ede7" stroke-width="1.4"/><rect x="1" y="1" width="20" height="7" rx="4" fill="#9c7326"/><rect x="1" y="5" width="20" height="3" fill="#9c7326"/></svg>PDF a Excel</a>
+    <nav class="secciones" aria-label="Secciones"><a href="../pdf-a-excel/" aria-current="page">Documentos en general</a><a href="../contadores/">Contadores · Facturas DIAN</a></nav>
+  </div>
   <header>
-    <h1>Muchos PDF, <em>un solo Excel</em></h1>
-    <p>Sube 1, 10 o 50 documentos —facturas, recibos, remisiones, informes, tesis, artículos, libros, normas, formularios, cartas, planos, listados…— en español, inglés, francés, alemán, neerlandés, portugués o italiano. La herramienta los clasifica, saca los datos que pidas de cada uno y arma un Excel con un resumen, los totales por moneda y el detalle.</p>
-    <div class="sellos"><span class="sello">Gratis</span><span class="sello">Sin cuenta</span><span class="sello">Tus PDF no salen de tu dispositivo</span></div>
+    <div class="texto">
+      <h1>Muchos documentos, <em>un solo Excel</em></h1>
+      <p>Facturas, remisiones, informes, tesis, planos, listados… en varios idiomas. Los clasifica, saca los datos que pidas y arma un Excel con resumen y totales.</p>
+    </div>
+    <div class="sellos"><span class="sello">Gratis</span><span class="sello">Sin cuenta</span><span class="sello">Tus archivos no salen de tu equipo</span></div>
   </header>
 
-  <div class="rejilla">
-    <section class="panel" aria-label="Documentos">
-      <label class="soltar" id="zona" for="entrada">
-        <b>Elegir o soltar documentos</b>
-        <span>PDF, fotos o capturas (JPG, PNG, WEBP), Word (.docx), Excel (.xlsx, .xls, .ods, .csv) y facturas electrónicas (ZIP o XML). Puedes seleccionar varios a la vez.</span>
-        <input type="file" id="entrada" accept="application/pdf,.pdf,.zip,.xml,.xlsx,.xlsm,.xls,.ods,.csv,.docx,image/*,.png,.jpg,.jpeg,.webp,.bmp,.gif" multiple hidden>
-      </label>
-      <ul class="archivos" id="archivos" aria-label="Archivos cargados"></ul>
+  <main class="mesa">
+    <div class="pasos">
+      <section class="paso" aria-labelledby="p1">
+        <h2 id="p1"><span class="n">1</span>Sube tus documentos</h2>
+        <label class="soltar" id="zona" for="entrada">
+          <b>Elegir archivos</b>
+          <span class="sub">o arrástralos aquí. Puedes elegir muchos a la vez.</span>
+          <span class="formatos"><span class="dest">PDF</span><span>Fotos</span><span>Word</span><span>Excel</span><span>ZIP / XML</span></span>
+          <input type="file" id="entrada" accept="application/pdf,.pdf,.zip,.xml,.xlsx,.xlsm,.xls,.ods,.csv,.docx,image/*,.png,.jpg,.jpeg,.webp,.bmp,.gif" multiple hidden>
+        </label>
+        <ul class="archivos" id="archivos" aria-label="Archivos cargados"></ul>
+        <button class="enlace" id="limpiar" hidden>Quitar todos los archivos</button>
+      </section>
 
-      <label class="campo" for="pedido">¿Qué datos necesitas de cada documento?
-        <small>Sepáralos con comas, o pregunta: «¿de qué son las facturas?», «¿de qué tratan las tesis?». Déjalo vacío para que elija los datos según el tipo de documento.</small>
-        <textarea id="pedido" placeholder="Ej.: número, fecha, proveedor, NIT, total"></textarea>
-      </label>
-      <div class="presets" id="presets" aria-label="Sugerencias">
-        <button type="button" data-v="número, fecha, proveedor, NIT, cliente, concepto, categoría, subtotal, IVA, retención, total, moneda">Facturas</button>
-        <button type="button" data-v="número, fecha, cliente, dirección, ciudad, transportador, placa">Remisiones</button>
-        <button type="button" data-v="título, autor, institución, fecha, páginas, temas, resumen">Informes y tesis</button>
-        <button type="button" data-v="">Automático</button>
-      </div>
+      <section class="paso" aria-labelledby="p2">
+        <h2 id="p2"><span class="n">2</span>Elige qué datos sacar</h2>
+        <div class="presets" id="presets" aria-label="Sugerencias">
+          <button type="button" data-v="" aria-pressed="true">Automático</button>
+          <button type="button" data-v="número, fecha, proveedor, NIT, cliente, concepto, categoría, subtotal, IVA, retención, total, moneda" aria-pressed="false">Facturas</button>
+          <button type="button" data-v="número, fecha, cliente, dirección, ciudad, transportador, placa" aria-pressed="false">Remisiones</button>
+          <button type="button" data-v="título, autor, institución, fecha, páginas, temas, resumen" aria-pressed="false">Informes y tesis</button>
+          <button type="button" data-v="número de plano, título, proyecto, escala, fecha, revisión, dibujó, revisó, aprobó, observaciones" aria-pressed="false">Planos</button>
+        </div>
+        <textarea id="pedido" aria-labelledby="p2" aria-describedby="ayudaPedido" placeholder="Ej.: número, fecha, proveedor, NIT, total"></textarea>
+        <p class="campo-ayuda" id="ayudaPedido">Escríbelos separados por comas o pregunta «¿de qué son las facturas?». Vacío = automático según el tipo de documento.</p>
+      </section>
 
-      <label class="opcion" for="conItems"><input type="checkbox" id="conItems" checked>
-        <span>Incluir las tablas de los documentos (ítems de facturas en una hoja y tablas de informes y listados en otra).</span></label>
-      <label class="opcion" for="conTexto"><input type="checkbox" id="conTexto">
-        <span>Incluir una hoja con todo el texto, línea por línea.</span></label>
-      <label class="opcion" for="forzarOcr"><input type="checkbox" id="forzarOcr">
-        <span>Leer todo como escaneado (OCR). Normalmente se activa solo en los documentos escaneados. Es lento: úsalo solo si el texto sale mal.</span></label>
+      <section class="paso" aria-labelledby="p3">
+        <h2 id="p3"><span class="n">3</span>Procesa y descarga</h2>
+        <div class="botones">
+          <button class="btn grande" id="convertir" disabled>Procesar documentos</button>
+          <button class="btn sec" id="detener" hidden>Detener</button>
+        </div>
+        <progress id="progreso" max="1" value="0" hidden></progress>
+        <div class="estado" id="estado" role="status" aria-live="polite"></div>
+        <p class="aviso-equipo" id="avisoEquipo" hidden>Tu equipo tiene poca memoria o un procesador básico: los PDF con texto, Word y Excel irán normal, pero las fotos y los escaneados pueden tardar cerca de 1 minuto por página. Se usará un modo más liviano; cierra otras pestañas para que vaya más rápido.</p>
+        <details class="opciones">
+          <summary>Más opciones</summary>
+          <label class="opcion" for="conItems"><input type="checkbox" id="conItems" checked>
+            <span>Incluir las tablas de los documentos (ítems de facturas y tablas de informes).</span></label>
+          <label class="opcion" for="conTexto"><input type="checkbox" id="conTexto">
+            <span>Incluir una hoja con todo el texto, línea por línea.</span></label>
+          <label class="opcion" for="forzarOcr"><input type="checkbox" id="forzarOcr">
+            <span>Leer todo como escaneado (OCR). Es lento: úsalo solo si el texto sale mal.</span></label>
+        </details>
+      </section>
+    </div>
 
-      <div class="botones">
-        <button class="btn" id="convertir" disabled>Procesar documentos</button>
-        <button class="btn sec" id="detener" hidden>Detener</button>
-        <button class="btn sec" id="limpiar" hidden>Quitar todos</button>
-      </div>
-      <progress id="progreso" max="1" value="0" hidden></progress>
-      <div class="estado" id="estado" role="status" aria-live="polite"></div>
-      <p class="aviso-equipo" id="avisoEquipo" hidden>Tu equipo tiene poca memoria o un procesador básico. Los PDF con texto, Word y Excel se leerán normal, pero las fotos y los PDF escaneados pueden tardar alrededor de 1 minuto por página. Se usará un modo más liviano. Cierra otras pestañas y programas para que vaya más rápido.</p>
-
-      <p class="nota">Funciona con reglas, no con inteligencia artificial: reconoce los formatos habituales en varios idiomas («Total:», «Invoice No.», «Rechnungsdatum», «NIT», «VAT»…). Los datos que no encuentra quedan marcados en la columna <b>Por revisar</b>.</p>
-      <details class="nota">
-        <summary>¿Qué computador necesito? ¿Por qué a veces tarda?</summary>
-        Todo se procesa en tu propio equipo (por eso tus archivos no se suben a ningún lado), así que la velocidad depende de tu computador:
-        <ul>
-          <li><b>PDF con texto, Word y Excel:</b> rápidos en casi cualquier equipo (segundos, incluso con 50 archivos).</li>
-          <li><b>Fotos y PDF escaneados (OCR):</b> es la parte pesada. Recomendado: 8 GB de RAM y procesador de 4 núcleos → unos 3 a 10 segundos por página. Con 4 GB de RAM o un procesador básico: de 30 segundos a 1 minuto por página, aproximadamente.</li>
-          <li><b>Mínimo:</b> 4 GB de RAM y Chrome, Edge o Firefox actualizados. En celular funciona, pero es más lento.</li>
-          <li><b>Consejos:</b> cierra otras pestañas y programas, sube los escaneados en grupos de 5 a 10 y no actives «Leer todo como escaneado» si el PDF ya tiene texto.</li>
-        </ul>
-      </details>
-      <p class="nota">Las fotos y los PDF escaneados se leen con OCR: la primera vez se descargan unos 6 MB para leer el texto de la imagen; después quedan guardados en el navegador.</p>
-    </section>
-
-    <section class="libro" aria-label="Resultado">
+    <section class="libro" aria-label="Vista previa del Excel">
       <div class="libro-cab">
-        <h2 id="titulo"></h2>
+        <div class="nombre"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="1" width="20" height="20" rx="4" fill="#ffffff"/><path d="M1 8h20M1 14h20M8 8v13M15 8v13" stroke="#2d5f4a" stroke-width="1.4"/><rect x="1" y="1" width="20" height="7" rx="4" fill="#9c7326"/><rect x="1" y="5" width="20" height="3" fill="#9c7326"/></svg><h2 id="titulo"></h2></div>
         <div class="botones">
           <button class="btn sec" id="copiar">Copiar hoja</button>
-          <button class="btn" id="descargar" disabled>Descargar Excel</button>
+          <button class="btn claro" id="descargar" disabled>Descargar Excel</button>
         </div>
       </div>
-      <div class="cifras" id="cifras"></div>
-      <p class="resumen" id="resumen"></p>
+      <div class="barra-fx"><span class="fx" aria-hidden="true">fx</span><p class="resumen" id="resumen"></p></div>
       <div class="tabla-caja" id="tablaCaja"></div>
       <div class="pestanas" id="pestanas" role="tablist" aria-label="Hojas"></div>
+      <div class="cifras" id="cifras"></div>
     </section>
-  </div>
+  </main>
+
+  <aside class="ayuda" aria-label="Ayuda">
+      <div class="tarjeta">
+        <h3>Tus archivos no se suben</h3>
+        <p>La página lee los documentos dentro de tu navegador. Nada se envía a un servidor, no hay cuenta y no se guarda nada al cerrar.</p>
+      </div>
+      <details>
+        <summary>¿Qué computador necesito?</summary>
+        Todo se procesa en tu propio equipo, así que la velocidad depende de él:
+        <ul>
+          <li><b>PDF con texto, Word, Excel y XML:</b> segundos en casi cualquier equipo, incluso con 50 archivos.</li>
+          <li><b>Fotos y PDF escaneados (OCR):</b> la parte pesada. Con 8 GB de RAM y 4 núcleos, unos 3 a 10 segundos por página; con 4 GB, de 30 segundos a 1 minuto.</li>
+          <li><b>Mínimo:</b> 4 GB de RAM y Chrome, Edge o Firefox actualizados. En celular funciona, pero más lento.</li>
+          <li><b>Consejo:</b> cierra otras pestañas y sube los escaneados en grupos de 5 a 10.</li>
+        </ul>
+      </details>
+      <details>
+        <summary>¿Cómo lee los documentos?</summary>
+        <p>Con reglas, no con inteligencia artificial: reconoce los formatos habituales en varios idiomas («Total:», «Invoice No.», «NIT», «Escala», «Drawn by»…). Lo que no encuentra queda marcado en la columna <b>Por revisar</b> y en amarillo en la vista previa. Las fotos y escaneados se leen con OCR: la primera vez se descargan unos 6 MB que quedan guardados en el navegador.</p>
+      </details>
+  </aside>
 </div>
 
 <script src="lib/pdf.min.js"></script>
 <script src="lib/xlsx.full.min.js"></script>
 <script src="lib/tesseract.min.js"></script>
-<script src="motor.js?v=10"></script>
+<script src="motor.js?v=11"></script>
 </body>
 </html>

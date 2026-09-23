@@ -1,0 +1,138 @@
+/* PDF a Excel — estilos comunes de /pdf-a-excel/ y /contadores/ */
+:root{
+  --papel:#edf0eb; --papel-2:#e2e7e1; --blanco:#fbfcfa;
+  --tinta:#12303a; --tinta-2:#2e5664; --gris:#5a6b6f;
+  --laton:#9c7326; --laton-2:#c79a42;
+  --libro:#2d5f4a; --libro-2:#e3ede7;          /* verde de libro contable: la ventana del Excel */
+  --linea:#c8d0c9; --rejilla:#dfe5e0; --error:#a3402b; --ok:#2d6b43; --aviso:#f6efdc;
+  --radio:12px; --sombra:0 1px 2px rgba(18,48,58,.06),0 8px 24px -12px rgba(18,48,58,.18);
+}
+*{box-sizing:border-box}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--papel);color:var(--tinta);
+  font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:"Literata",Georgia,serif;font-weight:500;margin:0;text-wrap:balance}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--laton);outline-offset:2px}
+.envoltura{max-width:1480px;margin:0 auto;padding:0 20px}
+@media (max-width:600px){.envoltura{padding:0 16px}}
+
+/* Barra superior: marca y secciones */
+.barra{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 24px;border-bottom:1px solid var(--linea);padding-top:12px}
+.marca{display:flex;align-items:center;gap:8px;font-family:"Literata",serif;font-size:1.05rem;padding-bottom:9px;color:var(--tinta);text-decoration:none}
+.marca svg{flex:none}
+.secciones{display:flex;gap:2px;margin-left:auto}
+.secciones a{padding:8px 14px;border:1px solid transparent;border-bottom:0;border-radius:8px 8px 0 0;color:var(--gris);text-decoration:none;font-size:.9rem;margin-bottom:-1px;white-space:nowrap}
+.secciones a:hover{color:var(--tinta);background:var(--papel-2)}
+.secciones a[aria-current="page"]{background:var(--blanco);border-color:var(--linea);color:var(--tinta);font-weight:600}
+@media (max-width:600px){.secciones{margin-left:0;width:100%}.secciones a{flex:1;text-align:center;padding:8px 6px;font-size:.84rem}}
+
+/* Encabezado compacto */
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 32px;padding-block:16px 14px}
+header .texto{max-width:760px;display:grid;gap:6px}
+h1{font-size:clamp(1.65rem,3vw,2.3rem);line-height:1.12}
+h1 em{font-style:normal;color:var(--laton)}
+header p{margin:0;color:var(--gris)}
+.sellos{display:flex;flex-wrap:wrap;gap:6px}
+.sello{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;border:1px solid var(--linea);border-radius:99px;padding:3px 10px;color:var(--tinta-2);background:var(--blanco)}
+.sello::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--libro)}
+
+/* Mesa de trabajo: pasos a la izquierda, el Excel a la derecha */
+.mesa{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:20px;align-items:start;padding-bottom:28px}
+@media (max-width:960px){.mesa{grid-template-columns:1fr}}
+.pasos{display:grid;gap:10px}
+.paso{background:var(--blanco);border:1px solid var(--linea);border-radius:var(--radio);padding:14px 16px;display:grid;gap:10px;box-shadow:var(--sombra)}
+.paso h2{font-family:"IBM Plex Sans",sans-serif;font-size:.95rem;font-weight:600;display:flex;align-items:center;gap:10px}
+.paso h2 .n{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--tinta);color:var(--blanco);font-size:.78rem;font-family:"IBM Plex Mono",monospace}
+.paso h2 small{margin-left:auto;font-weight:400;color:var(--gris);font-size:.78rem}
+
+.soltar{border:1.5px dashed var(--linea);border-radius:10px;background:var(--papel);padding:14px 14px;display:grid;gap:6px;justify-items:center;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.soltar:hover,.soltar.sobre{border-color:var(--libro);background:var(--libro-2)}
+.soltar b{font-weight:600;font-size:1rem}
+.soltar .sub{color:var(--gris);font-size:.84rem}
+.formatos{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
+.formatos span{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.04em;border:1px solid var(--linea);border-radius:5px;padding:1px 6px;background:var(--blanco);color:var(--tinta-2)}
+.formatos span.dest{border-color:var(--libro);color:var(--libro);font-weight:500}
+.archivos{list-style:none;margin:0;padding:0;max-height:200px;overflow:auto;border:1px solid var(--linea);border-radius:8px;background:var(--blanco)}
+.archivos:empty{display:none}
+.archivos li{display:flex;gap:8px;justify-content:space-between;align-items:center;padding:5px 10px;border-bottom:1px solid var(--rejilla);font-size:.8rem}
+.archivos li:last-child{border-bottom:0}
+.archivos .nom{font-family:"IBM Plex Mono",monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.archivos .est{flex:none;color:var(--gris);font-size:.74rem}
+.archivos .est.ok{color:var(--ok)} .archivos .est.error{color:var(--error)}
+.archivos button{flex:none;border:0;background:none;color:var(--gris);cursor:pointer;padding:0 2px;font-size:1rem;line-height:1}
+.archivos button:hover{color:var(--error)}
+
+.campo-ayuda{margin:0;font-size:.82rem;color:var(--gris)}
+textarea{background:var(--blanco);border:1px solid var(--linea);border-radius:8px;padding:9px 10px;resize:vertical;min-height:48px;width:100%}
+textarea:focus{border-color:var(--tinta-2)}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets button{border:1px solid var(--linea);background:var(--blanco);border-radius:99px;padding:3px 11px;font-size:.78rem;cursor:pointer;color:var(--tinta-2)}
+.presets button:hover{border-color:var(--libro);color:var(--libro)}
+.presets button[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:var(--blanco)}
+
+.botones{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--tinta);background:var(--tinta);color:var(--blanco);border-radius:8px;padding:10px 18px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn:hover:not(:disabled){background:var(--tinta-2)}
+.btn.grande{flex:1;padding:12px 18px;font-size:1rem}
+.enlace{justify-self:start;border:0;background:none;padding:0;color:var(--gris);font-size:.8rem;text-decoration:underline;cursor:pointer}
+.enlace:hover{color:var(--error)}
+.btn.sec{background:transparent;color:var(--tinta);border-color:var(--linea);font-weight:500}
+.btn.sec:hover:not(:disabled){background:var(--papel-2)}
+.btn.verde{background:var(--libro);border-color:var(--libro)}
+.btn.verde:hover:not(:disabled){background:#244d3c}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+details.opciones summary{cursor:pointer;font-size:.86rem;color:var(--tinta-2)}
+details.opciones[open] summary{margin-bottom:8px}
+.opcion{display:flex;gap:8px;align-items:flex-start;font-size:.84rem;color:var(--tinta-2);margin-top:6px}
+.opcion input{margin-top:3px}
+.estado{font-size:.88rem;color:var(--gris);min-height:1.4em}
+.estado:empty{display:none}
+.estado.error{color:var(--error)} .estado.ok{color:var(--ok)}
+progress{width:100%;height:6px;accent-color:var(--libro)}
+.aviso-equipo{font-size:.82rem;background:var(--aviso);border:1px solid #e3d3a8;border-radius:8px;padding:9px 11px;margin:0;color:var(--tinta-2)}
+
+/* La ventana del Excel (vista previa del resultado) */
+.libro{background:var(--blanco);border:1px solid var(--linea);border-radius:var(--radio);overflow:hidden;display:flex;flex-direction:column;min-width:0;box-shadow:var(--sombra)}
+@media (min-width:961px){.libro{position:sticky;top:14px;height:calc(100vh - 28px);min-height:520px;max-height:900px}}
+@media (max-width:960px){.libro{height:75vh;min-height:460px}}
+.libro-cab{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 12px 10px 14px;background:var(--libro);color:#fff}
+.libro-cab .nombre{display:flex;align-items:center;gap:9px;min-width:0}
+.libro-cab h2{font-family:"IBM Plex Sans",sans-serif;font-size:.95rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.libro-cab .btn{padding:7px 14px;font-size:.86rem}
+.libro-cab .btn.sec{color:#fff;border-color:rgba(255,255,255,.35)}
+.libro-cab .btn.sec:hover:not(:disabled){background:rgba(255,255,255,.12)}
+.libro-cab .btn.claro{background:#fff;color:var(--libro);border-color:#fff}
+.libro-cab .btn.claro:hover:not(:disabled){background:var(--libro-2)}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;border:1px solid rgba(255,255,255,.45);border-radius:99px;padding:1px 7px;margin-left:8px;vertical-align:middle;font-weight:400}
+.barra-fx{display:flex;align-items:stretch;border-bottom:1px solid var(--linea);background:var(--blanco);font-size:.86rem}
+.barra-fx .fx{flex:none;display:grid;place-items:center;width:42px;border-right:1px solid var(--linea);font-family:"Literata",serif;font-style:italic;color:var(--gris)}
+.barra-fx .resumen{margin:0;padding:8px 12px;color:var(--tinta-2);max-height:6.4em;overflow:auto}
+.tabla-caja{flex:1;min-height:0;overflow:auto;background:var(--blanco)}
+table{border-collapse:separate;border-spacing:0;font-family:"IBM Plex Mono",monospace;font-size:.78rem;font-variant-numeric:tabular-nums;min-width:100%}
+th,td{border-right:1px solid var(--rejilla);border-bottom:1px solid var(--rejilla);padding:5px 10px;text-align:left;white-space:nowrap;max-width:360px;overflow:hidden;text-overflow:ellipsis}
+thead th{position:sticky;top:0;z-index:2;background:var(--papel-2);color:var(--gris);font-weight:400;text-align:center;font-size:.7rem;padding:3px 10px}
+th.fila{position:sticky;left:0;z-index:1;color:var(--gris);font-weight:400;background:var(--papel-2);text-align:right;width:1%;font-size:.7rem}
+thead th.fila{z-index:3}
+tr.cab td{font-weight:600;background:var(--libro-2);color:var(--tinta)}
+td.num{text-align:right}
+td.falta{background:var(--aviso)}
+tr.total td{font-weight:600;border-top:2px solid var(--tinta-2)}
+tbody tr:not(.cab):hover td{background:#f4f0e2}
+.vacio{padding:24px 16px;color:var(--gris);text-align:center}
+.pestanas{display:flex;gap:1px;overflow-x:auto;background:var(--papel-2);border-top:1px solid var(--linea);padding:0 6px;flex:none}
+.pestanas button{border:0;border-bottom:3px solid transparent;background:transparent;padding:7px 13px;font-size:.8rem;cursor:pointer;white-space:nowrap;color:var(--gris)}
+.pestanas button:hover{color:var(--tinta)}
+.pestanas button[aria-selected="true"]{color:var(--libro);border-bottom-color:var(--libro);background:var(--blanco);font-weight:600}
+.cifras{display:flex;flex-wrap:wrap;gap:4px 18px;padding:6px 14px;background:var(--libro-2);border-top:1px solid var(--linea);font-size:.78rem;color:var(--tinta-2);flex:none}
+.cifra b{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--tinta);margin-right:4px}
+
+/* Ayuda al pie */
+.ayuda{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;padding-bottom:36px}
+.ayuda details,.ayuda .tarjeta{background:transparent;border:1px solid var(--linea);border-radius:var(--radio);padding:12px 14px;font-size:.84rem;color:var(--gris)}
+.ayuda summary,.ayuda h3{cursor:pointer;color:var(--tinta);font-family:"IBM Plex Sans",sans-serif;font-weight:600;font-size:.88rem}
+.ayuda h3{cursor:default;margin-bottom:6px}
+.ayuda details[open] summary{margin-bottom:6px}
+.ayuda ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}
+.ayuda p{margin:0}

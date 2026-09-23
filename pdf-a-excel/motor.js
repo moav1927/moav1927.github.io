@@ -99,7 +99,7 @@
     { id: 'plano', nombre: 'Plano', plural: 'Planos',
       titulo: ['plano', 'planos', 'drawing', 'dessin', 'blueprint', 'plan de', 'site plan', 'floor plan'],
       claves: ['escala', 'echelle', 'scale', 'lamina', 'sheet', 'dibujo', 'dibujado por', 'drawn by', 'checked by', 'fachada', 'planta', 'elevation', 'legend', 'leyenda', 'legende', 'niveau', 'nivel', 'cota', 'rev'],
-      campos: ['titulo', 'fecha', 'emisor', 'proyecto', 'paginas'] },
+      campos: ['plano', 'titulo', 'proyecto', 'emisor', 'numproyecto', 'fecha', 'escala', 'revision', 'dibujo', 'diseno', 'reviso', 'aprobo', 'observaciones', 'paginas'] },
     { id: 'presentacion', nombre: 'Presentación', plural: 'Presentaciones',
       titulo: ['presentacion', 'presentation', 'slides', 'diapositivas', 'webinar', 'keynote'],
       claves: ['agenda', 'thank you', 'gracias', 'questions', 'preguntas', 'outline'],
@@ -152,6 +152,15 @@
     resumen: { etiqueta: 'Resumen', tipo: 'resumen', syn: [] },
     cantidaditems: { etiqueta: 'Filas / ítems', tipo: 'numero', syn: [] },
     cufe: { etiqueta: 'CUFE / CUDE', tipo: 'codigo', syn: [] },
+    plano: { etiqueta: 'Número de plano', tipo: 'codigo', syn: [] },
+    escala: { etiqueta: 'Escala', tipo: 'texto', syn: ['escala', 'scale', 'echelle', 'massstab'] },
+    numproyecto: { etiqueta: 'Número de proyecto', tipo: 'codigo', syn: ['project number', 'project no', 'job number', 'job no', 'numero de proyecto', 'proyecto no', 'codigo del proyecto'] },
+    revision: { etiqueta: 'Revisión', tipo: 'codigo', syn: ['revision', 'rev', 'version'] },
+    dibujo: { etiqueta: 'Dibujó', tipo: 'texto', syn: ['drawn by', 'dibujo', 'dibujado por', 'dibujante'] },
+    diseno: { etiqueta: 'Diseñó', tipo: 'texto', syn: ['designed by', 'diseno', 'disenado por', 'disenador'] },
+    reviso: { etiqueta: 'Revisó', tipo: 'texto', syn: ['checked by', 'reviso', 'revisado por', 'reviewed by'] },
+    aprobo: { etiqueta: 'Aprobó', tipo: 'texto', syn: ['approved by', 'aprobed by', 'aprobo', 'aprobado por'] },
+    observaciones: { etiqueta: 'Observaciones', tipo: 'largo', syn: ['observaciones', 'observations', 'notas generales', 'general notes', 'notas', 'notes'] },
     tipodian: { etiqueta: 'Tipo de documento DIAN', tipo: 'texto', syn: [] },
     referencia: { etiqueta: 'Factura afectada', tipo: 'codigo', syn: ['factura de referencia', 'factura afectada', 'referencia factura', 'factura relacionada'] },
     basegravable: { etiqueta: 'Base gravable', tipo: 'dinero', syn: ['base gravable', 'base imponible', 'base iva'] },
@@ -182,6 +191,11 @@
     'concepto': 'concepto', 'productos': 'concepto', 'servicios': 'concepto', 'que se compro': 'concepto', 'detalle': 'concepto', 'descripcion de la compra': 'concepto',
     'categoria': 'categoria', 'sector': 'categoria', 'tipo de gasto': 'categoria', 'rubro': 'categoria',
     'tema': 'temas', 'temas': 'temas', 'temas principales': 'temas', 'de que trata': 'temas', 'de que tratan': 'temas', 'topic': 'temas', 'topics': 'temas',
+    'numero de plano': 'plano', 'plano': 'plano', 'no de plano': 'plano', 'codigo del plano': 'plano', 'lamina': 'plano', 'hoja': 'plano', 'sheet': 'plano', 'drawing number': 'plano',
+    'titulo del plano': 'titulo', 'nombre del plano': 'titulo', 'contenido': 'titulo', 'titulo del proyecto': 'proyecto', 'nombre del proyecto': 'proyecto',
+    'escala': 'escala', 'scale': 'escala', 'numero de proyecto': 'numproyecto', 'project number': 'numproyecto', 'revision': 'revision', 'rev': 'revision', 'version': 'revision',
+    'dibujo': 'dibujo', 'dibujante': 'dibujo', 'drawn by': 'dibujo', 'diseno': 'diseno', 'disenador': 'diseno', 'designed by': 'diseno', 'reviso': 'reviso', 'checked by': 'reviso',
+    'aprobo': 'aprobo', 'aprobado por': 'aprobo', 'approved by': 'aprobo', 'firmas': 'aprobo', 'observaciones': 'observaciones', 'observations': 'observaciones', 'notas': 'observaciones', 'notes': 'observaciones', 'rotulo': 'plano',
     'cufe': 'cufe', 'cude': 'cufe', 'codigo unico': 'cufe', 'tipo dian': 'tipodian', 'factura afectada': 'referencia', 'referencia': 'referencia',
     'base gravable': 'basegravable', 'inc': 'inc', 'impoconsumo': 'inc', 'impuesto al consumo': 'inc',
     'retefuente': 'retefuente', 'retencion en la fuente': 'retefuente', 'rete fuente': 'retefuente', 'reteiva': 'reteiva', 'rete iva': 'reteiva', 'reteica': 'reteica', 'rete ica': 'reteica',
@@ -252,17 +266,23 @@
   zona.addEventListener('dragover', e => { e.preventDefault(); zona.classList.add('sobre'); });
   zona.addEventListener('dragleave', () => zona.classList.remove('sobre'));
   zona.addEventListener('drop', e => { e.preventDefault(); zona.classList.remove('sobre'); agregar(e.dataTransfer.files); });
-  $('#presets').onclick = e => { const b = e.target.closest('button'); if (b) $('#pedido').value = b.dataset.v; };
+  const marcarPreset = () => { const v = $('#pedido').value.trim(); for (const b of $('#presets').querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.v === v)); };
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if (b) { $('#pedido').value = b.dataset.v; marcarPreset(); } };
+  $('#pedido').addEventListener('input', marcarPreset);
 
   // =====================================================================
   // Lectura de PDF: piezas de texto con posición (y crece hacia abajo)
   // =====================================================================
   async function piezasTexto(pag) {
-    const alto = pag.getViewport({ scale: 1 }).height;
+    // Coordenadas de pantalla: respeta páginas con origen desplazado (planos de CAD) o rotadas
+    const vp = pag.getViewport({ scale: 1 });
     const { items } = await pag.getTextContent();
     const piezas = items.filter(it => it.str.trim()).map(it => {
-      const h = Math.abs(it.transform[3]) || Math.abs(it.transform[0]) || 10;
-      return { x: it.transform[4], fin: it.transform[4] + it.width, y: alto - it.transform[5], alto: h, txt: it.str };
+      const h = Math.hypot(it.transform[2], it.transform[3]) || Math.abs(it.transform[0]) || 10;
+      const [x1, y1] = vp.convertToViewportPoint(it.transform[4], it.transform[5]);
+      const dx = it.width / (Math.hypot(it.transform[0], it.transform[1]) || 1);
+      const [x2] = vp.convertToViewportPoint(it.transform[4] + it.transform[0] * dx, it.transform[5] + it.transform[1] * dx);
+      return { x: Math.min(x1, x2), fin: Math.max(x1, x2), y: y1, alto: h, txt: it.str };
     });
     return piezas;
   }
@@ -571,6 +591,105 @@
   // Clasificación
   // =====================================================================
   const cuenta = (txt, k) => (txt.match(new RegExp('(^|[^a-z])' + escRe(k) + '([^a-z]|$)', 'g')) || []).length;
+  // =====================================================================
+  // Planos: el rótulo (cajetín) con número de plano, título, proyecto, escala, firmas y observaciones
+  // =====================================================================
+  const ROTULO = [
+    ['dibujo', /^(drawn( by)?|dibujo|dibujado( por)?|dibujante|dib)$/],
+    ['diseno', /^(designed( by)?|design|diseno|disenado( por)?|disenador|disen[oó])$/],
+    ['reviso', /^(checked( by)?|reviewed( by)?|reviso|revisado( por)?|revisor)$/],
+    ['aprobo', /^(approved( by)?|aprobed( by)?|aprobo|aprobado( por)?|vo ?bo)$/],
+    ['escala', /^(scale|escala|esc|echelle|massstab)$/],
+    ['fecha', /^(date|fecha|fecha de emision|issue date|datum)$/],
+    ['numproyecto', /^(project (number|no|n[o°º])|job (no|number)|proyecto (no|n[o°º])|no (de )?proyecto|numero de proyecto|codigo (del )?proyecto)$/],
+    ['plano', /^(plano|plano (no|n[o°º]|numero)|no (de )?plano|numero de plano|codigo (del )?plano|lamina( no| n[o°º])?|hoja( no| n[o°º])?|sheet( no| number)?|drawing (no|number)|dwg( no)?)$/],
+    ['revision', /^(rev|revision|version)$/],
+    ['proyecto', /^(proyecto|project|obra|project name|nombre del proyecto)$/],
+    ['titulo', /^(contiene|contenido|titulo( del plano)?|drawing title|title|nombre del plano|descripcion del plano)$/],
+    ['cliente', /^(cliente|client|owner|propietario|contratante)$/],
+    ['observaciones', /^(observaciones|observations|notas( generales)?|notes|general notes|nota)$/],
+  ];
+  const RE_ESCALA = /\b1\s?:\s?\d{1,5}\b|\b(indicada|as shown|n\.?t\.?s|sin escala|varias)\b/i;
+  const etiquetaRotulo = t => { const n = norm(t).replace(/[:.\-]+$/, '').replace(/[.]/g, '').trim(); return ROTULO.find(([, re]) => re.test(n))?.[0] || null; };
+  function rotuloDoc(doc) {
+    if (doc._rotulo !== undefined) return doc._rotulo;
+    // Piezas sueltas de la primera página (x, fin, y, alto, txt)
+    let P = doc.piezas1;
+    if (!P) P = doc.lineas.filter(l => l.pagina === 1).flatMap(l => (l.cx || []).map(c => ({ x: c.x, fin: c.fin, y: l.y, alto: l.alto, txt: c.txt })));
+    P = P.filter(p => p.txt.trim());
+    if (P.length < 5) return (doc._rotulo = null);
+    // "ESCALA: 1:75" en una sola pieza → etiqueta y valor
+    const piezas = [];
+    for (const p of P) {
+      const m = p.txt.match(/^\s*([^:]{2,30}?)\s*:\s*(.+)$/);
+      if (m && etiquetaRotulo(m[1]) && !/^\d/.test(m[1])) { const k = (p.fin - p.x) / Math.max(1, p.txt.length); piezas.push({ ...p, txt: m[1], fin: p.x + m[1].length * k }, { ...p, txt: m[2].trim(), x: p.x + (p.txt.length - m[2].length) * k }); }
+      else piezas.push(p);
+    }
+    const etiquetas = piezas.map(p => ({ p, k: etiquetaRotulo(p.txt) })).filter(e => e.k);
+    const fuertes = etiquetas.filter(e => ['dibujo', 'diseno', 'reviso', 'aprobo', 'escala', 'numproyecto', 'plano'].includes(e.k));
+    if (new Set(fuertes.map(e => e.k)).size < 2) return (doc._rotulo = null);
+    const W = Math.max(...P.map(p => p.fin)), H = Math.max(...P.map(p => p.y));
+    const bx0 = Math.min(...fuertes.map(e => e.p.x)), by0 = Math.min(...fuertes.map(e => e.p.y));
+    const altoEtq = fuertes.map(e => e.p.alto).sort((a, b) => a - b)[Math.floor(fuertes.length / 2)] || 10;
+    const esEtq = new Set(etiquetas.map(e => e.p));
+    const validos = {
+      escala: v => RE_ESCALA.test(v), fecha: v => !!(fechaDe(v) || fechaDe(v, false, true)), revision: v => /^[A-Z0-9]{1,4}$/i.test(v.trim()),
+      numproyecto: v => /\d/.test(v) && v.length <= 30, plano: v => /[A-Z]/i.test(v) || /\d/.test(v),
+      nombre: v => /\p{L}{2}/u.test(v) && !RE_ESCALA.test(v) && !fechaDe(v) && !etiquetaRotulo(v),
+    };
+    const ok = (k, v) => (validos[k] || validos.nombre)(v);
+    // Valor: la pieza más cercana a la derecha en la misma línea, o la de abajo
+    const valor = e => {
+      const { p, k } = e;
+      const der = piezas.filter(q => q !== p && !esEtq.has(q) && q.x >= p.fin - 2 && Math.abs(q.y - p.y) < Math.max(p.alto, 6) * 0.7 && q.x - p.fin < W * 0.2 && ok(k, q.txt)).sort((a, b) => a.x - b.x)[0];
+      // Etiqueta pequeña arriba y valor debajo (rótulos en franja)
+      const abajo = piezas.filter(q => q !== p && !esEtq.has(q) && q.y > p.y + 1 && q.alto <= Math.max(p.alto, 6) * 2.5 && q.y - p.y < Math.max(p.alto, q.alto, 8) * 3.5 && q.x < p.fin + 40 && q.fin > p.x - 40 && ok(k, q.txt)).sort((a, b) => a.y - b.y || Math.abs(a.x - p.x) - Math.abs(b.x - p.x))[0];
+      const dDer = der ? der.x - p.fin : Infinity, dAbajo = abajo ? (abajo.y - p.y) * 1.5 : Infinity;
+      const q = dDer <= dAbajo ? der : abajo;
+      return q ? q.txt.trim() : null;
+    };
+    const r = { etiquetas: new Set(fuertes.map(e => e.k)).size, presentes: new Set(etiquetas.map(e => e.k)) };
+    for (const e of etiquetas) if (e.k !== 'observaciones' && r[e.k] == null) { const v = valor(e); if (v) r[e.k] = v; }
+    // Zona del rótulo: alrededor de las etiquetas
+    const enZona = q => q.x >= bx0 - W * 0.03 && q.y >= by0 - H * 0.2;
+    const zona = piezas.filter(enZona);
+    // Número de plano: el código más grande del rótulo (MEC-31, A-101, E-02…)
+    const RE_COD = /^[A-Z]{1,6}[\s\-_.]?\d{1,4}([\-.]\d{1,3})?[A-Z]?$/i;
+    if (!r.plano) {
+      const cod = zona.filter(q => RE_COD.test(q.txt.trim()) && !RE_ESCALA.test(q.txt) && q.alto >= altoEtq * 1.3).sort((a, b) => b.alto - a.alto)[0];
+      if (cod) r.plano = cod.txt.trim();
+    }
+    // Título y proyecto: los textos grandes del rótulo, agrupados en bloques
+    const usados = new Set(Object.values(r).map(v => norm(v)));
+    const grandes = zona.filter(q => !esEtq.has(q) && q.alto >= altoEtq * 1.5 && /\p{L}{2}/u.test(q.txt) && !RE_ESCALA.test(q.txt) && !fechaDe(q.txt) && !usados.has(norm(q.txt)) && !RE_COD.test(q.txt.trim()))
+      .sort((a, b) => a.y - b.y || a.x - b.x);
+    const bloques = [];
+    for (const q of grandes) {
+      const b = bloques.at(-1);
+      if (b && Math.abs(b.alto - q.alto) < q.alto * 0.2 && q.y - b.ultY < q.alto * 1.6 && q.y - b.ultY >= -2) { if (Math.abs(q.y - b.ultY) < q.alto * 0.4) b.partes[b.partes.length - 1] += ' ' + q.txt.trim(); else b.partes.push(q.txt.trim()); b.ultY = q.y; }
+      else bloques.push({ alto: q.alto, ultY: q.y, partes: [q.txt.trim()] });
+    }
+    const textos = bloques.map(b => b.partes.join(' ').replace(/\s+/g, ' '));
+    if (!r.titulo && !r.proyecto && textos.length >= 2) { r.proyecto = textos[0]; r.titulo = textos.slice(1).sort((a, b) => b.length - a.length)[0]; }
+    else if (!r.titulo && textos.length) r.titulo = textos.find(t => norm(t) !== norm(r.proyecto || '')) || null;
+    else if (!r.proyecto && textos.length) r.proyecto = textos.find(t => norm(t) !== norm(r.titulo || '')) || null;
+    // Observaciones: lo que está debajo de la etiqueta (en su recuadro)
+    const obs = etiquetas.filter(e => e.k === 'observaciones').sort((a, b) => (enZona(b.p) - enZona(a.p)));
+    for (const { p } of obs) {
+      const lineas = [];
+      for (const q of piezas.filter(q => q.y > p.y + 1 && q.y - p.y < H * 0.2 && q.x >= p.x - 15 && q.x < p.x + W * 0.22).sort((a, b) => a.y - b.y || a.x - b.x)) {
+        if (esEtq.has(q) || q.alto >= altoEtq * 1.5 || grandes.includes(q)) break;
+        const ult = lineas.at(-1);
+        if (ult && q.y - ult.y > Math.max(q.alto, 8) * 2.6) break;
+        if (ult && Math.abs(q.y - ult.y) < q.alto * 0.5) ult.t += ' ' + q.txt.trim(); else lineas.push({ y: q.y, t: q.txt.trim() });
+      }
+      const texto = lineas.map(l => l.t).join(' ').replace(/\s+/g, ' ').trim();
+      if (texto) { r.observaciones = texto.length > 600 ? texto.slice(0, 597) + '…' : texto; break; }
+      r.observaciones ??= 'Sin observaciones';
+    }
+    return (doc._rotulo = r);
+  }
+
   function clasificar(doc, nombreArchivo, meta) {
     const inicio = doc.lineas.filter(l => l.pagina === 1).slice(0, 16);
     const altoMax = Math.max(...inicio.map(l => l.alto), 1);
@@ -594,6 +713,9 @@
         if (doc.lineas.some(l => l.pagina === 1 && /@/.test(l.texto))) p += 3;
       }
       if (t.id === 'plano') {
+        const rot = rotuloDoc(doc);
+        if (rot) p += 8 + rot.etiquetas * 3;
+        if (meta.ladoMayor >= 1600) p += 8; else if (meta.ladoMayor >= 1150) p += 3;
         // Un plano lleva escala (1:100…) o se llama así; "drawing" suelto no basta
         if (doc.lineas.some(l => /\b1\s?:\s?(20|25|50|75|100|125|150|200|250|500|1000|2000|5000)\b/.test(l.texto))) p += 6;
         else if (!inicio.some(l => /\b(plano|planos|blueprint|floor plan|site plan)\b/.test(l.textoN))) p *= 0.3;
@@ -982,6 +1104,15 @@
       if (typeof d.total === 'number') partes.push(`por ${fmtMonto(d.total, d.moneda)}`);
       return partes.join(' ') + (d.concepto ? `: ${d.concepto}.` : items ? `; ${items} ítem${items === 1 ? '' : 's'}.` : '.');
     }
+    if (tipo.id === 'plano') {
+      const r = rotuloDoc(doc) || {};
+      const partes = [`Plano${r.plano ? ' ' + r.plano : ''}${d.titulo ? ` «${d.titulo}»` : ''}${r.proyecto ? ' del proyecto ' + r.proyecto : ''}`];
+      if (r.escala) partes.push(`escala ${r.escala}`);
+      if (d.fecha) partes.push(`fecha ${d.fecha}`);
+      if (r.revision) partes.push(`revisión ${r.revision}`);
+      const firmas = [r.diseno && `diseñó ${r.diseno}`, r.dibujo && `dibujó ${r.dibujo}`, r.reviso && `revisó ${r.reviso}`, r.aprobo && `aprobó ${r.aprobo}`].filter(Boolean);
+      return partes.join(', ') + (firmas.length ? '; ' + firmas.join(', ') : '') + '.' + (r.observaciones && r.observaciones !== 'Sin observaciones' ? ` Observaciones: ${r.observaciones}` : '');
+    }
     if (tipo.id === 'datos') {
       const t = doc.tablas.slice().sort((a, b) => b.filas.length - a.filas.length)[0];
       const cols = t ? t.columnas.filter(c => !/^Columna/.test(c)).slice(0, 6) : [];
@@ -1127,7 +1258,15 @@
 
   function extraerCampo(doc, clave, tipo, datos, meta) {
     if (doc.xml && clave in doc.xml.valores) return doc.xml.valores[clave];
+    if (tipo.id === 'plano' && (clave === 'proyecto' || clave === 'cliente' || clave === 'fecha') && rotuloDoc(doc)?.[clave]) return clave === 'fecha' ? (fechaDe(rotuloDoc(doc).fecha) || rotuloDoc(doc).fecha) : rotuloDoc(doc)[clave];
     switch (clave) {
+      case 'plano': case 'escala': case 'numproyecto': case 'revision': case 'dibujo': case 'diseno': case 'reviso': case 'aprobo': case 'observaciones': {
+        const r = tipo.id === 'plano' ? rotuloDoc(doc) : null;
+        if (r?.[clave]) return r[clave];
+        if (clave === 'plano') return tipo.id === 'plano' ? (norm(meta.archivo || '').match(/^[a-z]{1,6}[\-_ ]?\d{1,4}/)?.[0].toUpperCase() ?? null) : null;
+        if (clave === 'escala') { const l = doc.lineas.find(l => RE_ESCALA.test(l.texto) && /escala|scale/.test(l.textoN)); return l ? l.texto.match(RE_ESCALA)[0] : null; }
+        return CAMPOS[clave].syn.length ? buscar(doc, CAMPOS[clave]) : null;
+      }
       case 'cufe': {
         // 96 caracteres hexadecimales, a veces partidos en varias líneas
         const i = doc.lineas.findIndex(l => /\b(cufe|cude)\b/.test(l.textoN));
@@ -1140,7 +1279,8 @@
       case 'temas': return COMERCIALES.has(tipo.id) ? null : temasDoc(doc);
       case 'numero': return numeroDoc(doc, tipo);
       case 'cliente': return tipo.id === 'carta' ? destinatarioCarta(doc) : clienteDoc(doc)?.v ?? null;
-      case 'titulo': return (v => v && v.split(/\s+/).length >= 2 ? v : null)(buscar(doc, CAMPOS.titulo)) || (tipo.id === 'carta' ? buscar(doc, { tipo: 'texto', syn: ['asunto', 'subject', 're', 'ref', 'referencia', 'objet', 'betreff', 'onderwerp'] }) : null) || (!tipo.comercial && meta.tituloMeta) || tituloInfo(doc)?.texto || meta.tituloMeta || null;
+      case 'titulo': if (tipo.id === 'plano' && rotuloDoc(doc)?.titulo) return rotuloDoc(doc).titulo;
+        return (v => v && v.split(/\s+/).length >= 2 ? v : null)(buscar(doc, CAMPOS.titulo)) || (tipo.id === 'carta' ? buscar(doc, { tipo: 'texto', syn: ['asunto', 'subject', 're', 'ref', 'referencia', 'objet', 'betreff', 'onderwerp'] }) : null) || (!tipo.comercial && meta.tituloMeta) || tituloInfo(doc)?.texto || meta.tituloMeta || null;
       case 'emisor': return tipo.id === 'carta' ? (firmaCarta(doc) || buscar(doc, CAMPOS.emisor)) : emisorDoc(doc, tipo);
       case 'proveedor': return buscar(doc, CAMPOS.proveedor) || emisorDoc(doc, tipo);
       case 'autor': return autorDoc(doc, tipo);
@@ -1450,7 +1590,7 @@
     if (RE_NO_SOPORTADO.test(a.nombre)) throw { msg: /\.doc$/i.test(a.nombre) ? 'Word antiguo (.doc): guárdalo como .docx' : 'Formato no soportado: conviértelo a PDF' };
     const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await a.file.arrayBuffer()) }).promise;
     const n = Math.min(pdf.numPages, MAX_PAGINAS);
-    const paginas = [], crudas = []; let conOcr = 0, sinLeer = 0, camposFormulario = 0, horizontales = 0, info = {};
+    const paginas = [], crudas = []; let conOcr = 0, sinLeer = 0, camposFormulario = 0, horizontales = 0, info = {}, ladoMayor = 0;
     try {
       try { const f = await pdf.getFieldObjects(); camposFormulario = f ? Object.keys(f).length : 0; } catch { }
       try { info = (await pdf.getMetadata())?.info || {}; } catch { }
@@ -1461,6 +1601,7 @@
         const pag = await pdf.getPage(p);
         const vp = pag.getViewport({ scale: 1 });
         if (vp.width > vp.height * 1.1) horizontales++;
+        if (p === 1) ladoMayor = Math.max(vp.width, vp.height);
         const piezas = $('#forzarOcr').checked ? [] : await piezasTexto(pag);
         if (piezas.map(x => x.txt).join('').replace(/\s/g, '').length < 20) vacias.push(p - 1);
         crudas.push(piezas);
@@ -1508,7 +1649,7 @@
       }
       paginas.forEach((ls, k) => paginas[k] = porColumnas(ls));
     } finally { pdf.destroy(); }
-    return { paginas, numPaginas: pdf.numPages ?? n, leidas: n, conOcr, sinLeer, camposFormulario, horizontales, info };
+    return { paginas, numPaginas: pdf.numPages ?? n, leidas: n, conOcr, sinLeer, camposFormulario, horizontales, info, ladoMayor, piezas1: crudas[0] };
   }
 
   $('#convertir').onclick = async () => {
@@ -1528,10 +1669,11 @@
         const leido = await leerArchivo(a, i, archivos.length);
         const { paginas, numPaginas, leidas, conOcr, sinLeer, camposFormulario, horizontales, info } = leido;
         const doc = analizar(paginas);
+        if (leido.piezas1) doc.piezas1 = leido.piezas1;
         if (leido.xml) { doc.xml = leido.xml; doc.tablas = leido.xml.tablas; doc._items = leido.xml.items; }
         doc.ocr = conOcr > 0;
         if (!doc.lineas.length) throw { msg: 'Sin texto' };
-        const meta = { paginas: numPaginas, leidas, camposFormulario, horizontales, ...metadatos(info, doc), idioma: doc.xml ? 'Español' : detectarIdioma(doc.lineas.slice(0, 400).map(l => l.texto).join(' ')) };
+        const meta = { archivo: a.nombre, paginas: numPaginas, leidas, camposFormulario, horizontales, ladoMayor: leido.ladoMayor || 0, ...metadatos(info, doc), idioma: doc.xml ? 'Español' : detectarIdioma(doc.lineas.slice(0, 400).map(l => l.texto).join(' ')) };
         doc.meta = meta;
         idiomaActual = meta.idioma;
         // ¿Día/mes o mes/día? Lo decide una fecha inequívoca del propio documento; si no hay, mes/día solo en inglés con dólares
@@ -1608,7 +1750,8 @@
     let faltantes = 0;
     const filas = lista.map(d => {
       const vals = claves.map(k => d.datos[k] ?? '');
-      const noAplica = k => (['concepto', 'categoria'].includes(k) && !COMERCIALES.has(d.tipo.id)) || (k === 'temas' && COMERCIALES.has(d.tipo.id));
+      const noAplica = k => (['concepto', 'categoria'].includes(k) && !COMERCIALES.has(d.tipo.id)) || (k === 'temas' && COMERCIALES.has(d.tipo.id)) ||
+        (d.tipo.id === 'plano' && d.doc._rotulo && (k === 'emisor' || ['numproyecto', 'revision', 'dibujo', 'diseno', 'reviso', 'aprobo', 'observaciones', 'escala'].includes(k) && !d.doc._rotulo.presentes.has(k)));   // el rótulo no tiene ese recuadro; la empresa suele ir como logo   // el rótulo no tiene ese recuadro
       const f = etiquetas.filter((_, j) => (vals[j] === '' || vals[j] === null) && !noAplica(claves[j]));
       if (d.confianza === 'baja') f.unshift('tipo de documento');
       if (d.sinLeer) f.push(`${d.sinLeer} páginas escaneadas sin leer`);
@@ -1744,12 +1887,13 @@
     const catOrden = Object.entries(porCategoria).sort((a, b) => b[1].n - a[1].n);
     const temasLote = {};
     for (const d of ok) {
-      if (COMERCIALES.has(d.tipo.id)) continue;
+      if (COMERCIALES.has(d.tipo.id) || d.tipo.id === 'plano') continue;
       const t = d.datos.temas ?? d.datos._temas;
       if (t) for (const x of String(t).split(', ')) { const k = norm(x); (temasLote[k] ??= { forma: x, n: 0 }).n++; }
     }
-    const nNoCom = ok.filter(d => !COMERCIALES.has(d.tipo.id)).length;
-    const temasPorDoc = ok.filter(d => !COMERCIALES.has(d.tipo.id) && (d.datos.temas ?? d.datos._temas)).map(d => [d.archivo, d.tipo.nombre, d.datos.temas ?? d.datos._temas]);
+    const nNoCom = ok.filter(d => !COMERCIALES.has(d.tipo.id) && d.tipo.id !== 'plano').length;
+    const planos = ok.filter(d => d.tipo.id === 'plano').map(d => { const r = d.doc._rotulo || {}; const t = d.datos.titulo ?? d.datos._titulo ?? r.titulo; return (r.plano || d.archivo.replace(/\.[^.]+$/, '')) + (t ? ` (${t})` : ''); });
+    const temasPorDoc = ok.filter(d => !COMERCIALES.has(d.tipo.id) && d.tipo.id !== 'plano' && (d.datos.temas ?? d.datos._temas)).map(d => [d.archivo, d.tipo.nombre, d.datos.temas ?? d.datos._temas]);
     const repetidos = Object.values(temasLote).filter(x => x.n >= 2).sort((a, b) => b.n - a.n);
     const temasComunes = Object.values(temasLote).filter(x => x.n >= 2 || nNoCom === 1).sort((a, b) => b.n - a.n).slice(0, 8);
     let texto = [
@@ -1757,6 +1901,7 @@
       errores.length ? `${errores.length === 1 ? 'Uno no se pudo leer' : errores.length + ' no se pudieron leer'} (${errores.map(d => d.error.toLowerCase()).filter((v, i, a) => a.indexOf(v) === i).join(', ')}).` : '',
       textoIdiomas && Object.keys(idiomas).length > 1 ? `Idiomas: ${textoIdiomas}.` : '',
       frasesDinero.length ? `Sumas por tipo: ${frasesDinero.join('; ')}.` : '',
+      planos.length ? `Plano${planos.length === 1 ? '' : 's'}: ${planos.slice(0, 8).join('; ')}${planos.length > 8 ? '; …' : ''}.` : '',
       catOrden.length ? `Los documentos comerciales son principalmente de ${catOrden.slice(0, 4).map(([c, x]) => `${c.toLowerCase()} (${x.n})`).join(', ')}.` : '',
       temasComunes.length ? `Temas ${nNoCom === 1 ? 'del documento' : 'en común'}: ${temasComunes.map(x => x.forma + (x.n > 1 ? ` (${x.n})` : '')).join(', ')}.` : (temasPorDoc.length ? `Temas por documento: ${temasPorDoc.slice(0, 5).map(([a, , t]) => `${a.replace(/\.[^.]+$/, '')} (${t.split(', ').slice(0, 3).join(', ')})`).join('; ')}${temasPorDoc.length > 5 ? '; …' : ''}.` : ''),
       largos.length ? `El más extenso es «${largos[0].datos.titulo ?? largos[0].datos._titulo ?? largos[0].archivo}» (${largos[0].paginas} páginas).` : '',
@@ -1795,7 +1940,7 @@
         hojas.push({ nombre: 'Ítems', columnas: ['Archivo', 'Tipo', 'Número doc.', 'Página', ...cols], filas: filas.map(f => Array.from({ length: ancho }, (_, j) => f[j] ?? '')) });
       }
       const apiladas = [];
-      for (const d of ok.filter(d => !COMERCIALES.has(d.tipo.id))) for (const t of d.doc.tablas) {
+      for (const d of ok.filter(d => !COMERCIALES.has(d.tipo.id) && d.tipo.id !== 'plano')) for (const t of d.doc.tablas) {
         if (apiladas.length > 20000) break;
         apiladas.push([`${d.archivo} · página ${t.pagina}`], t.columnas, ...t.filas.map(f => f.map(convertir)), []);
       }
@@ -1832,11 +1977,14 @@
       ['2026-09-02', 'Factura electrónica de venta', 'TA877', '800222333-5', 'Transportes Andinos Ltda.', 6210000, 0, 62100, 6210000, 'COP', 'PDF (revisar)'],
       ['', 'TOTAL COP', '', '', '', { t: 'n', v: 10788000 }, { t: 'n', v: 780220 }, { t: 'n', v: 225175 }, { t: 'n', v: 11418220 }, '', '']] }]
   };
-  function mostrar(datos) { libro = datos; esEjemplo = false; hojaActiva = Math.min(1, datos.hojas.length - 1); pintar(); }
+  function mostrar(datos) {
+    libro = datos; esEjemplo = false; hojaActiva = Math.min(1, datos.hojas.length - 1); pintar();
+    if (matchMedia('(max-width: 960px)').matches) $('.libro').scrollIntoView({ behavior: 'smooth', block: 'start' });   // en celular el resultado queda debajo
+  }
   const valorCelda = v => (v && typeof v === 'object') ? v.v : v;
   function pintar() {
     $('#titulo').innerHTML = esc(libro.titulo) + (esEjemplo ? '<span class="chip">Ejemplo</span>' : '');
-    $('#cifras').innerHTML = libro.cifras.map(([n, t]) => `<div class="cifra"><b>${esc(typeof n === 'number' ? n.toLocaleString('es-CO') : n)}</b><span>${esc(t)}</span></div>`).join('');
+    $('#cifras').innerHTML = libro.cifras.map(([n, t]) => `<span class="cifra"><b>${esc(typeof n === 'number' ? n.toLocaleString('es-CO') : n)}</b>${esc(t)}</span>`).join('');
     $('#resumen').textContent = libro.resumen;
     const h = libro.hojas[hojaActiva];
     const ancho = Math.max(h.columnas.length, ...h.filas.slice(0, 1000).map(f => f.length));
@@ -1848,8 +1996,9 @@
       const falta = iRev >= 0 && (v === '' || v == null) && j > 2 && j < iRev - 1 && i < n - nt;
       return `<td class="${typeof v === 'number' ? 'num' : ''}${falta ? ' falta' : ''}" title="${esc(v ?? '')}">${esc(typeof v === 'number' ? fmtNum(v) : v ?? '')}</td>`;
     };
-    $('#tablaCaja').innerHTML = `<table><thead><tr><th class="fila"></th>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${
-      h.filas.slice(0, 1000).map((f, i) => `<tr class="${i >= n - nt ? 'total' : ''}"><th class="fila">${i + 1}</th>${cols.map((_, j) => celda(f[j] ?? '', i, j)).join('')}</tr>`).join('')
+    // Como en Excel: letras de columna arriba y los encabezados en la fila 1 (los números coinciden con el archivo descargado)
+    $('#tablaCaja').innerHTML = `<table><thead><tr><th class="fila"></th>${cols.map((_, j) => `<th>${colLetra(j)}</th>`).join('')}</tr></thead><tbody><tr class="cab"><th class="fila">1</th>${cols.map(c => `<td title="${esc(c)}">${esc(c)}</td>`).join('')}</tr>${
+      h.filas.slice(0, 1000).map((f, i) => `<tr class="${i >= n - nt ? 'total' : ''}"><th class="fila">${i + 2}</th>${cols.map((_, j) => celda(f[j] ?? '', i, j)).join('')}</tr>`).join('')
     }</tbody></table>${n > 1000 ? `<p class="vacio">Vista previa de 1.000 de ${n.toLocaleString('es-CO')} filas. El Excel las incluye todas.</p>` : ''}`;
     $('#pestanas').innerHTML = libro.hojas.map((x, i) =>
       `<button role="tab" aria-selected="${i === hojaActiva}" data-i="${i}">${esc(x.nombre)} · ${x.nombre === 'Tablas' ? x.filas.filter(f => f.length === 1).length : x.filas.length - (x.nTotales || 0)}</button>`).join('');
