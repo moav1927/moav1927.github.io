@@ -103,6 +103,9 @@
   .pestanas button{border:0;border-bottom:3px solid transparent;background:transparent;padding:8px 14px;font-size:.85rem;cursor:pointer;white-space:nowrap;color:var(--gris)}
   .pestanas button[aria-selected="true"]{color:var(--tinta);border-bottom-color:var(--laton);background:var(--blanco);font-weight:600}
   .vacio{padding:32px 16px;color:var(--gris);text-align:center}
+  .aviso-equipo{font-size:.85rem;background:var(--aviso);border:1px solid #e3d3a8;border-radius:8px;padding:10px 12px;margin:0;color:var(--tinta-2)}
+  details.nota summary{cursor:pointer;color:var(--tinta-2);font-weight:500}
+  details.nota ul{margin:8px 0 0;padding-left:18px;display:grid;gap:4px}
 </style>
 </head>
 <body>
@@ -139,7 +142,7 @@
       <label class="opcion" for="conTexto"><input type="checkbox" id="conTexto">
         <span>Incluir una hoja con todo el texto, línea por línea.</span></label>
       <label class="opcion" for="forzarOcr"><input type="checkbox" id="forzarOcr">
-        <span>Leer todo como escaneado (OCR). Normalmente se activa solo en las páginas sin texto.</span></label>
+        <span>Leer todo como escaneado (OCR). Normalmente se activa solo en los documentos escaneados. Es lento: úsalo solo si el texto sale mal.</span></label>
 
       <div class="botones">
         <button class="btn" id="convertir" disabled>Procesar documentos</button>
@@ -148,8 +151,19 @@
       </div>
       <progress id="progreso" max="1" value="0" hidden></progress>
       <div class="estado" id="estado" role="status" aria-live="polite"></div>
+      <p class="aviso-equipo" id="avisoEquipo" hidden>Tu equipo tiene poca memoria o un procesador básico. Los PDF con texto, Word y Excel se leerán normal, pero las fotos y los PDF escaneados pueden tardar alrededor de 1 minuto por página. Se usará un modo más liviano. Cierra otras pestañas y programas para que vaya más rápido.</p>
 
       <p class="nota">Funciona con reglas, no con inteligencia artificial: reconoce los formatos habituales en varios idiomas («Total:», «Invoice No.», «Rechnungsdatum», «NIT», «VAT»…). Los datos que no encuentra quedan marcados en la columna <b>Por revisar</b>.</p>
+      <details class="nota">
+        <summary>¿Qué computador necesito? ¿Por qué a veces tarda?</summary>
+        Todo se procesa en tu propio equipo (por eso tus archivos no se suben a ningún lado), así que la velocidad depende de tu computador:
+        <ul>
+          <li><b>PDF con texto, Word y Excel:</b> rápidos en casi cualquier equipo (segundos, incluso con 50 archivos).</li>
+          <li><b>Fotos y PDF escaneados (OCR):</b> es la parte pesada. Recomendado: 8 GB de RAM y procesador de 4 núcleos → unos 3 a 10 segundos por página. Con 4 GB de RAM o un procesador básico: de 30 segundos a 1 minuto por página, aproximadamente.</li>
+          <li><b>Mínimo:</b> 4 GB de RAM y Chrome, Edge o Firefox actualizados. En celular funciona, pero es más lento.</li>
+          <li><b>Consejos:</b> cierra otras pestañas y programas, sube los escaneados en grupos de 5 a 10 y no actives «Leer todo como escaneado» si el PDF ya tiene texto.</li>
+        </ul>
+      </details>
       <p class="nota">Las fotos y los PDF escaneados se leen con OCR: la primera vez se descargan unos 6 MB para leer el texto de la imagen; después quedan guardados en el navegador.</p>
     </section>
 
@@ -417,6 +431,16 @@
     });
     return piezas;
   }
+  // Equipos con poca memoria o pocos núcleos: OCR a menor resolución (un poco menos preciso, bastante más rápido)
+  const EQUIPO_LIVIANO = (navigator.deviceMemory || 8) <= 4 || (navigator.hardwareConcurrency || 4) <= 2;
+  const RES_OCR = EQUIPO_LIVIANO ? 2000 : 2880;
+  const tiemposOcr = [];
+  if (EQUIPO_LIVIANO) $('#avisoEquipo').hidden = false;
+  const restante = faltan => {
+    if (tiemposOcr.length < 1 || faltan < 2) return '';
+    const seg = tiemposOcr.slice(-5).reduce((a, b) => a + b, 0) / Math.min(5, tiemposOcr.length) / 1000 * faltan;
+    return seg < 60 ? ` (faltan unos ${Math.ceil(seg / 5) * 5} s)` : ` (faltan unos ${Math.round(seg / 60)} min)`;
+  };
   async function obtenerOcr() {
     if (ocrWorker) return ocrWorker;
     estado('Preparando el lector de documentos escaneados (solo la primera vez tarda más)…');
@@ -425,7 +449,7 @@
   }
   async function piezasOcr(pag) {
     const vp = pag.getViewport({ scale: 1 });
-    const escala = Math.min(3, 2880 / Math.max(vp.width, vp.height));
+    const escala = Math.min(3, RES_OCR / Math.max(vp.width, vp.height));
     const v = pag.getViewport({ scale: escala });
     const c = document.createElement('canvas');
     c.width = Math.round(v.width); c.height = Math.round(v.height);
@@ -1362,7 +1386,7 @@
     let img;
     try { img = await createImageBitmap(a.file); } catch { throw { msg: 'No se pudo abrir la imagen' }; }
     const lado = Math.max(img.width, img.height);
-    const escala = Math.min(Math.max(1, Math.min(4, 1800 / img.width)), 3600 / lado);
+    const escala = Math.min(Math.max(1, Math.min(4, (EQUIPO_LIVIANO ? 1500 : 1800) / img.width)), (EQUIPO_LIVIANO ? 2600 : 3600) / lado);
     const c = document.createElement('canvas');
     c.width = Math.round(img.width * escala); c.height = Math.round(img.height * escala);
     const ctx = c.getContext('2d');
@@ -1371,7 +1395,9 @@
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, 0, 0, c.width, c.height);
     img.close?.();
+    const t0 = performance.now();
     const { data } = await (await obtenerOcr()).recognize(c);
+    tiemposOcr.push(performance.now() - t0);
     c.width = c.height = 0;
     const piezas = (data.words || []).filter(p => p.text.trim() && p.confidence > 30).map(p => ({
       x: p.bbox.x0 / escala, fin: p.bbox.x1 / escala, y: p.bbox.y1 / escala, alto: Math.max(4, (p.bbox.y1 - p.bbox.y0) / escala), txt: p.text
@@ -1472,21 +1498,31 @@
     try {
       try { const f = await pdf.getFieldObjects(); camposFormulario = f ? Object.keys(f).length : 0; } catch { }
       try { info = (await pdf.getMetadata())?.info || {}; } catch { }
+      const vacias = [];
       for (let p = 1; p <= n; p++) {
         if (cancelado) throw { cancel: true };
         if (p % 20 === 0) estado(`Documento ${i + 1} de ${total}: página ${p} de ${n}…`);
         const pag = await pdf.getPage(p);
         const vp = pag.getViewport({ scale: 1 });
         if (vp.width > vp.height * 1.1) horizontales++;
-        let piezas = $('#forzarOcr').checked ? [] : await piezasTexto(pag);
-        if (piezas.map(x => x.txt).join('').replace(/\s/g, '').length < 20) {
-          if (conOcr < MAX_OCR) {
-            estado(`Documento ${i + 1} de ${total}: leyendo página escaneada ${p} de ${n}…`);
-            piezas = await piezasOcr(pag); conOcr++;
-          } else sinLeer++;
-        }
+        const piezas = $('#forzarOcr').checked ? [] : await piezasTexto(pag);
+        if (piezas.map(x => x.txt).join('').replace(/\s/g, '').length < 20) vacias.push(p - 1);
         crudas.push(piezas);
         pag.cleanup();
+      }
+      // OCR (lento) solo si el documento es escaneado: en un PDF con texto, las páginas
+      // sin texto suelen ser portadas, hojas en blanco o figuras
+      const escaneado = $('#forzarOcr').checked || n <= 3 || vacias.length >= n * 0.5;
+      if (escaneado) for (const k of vacias) {
+        if (cancelado) throw { cancel: true };
+        if (conOcr >= MAX_OCR) { sinLeer++; continue; }
+        const faltan = Math.min(vacias.length, MAX_OCR) - conOcr;
+        estado(`Documento ${i + 1} de ${total}: leyendo página escaneada ${k + 1} de ${n}…` + restante(faltan));
+        const t0 = performance.now();
+        const pag = await pdf.getPage(k + 1);
+        crudas[k] = await piezasOcr(pag); conOcr++;
+        pag.cleanup();
+        tiemposOcr.push(performance.now() - t0);
       }
       // Descarta el texto diminuto (rótulos dentro de figuras): se compara con el tamaño típico del documento
       const pesos = [];
@@ -1524,12 +1560,13 @@
     archivos.forEach(a => { a.estado = 'Pendiente'; a.clase = ''; });
     ocupado(true);
     const pedido = interpretarPedido($('#pedido').value);
-    const docs = [];
+    const docs = [], inicio = performance.now();
     for (let i = 0; i < archivos.length; i++) {
       if (cancelado) break;
       const a = archivos[i];
       a.estado = 'Leyendo…'; pintarArchivos();
-      estado(`Leyendo documento ${i + 1} de ${archivos.length}: ${a.nombre}`); progreso(i / archivos.length);
+      const porDoc = i ? (performance.now() - inicio) / i / 1000 : 0, faltan = porDoc * (archivos.length - i);
+      estado(`Leyendo documento ${i + 1} de ${archivos.length}: ${a.nombre}` + (i >= 2 && faltan > 20 ? (faltan < 90 ? ` (faltan unos ${Math.ceil(faltan / 10) * 10} s)` : ` (faltan unos ${Math.round(faltan / 60)} min)`) : '')); progreso(i / archivos.length);
       try {
         const { paginas, numPaginas, leidas, conOcr, sinLeer, camposFormulario, horizontales, info } = await leerArchivo(a, i, archivos.length);
         const doc = analizar(paginas);
@@ -1568,6 +1605,8 @@
     }
     idiomaActual = '';
     progreso(null);
+    // En equipos con poca memoria se libera el lector OCR (unos 150 MB) al terminar
+    if (EQUIPO_LIVIANO && ocrWorker) { ocrWorker.terminate(); ocrWorker = null; }
     if (!docs.some(d => !d.error)) { estado(cancelado ? 'Proceso detenido.' : 'No se pudo leer ningún documento.', 'error'); ocupado(false); return; }
     mostrar(construirLibro(docs, pedido));
     estado(cancelado ? `Proceso detenido: se incluyen los ${docs.length} documentos leídos.` : 'Listo. Revisa las hojas y descarga el Excel.', cancelado ? '' : 'ok');
