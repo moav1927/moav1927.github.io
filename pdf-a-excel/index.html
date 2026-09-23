@@ -117,9 +117,9 @@
   <div class="rejilla">
     <section class="panel" aria-label="Documentos">
       <label class="soltar" id="zona" for="entrada">
-        <b>Elegir o soltar PDF o Excel</b>
-        <span>Puedes seleccionar varios a la vez. También lee facturas hechas en Excel (.xlsx, .xls, .ods, .csv).</span>
-        <input type="file" id="entrada" accept="application/pdf,.pdf,.xlsx,.xlsm,.xls,.ods,.csv" multiple hidden>
+        <b>Elegir o soltar documentos</b>
+        <span>PDF, fotos o capturas (JPG, PNG, WEBP), Word (.docx) y Excel (.xlsx, .xls, .ods, .csv). Puedes seleccionar varios a la vez.</span>
+        <input type="file" id="entrada" accept="application/pdf,.pdf,.xlsx,.xlsm,.xls,.ods,.csv,.docx,image/*,.png,.jpg,.jpeg,.webp,.bmp,.gif" multiple hidden>
       </label>
       <ul class="archivos" id="archivos" aria-label="Archivos cargados"></ul>
 
@@ -150,7 +150,7 @@
       <div class="estado" id="estado" role="status" aria-live="polite"></div>
 
       <p class="nota">Funciona con reglas, no con inteligencia artificial: reconoce los formatos habituales en varios idiomas («Total:», «Invoice No.», «Rechnungsdatum», «NIT», «VAT»…). Los datos que no encuentra quedan marcados en la columna <b>Por revisar</b>.</p>
-      <p class="nota">Si un PDF está escaneado, la primera vez se descargan unos 6 MB para leer el texto de la imagen; después quedan guardados en el navegador.</p>
+      <p class="nota">Las fotos y los PDF escaneados se leen con OCR: la primera vez se descargan unos 6 MB para leer el texto de la imagen; después quedan guardados en el navegador.</p>
     </section>
 
     <section class="libro" aria-label="Resultado">
@@ -293,8 +293,8 @@
     numero: { etiqueta: 'Número', tipo: 'codigo', syn: ['factura electronica de venta no', 'factura de venta no', 'factura no', 'numero de factura', 'no factura', 'invoice number', 'invoice no', 'invoice nr', 'invoice #', 'invoice id', 'bill no', 'bill number', 'receipt no', 'receipt number', 'booking id', 'numero de facture', 'facture n', 'facture no', 'rechnungsnummer', 'rechnungsnr', 'rechnung nr', 'factuurnummer', 'factuur nr', 'factuurnr', 'numero fattura', 'fattura n', 'remision no', 'numero de remision', 'delivery note no', 'cotizacion no', 'quote no', 'quotation no', 'orden de compra no', 'po number', 'order number', 'numero de orden', 'credit note no', 'nota credito no', 'documento no', 'document no', 'docket no', 'consecutivo', 'invoice', 'factuur', 'facture', 'rechnung', 'factura', 'numero', 'number', 'no', 'nro', 'nr', 'n'] },
     fecha: { etiqueta: 'Fecha', tipo: 'fecha', syn: ['fecha de emision', 'fecha de expedicion', 'fecha factura', 'fecha de factura', 'fecha de elaboracion', 'fecha de generacion', 'fecha de despacho', 'invoice date', 'date of issue', 'issue date', 'bill date', 'receipt date', 'date de facture', 'date d emission', 'rechnungsdatum', 'factuurdatum', 'factuur datum', 'data da fatura', 'data fattura', 'fecha', 'date', 'datum', 'data', 'dated', 'issued'], excluir: ['vencimiento', 'nacimiento', 'due', 'echeance', 'fallig', 'verval', 'scadenza', 'birth', 'check out', 'entrega', 'delivery', 'periodo', 'period', 'order date', 'besteldatum', 'report run'] },
     vencimiento: { etiqueta: 'Fecha de vencimiento', tipo: 'fecha', syn: ['fecha de vencimiento', 'vencimiento', 'due date', 'payment due', 'date d echeance', 'echeance', 'falligkeitsdatum', 'fallig am', 'vervaldatum', 'scadenza', 'pay by'] },
-    emisor: { etiqueta: 'Emisor', tipo: 'texto', syn: ['razon social', 'emisor', 'vendedor', 'expedido por', 'prestador', 'seller', 'sold by', 'vendor', 'supplier', 'issued by', 'titulaire du compte', 'account holder', 'account name', 'beneficiary', 'beneficiario', 'titular de la cuenta', 'rekeninghouder', 'kontoinhaber', 'payable to', 'pagar a', 'fournisseur', 'vendeur', 'lieferant', 'verkaufer', 'leverancier', 'verkoper', 'fornitore'] },
-    proveedor: { etiqueta: 'Proveedor', tipo: 'texto', syn: ['proveedor', 'razon social', 'vendedor', 'emisor', 'contratista', 'seller', 'sold by', 'vendor', 'supplier', 'fournisseur', 'lieferant', 'leverancier', 'fornitore'] },
+    emisor: { etiqueta: 'Emisor', tipo: 'texto', syn: ['razon social', 'emisor', 'expedido por', 'prestador', 'seller', 'sold by', 'vendor', 'supplier', 'issued by', 'titulaire du compte', 'account holder', 'account name', 'beneficiary', 'beneficiario', 'titular de la cuenta', 'rekeninghouder', 'kontoinhaber', 'payable to', 'pagar a', 'fournisseur', 'vendeur', 'lieferant', 'verkaufer', 'leverancier', 'verkoper', 'fornitore'] },
+    proveedor: { etiqueta: 'Proveedor', tipo: 'texto', syn: ['proveedor', 'razon social', 'emisor', 'contratista', 'seller', 'sold by', 'vendor', 'supplier', 'fournisseur', 'lieferant', 'leverancier', 'fornitore'] },
     nit: { etiqueta: 'NIT / ID fiscal', tipo: 'nit', syn: ['nit', 'nit emisor', 'rut', 'cc/nit', 'gstin', 'gst no', 'gst number', 'gst reg', 'vat no', 'vat number', 'vat id', 'vat reg no', 'vat registration', 'tax id', 'tin', 'ein', 'siret', 'siren', 'tva intracommunautaire', 'n tva', 'ust-idnr', 'ust-id', 'ust id', 'steuernummer', 'btw nr', 'btw-nummer', 'btw nummer', 'btw', 'partita iva', 'cnpj', 'rfc', 'cif', 'nif'] },
     cliente: { etiqueta: 'Cliente', tipo: 'texto', syn: ['cliente', 'senor(es)', 'senores', 'senor', 'adquiriente', 'adquirente', 'comprador', 'facturar a', 'facturado a', 'destinatario', 'contratante', 'dirigido a', 'nombre del cliente', 'bill to', 'billed to', 'invoice to', 'sold to', 'customer name', 'customer', 'client name', 'client', 'guest name', 'buyer', 'facture a', 'adresse de facturation', 'kunde', 'rechnungsadresse', 'klant', 'factuuradres', 't.a.v', 'nom de l abonne', 'billing address'], excluir: ['care', 'service', 'support', 'number', 'nummer', 'numero', 'no', 'id', 'code', 'ref'] },
     nitcliente: { etiqueta: 'ID fiscal cliente', tipo: 'nit', syn: ['nit cliente', 'nit adquiriente', 'customer vat', 'customer gstin', 'buyer tax id'] },
@@ -306,7 +306,7 @@
     iva: { etiqueta: 'Impuesto (IVA/VAT)', tipo: 'dinero', syn: ['iva', 'valor iva', 'total iva', 'impuesto', 'impuestos', 'total tax', 'sales tax', 'tax', 'taxes', 'vat', 'gst', 'igst', 'cgst', 'sgst', 'tva', 'montant tva', 'mwst', 'ust', 'umsatzsteuer', 'btw', 'imposta', 'icms'], excluir: ['sin iva', 'antes de iva', 'base', 'regimen', 'responsable', 'excl', 'incl', 'tax id', 'vat no', 'vat number', 'vat id', 'vat reg', 'gst no', 'gstin', 'gst number', 'gst reg', 'tax invoice', 'btw nr', 'btw-nummer', 'btw nummer', 'tva intra', 'n tva', 'ust-id', 'ust id', 'number', 'statement', 'rate', 'tarif', 'tasa'] },
     descuento: { etiqueta: 'Descuento', tipo: 'dinero', syn: ['descuento', 'descuentos', 'dcto', 'discount', 'remise', 'rabatt', 'korting', 'sconto'] },
     retencion: { etiqueta: 'Retención', tipo: 'dinero', syn: ['retencion en la fuente', 'retefuente', 'retencion irpf', 'irpf', 'retencion', 'reteica', 'reteiva', 'withholding tax', 'withholding', 'tds'] },
-    total: { etiqueta: 'Total', tipo: 'dinero', ultimo: true, syn: ['total a pagar', 'coste total', 'costo total', 'importe total', 'total factura', 'bedrag inclusief btw', 'bedrag incl', 'totaal incl', 'somme a payer', 'montant a payer', 'total for this invoice', 'total facture', 'valor total', 'neto a pagar', 'total factura', 'total general', 'gran total', 'valor a pagar', 'total cotizacion', 'total due', 'amount due', 'balance due', 'grand total', 'invoice total', 'total amount', 'amount payable', 'total payable', 'total incl', 'total including', 'total ttc', 'montant ttc', 'net a payer', 'total a payer', 'montant total', 'gesamtbetrag', 'rechnungsbetrag', 'endbetrag', 'gesamtsumme', 'zu zahlen', 'factuur totaal', 'totaalbedrag', 'te betalen', 'totaal', 'totale fattura', 'importo totale', 'totale', 'total'], excluir: ['subtotal', 'sub total', 'sub-total', 'total items', 'total unidades', 'total bultos', 'total iva', 'total cantidad', 'total paginas', 'total bruto', 'total tax', 'total excl', 'total ht', 'total quantity', 'total qty', 'totaal excl', 'total discount', 'total hours', 'total pages', 'total weight', 'total units', 'total savings'] },
+    total: { etiqueta: 'Total', tipo: 'dinero', ultimo: true, syn: ['total a pagar', 'total neto', 'valor neto', 'coste total', 'costo total', 'importe total', 'total factura', 'bedrag inclusief btw', 'bedrag incl', 'totaal incl', 'somme a payer', 'montant a payer', 'total for this invoice', 'total facture', 'valor total', 'neto a pagar', 'total factura', 'total general', 'gran total', 'valor a pagar', 'total cotizacion', 'total due', 'amount due', 'balance due', 'grand total', 'invoice total', 'total amount', 'amount payable', 'total payable', 'total incl', 'total including', 'total ttc', 'montant ttc', 'net a payer', 'total a payer', 'montant total', 'gesamtbetrag', 'rechnungsbetrag', 'endbetrag', 'gesamtsumme', 'zu zahlen', 'factuur totaal', 'totaalbedrag', 'te betalen', 'totaal', 'totale fattura', 'importo totale', 'totale', 'total'], excluir: ['subtotal', 'sub total', 'sub-total', 'total items', 'total unidades', 'total bultos', 'total iva', 'total cantidad', 'total paginas', 'total bruto', 'total tax', 'total excl', 'total ht', 'total quantity', 'total qty', 'totaal excl', 'total discount', 'total hours', 'total pages', 'total weight', 'total units', 'total savings'] },
     saldo: { etiqueta: 'Saldo', tipo: 'dinero', ultimo: true, syn: ['saldo final', 'saldo actual', 'nuevo saldo', 'closing balance', 'ending balance', 'new balance', 'solde', 'saldo', 'balance'] },
     moneda: { etiqueta: 'Moneda', tipo: 'texto', syn: ['moneda', 'currency', 'devise', 'wahrung', 'valuta'] },
     formapago: { etiqueta: 'Forma de pago', tipo: 'texto', syn: ['forma de pago', 'medio de pago', 'condiciones de pago', 'metodo de pago', 'payment method', 'payment mode', 'payment terms', 'mode de paiement', 'zahlungsart', 'zahlungsbedingungen', 'betaalwijze'] },
@@ -378,11 +378,11 @@
 
   // ---------- Archivos ----------
   function agregar(lista) {
-    const nuevos = [...lista].filter(f => /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name) || RE_HOJA.test(f.name));
+    const nuevos = [...lista].filter(f => /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name) || RE_HOJA.test(f.name) || RE_IMAGEN.test(f.name) || RE_WORD.test(f.name) || RE_NO_SOPORTADO.test(f.name) || /^image\//.test(f.type));
     const omitidos = lista.length - nuevos.length;
     for (const f of nuevos) if (!archivos.some(a => a.nombre === f.name && a.file.size === f.size))
       archivos.push({ file: f, nombre: f.name, estado: 'Pendiente', clase: '' });
-    estado(`${archivos.length} documento${archivos.length === 1 ? '' : 's'} listo${archivos.length === 1 ? '' : 's'} para procesar.` + (omitidos ? ` Se omitieron ${omitidos} archivo(s) que no son PDF ni hojas de cálculo.` : ''));
+    estado(`${archivos.length} documento${archivos.length === 1 ? '' : 's'} listo${archivos.length === 1 ? '' : 's'} para procesar.` + (omitidos ? ` Se omitieron ${omitidos} archivo(s) de un formato que no se puede leer.` : ''));
     ocupado(false);
   }
   function pintarArchivos() {
@@ -573,6 +573,7 @@
       [/(\d{1,2})\.?\s*(?:de\s+)?([a-z]{3,10})\.?\s*,?\s*(?:de\s+|del\s+)?(\d{4})/, m => MESES[m[2]] && iso(+m[3], MESES[m[2]], +m[1])],
       [/([a-z]{3,10})\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*,?\s*(?:de\s+)?(\d{4})/, m => MESES[m[1]] && iso(+m[3], MESES[m[1]], +m[2])],
     ];
+    pats.push([/(?<![\d\/.-])(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2})(?![\d\/.-])/, m => { const a = +m[3] + (+m[3] < 70 ? 2000 : 1900); return mesPrimero ? (iso(a, +m[1], +m[2]) || iso(a, +m[2], +m[1])) : (iso(a, +m[2], +m[1]) || iso(a, +m[1], +m[2])); }]);
     if (mesAno) pats.push([/\b([a-z]{3,10})\.?,?\s+(?:de\s+)?(\d{4})\b/, m => MESES[m[1]] && +m[2] >= 1900 && +m[2] <= 2100 ? `${m[2]}-${String(MESES[m[1]]).padStart(2, '0')}` : null]);
     for (const [re, fn] of pats) {
       const m = t.match(exacta ? new RegExp('^' + re.source + '$') : re);
@@ -733,7 +734,7 @@
         else if (!inicio.some(l => /\b(plano|planos|blueprint|floor plan|site plan)\b/.test(l.textoN))) p *= 0.3;
       }
       if (t.id === 'presentacion' && meta.horizontales >= meta.leidas * 0.7 && meta.leidas >= 3 && doc.lineas.length / meta.leidas < 30) p += 12;
-      if (t.id === 'carta' && doc.lineas.slice(0, 12).some(l => /^(dear|estimad|apreciad|to whom|a quien|senor|madame|monsieur|sehr geehrte)/.test(l.textoN))) p += 6;
+      if (t.id === 'carta' && doc.lineas.slice(0, 12).some(l => /^(dear|estimad|apreciad|to whom|a quien|senor|madame|monsieur|sehr geehrte)/.test(l.textoN))) p += 6 + (doc.lineas.some(l => RE_DESPEDIDA.test(l.textoN)) ? 8 : 0);
       if (t.id === 'libro' && meta.paginas >= 40) p += doc.lineas.filter(l => l.pagina <= 20).some(l => /^(table of contents|contents|indice|inhaltsverzeichnis|sommaire|chapter 1|capitulo 1)\b/.test(l.textoN)) ? 8 : 4;
       puntajes.push([t, p]);
     }
@@ -764,7 +765,7 @@
       case 'dinero': return dineroDe(v);
       case 'fecha': return fechaDe(v) || fechaDe(v, false, true);
       case 'nit': {
-        const m = v.match(/\b[A-Z]{0,4}[\dA-Z][\dA-Z.\-\s]{4,20}[\dA-Z]\b/i);
+        const m = v.match(/\b[A-Z]{0,4}[\dA-Z][\dA-Z.,\-\s]{4,20}[\dA-Z]\b/i);
         return m && (m[0].match(/\d/g) || []).length >= 5 ? m[0].replace(/\s/g, '') : null;
       }
       case 'correo': { const m = v.match(/[\w.+-]+@[\w-]+\.[\w.]+/); return m ? m[0] : null; }
@@ -786,7 +787,7 @@
       }
     }
   }
-  const ETIQUETAS = new Set(Object.values(CAMPOS).flatMap(c => c.syn).filter(s => s.length > 2).concat(['forma de pago', 'cantidad', 'descripcion', 'description', 'codigo', 'valor unitario', 'unit price', 'quantity', 'qty', 'amount', 'order', 'ordernummer', 'order id', 'artikel', 'omschrijving', 'prijs', 'bedrag', 'aantal', 'product', 'item', 'items', 'price', 'reference', 'referencia', 'ship to', 'shipping address', 'payment terms', 'po number', 'klantnummer', 'kundennr', 'customer id', 'account number', 'afleveradres', 'besteldatum', 'vervaldatum']));
+  const ETIQUETAS = new Set(Object.values(CAMPOS).flatMap(c => c.syn).filter(s => s.length > 2).concat(['forma de pago', 'cantidad', 'descripcion', 'description', 'codigo', 'valor unitario', 'unit price', 'quantity', 'qty', 'amount', 'order', 'ordernummer', 'order id', 'artikel', 'omschrijving', 'prijs', 'bedrag', 'aantal', 'product', 'item', 'items', 'price', 'reference', 'referencia', 'ship to', 'shipping address', 'payment terms', 'po number', 'klantnummer', 'kundennr', 'customer id', 'account number', 'afleveradres', 'besteldatum', 'vervaldatum', 'cant', 'detalle', 'unid', 'v. unit', 'vendedor', 'tarifa', 'base', 'impuesto', 'valor']));
   const esEtiqueta = t => /:\s*$/.test(t) || ETIQUETAS.has(norm(t).replace(/[:.#]+$/, '').replace(/\s*\d+([.,]\d+)?\s*%$/, '').replace(/\s*\(.*\)$/, ''));
   const excluye = (l, campo) => campo.excluir?.some(x => /^[a-z ]+$/.test(x) ? new RegExp('(^|\\s)' + x + '($|\\s)').test(l) : l.includes(x));
   function puntajeEtiqueta(labelN, campo) {
@@ -802,6 +803,30 @@
     return mejor;
   }
 
+  // OCR: si el comienzo de la celda está a una o dos letras de una etiqueta conocida ("subtota" → "subtotal"), se corrige
+  const distancia = (a, b) => {
+    if (Math.abs(a.length - b.length) > 2) return 9;
+    let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = cur;
+    }
+    return prev[b.length];
+  };
+  function corregirEtiqueta(cn, syns) {
+    // Si ya empieza por una etiqueta conocida, no se toca
+    if (syns.some(s => cn === s || cn.startsWith(s + ' ') || new RegExp('^' + escRe(s) + '[:.;,]').test(cn))) return cn;
+    for (const s of syns) {
+      if (s.length < 6 || cn.startsWith(s)) continue;
+      const n = s.split(' ').length;
+      const partes = cn.split(' ');
+      const cab = partes.slice(0, n).join(' ').replace(/[:.;,]+$/, '');
+      if (cab.length >= 5 && distancia(cab, s) <= (s.length >= 10 ? 2 : 1)) return s + (cn.slice(partes.slice(0, n).join(' ').length).match(/^[:.;,]*/)[0] || '') + cn.slice(partes.slice(0, n).join(' ').length).replace(/^[:.;,]*/, '');
+    }
+    return cn;
+  }
+
   // Devuelve {v, raw} con el mejor candidato para un campo
   function buscarCon(doc, campo, filtro) {
     const cand = [];
@@ -815,8 +840,14 @@
     }
     // Etiqueta al inicio de una celda; el valor va en el resto de la celda, en las celdas
     // de la derecha o justo debajo (formatos con etiquetas arriba y valores abajo)
-    doc.lineas.forEach((l, pos) => l.cx.forEach((c, i) => {
-      const cn = norm(c.txt);
+    doc.lineas.forEach((l, pos) => l.cx.forEach((c0, i0) => {
+      // El OCR a veces parte la etiqueta en dos celdas ("Total" | "a Pagar"): se prueba también unida
+      const sig0 = l.cx[i0 + 1];
+      const variantes = [[c0, i0]];
+      if (sig0 && !/\d/.test(c0.txt) && /^\p{Ll}/u.test(sig0.txt) && !/\d/.test(sig0.txt) && sig0.txt.length <= 20 && sig0.txt.split(/\s+/).length <= 3) variantes.push([{ x: c0.x, fin: sig0.fin, txt: c0.txt + ' ' + sig0.txt }, i0 + 1]);
+      for (const [c, i] of variantes.reverse()) {
+      let cn = norm(c.txt);
+      if (doc.ocr) cn = corregirEtiqueta(cn, campo.syn);
       for (const s of campo.syn) {
         if (s.length < 3 && !/^(no|nro|nr|n)$/.test(s)) continue;
         const m = cn.match(new RegExp('^' + escRe(s) + '(?![a-z0-9])(?:\\s*\\([a-z$€£₹.]{1,4}\\)|\\s*[$€£₹])?(?:\\s*\\d+(?:[.,]\\d+)?\\s*%)?\\s*([:#°º.]*)\\s*(.*)$'));
@@ -845,6 +876,7 @@
         }
         if (v !== null) { cand.push({ v, raw, p: puntajeEtiqueta(s, campo) * 0.8 + bono(raw), pos }); return; }
       }
+      }
     }));
     if (filtro) cand.splice(0, cand.length, ...cand.filter(c => filtro(c.pos)));
     if (!cand.length) return null;
@@ -862,6 +894,9 @@
       if (m) { const v = validar(m[2], 'codigo'); if (v) return v; }
     }
     if (!tipo?.comercial) return null;
+    for (const l of doc.lineas.slice(0, 15)) { const m = l.texto.match(/\b(\d{4,5})\s*-\s*(\d{8})\b/); if (m) return `${m[1]}-${m[2]}`; }
+    const iTit = doc.lineas.slice(0, 40).findIndex(l => /^(factura|invoice|recibo|remision|cotizacion)\b/.test(l.textoN) && l.texto.length < 60);
+    if (iTit >= 0) for (const l of doc.lineas.slice(iTit + 1, iTit + 3)) { const m = l.texto.trim().match(/^(?:no\.?\s*|n[°º]\s*)?([A-Z]{1,6}[\s-]?\d{3,}[\w-]*)$/i); if (m && validar(m[1], 'codigo')) return validar(m[1], 'codigo'); }
     for (const l of doc.lineas.slice(0, 15)) { const m = l.texto.match(/^#\s*(\S+)$/); if (m && validar(m[1], 'codigo')) return validar(m[1], 'codigo'); }
     return buscar(doc, CAMPOS.numero);
   }
@@ -979,7 +1014,9 @@
     if (mejorJunto) return mejorJunto[0];
     if (!tipo.comercial) return institucionDoc(doc);
     for (const l of doc.lineas.slice(0, 6)) {
-      const celda = l.celdas.map(quitarTipo).find(c => c && lineaNombre({ texto: c, textoN: norm(c) }) && !esEtiqueta(c));
+      // Nombre de empresa: dos palabras o más (o una sola en mayúsculas), sin rótulos como "Fecha", "Hora" o "No responsables de IVA"
+      const celda = l.celdas.filter(c => !palabrasTipo.some(k => norm(c).startsWith(k))).map(quitarTipo).find(c => c && !/[|]/.test(c) && lineaNombre({ texto: c, textoN: norm(c) }) && !esEtiqueta(c) &&
+        (c.split(/\s+/).length >= 2 || (c === c.toUpperCase() && c.length >= 4)) && !/^(fecha|hora|date|nit|nif|tel|no responsable|responsable|regimen|r[eé]gimen|original|copia|p[aá]gina)/i.test(c));
       if (celda) return celda;
     }
     return null;
@@ -1027,11 +1064,17 @@
   function monedaDoc(doc, rawTotal) {
     const m = rawTotal && monedaDe(rawTotal);
     if (m && m !== '$') return m;
+    const lineas = doc.lineas.slice(0, 300).map(l => l.texto);
+    // El total dice "$": solo un código explícito (USD, COP, MXN…) precisa cuál
+    if (m === '$') {
+      for (const t of lineas) { const c = t.match(/\b(USD|COP|MXN|ARS|CLP|CAD|AUD|BRL)\b/); if (c) return c[1]; }
+      return '$';
+    }
+    // Sin moneda en el total: la más frecuente, contando solo símbolos o códigos pegados a un número
     const conteo = {};
-    for (const l of doc.lineas.slice(0, 300)) { const x = monedaDe(l.texto); if (x) conteo[x] = (conteo[x] || 0) + 1; }
+    for (const t of lineas) for (const x of t.matchAll(new RegExp('(?:' + RE_MONEDA.source + ')\\s?-?\\d|\\d\\s?(?:' + RE_MONEDA.source + ')', 'g'))) { const k = monedaDe(x[0]); if (k) conteo[k] = (conteo[k] || 0) + 1; }
     const orden = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
-    const mejor = orden.find(([k]) => k !== '$')?.[0];
-    return mejor && (!conteo['$'] || conteo[mejor] >= conteo['$']) ? mejor : (m || orden[0]?.[0] || null);
+    return orden[0]?.[0] || lineas.map(t => t.match(/\b(EUR|USD|COP|INR|GBP|MXN|ARS|CLP)\b/)?.[1]).find(Boolean) || null;
   }
 
   const SECCIONES = ['resumen ejecutivo', 'executive summary', 'resumen', 'abstract', 'summary', 'resumo', 'resume', 'zusammenfassung', 'kurzfassung', 'samenvatting', 'sommario', 'riassunto', 'sintesis', 'conclusiones', 'conclusions', 'conclusion', 'highlights', 'objeto', 'objetivo', 'purpose', 'introduccion', 'introduction', 'einleitung', 'inleiding', 'introduzione', 'introducao', 'preface', 'prefacio', 'vorwort', 'prologo', 'avant-propos'];
@@ -1152,6 +1195,74 @@
   // Proceso de todos los archivos
   // =====================================================================
   const RE_HOJA = /\.(xlsx|xlsm|xls|ods|csv)$/i;
+  const RE_IMAGEN = /\.(png|jpe?g|webp|bmp|gif)$/i;
+  const RE_WORD = /\.docx$/i;
+  const RE_NO_SOPORTADO = /\.(doc|tiff?|heic|heif|odt|rtf|pptx?)$/i;
+
+  // Imágenes (fotos o capturas de facturas): se amplían, se pasan a grises y se leen con OCR
+  async function leerImagen(a) {
+    let img;
+    try { img = await createImageBitmap(a.file); } catch { throw { msg: 'No se pudo abrir la imagen' }; }
+    const lado = Math.max(img.width, img.height);
+    const escala = Math.min(Math.max(1, Math.min(4, 1800 / img.width)), 3600 / lado);
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * escala); c.height = Math.round(img.height * escala);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.filter = 'grayscale(1) contrast(1.25)';
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    img.close?.();
+    const { data } = await (await obtenerOcr()).recognize(c);
+    c.width = c.height = 0;
+    const piezas = (data.words || []).filter(p => p.text.trim() && p.confidence > 30).map(p => ({
+      x: p.bbox.x0 / escala, fin: p.bbox.x1 / escala, y: p.bbox.y1 / escala, alto: Math.max(4, (p.bbox.y1 - p.bbox.y0) / escala), txt: p.text
+    }));
+    return { paginas: [porColumnas(armarLineas(piezas))], numPaginas: 1, leidas: 1, conOcr: 1, sinLeer: 0, camposFormulario: 0, horizontales: img.width > img.height * 1.1 ? 1 : 0, info: {} };
+  }
+
+  // Word (.docx): párrafos como líneas y tablas como filas con celdas en columnas
+  let mammothListo = null;
+  const cargarMammoth = () => mammothListo ??= new Promise((ok, mal) => { const sc = document.createElement('script'); sc.src = base + 'mammoth.browser.min.js'; sc.onload = ok; sc.onerror = () => mal({ msg: 'No se pudo cargar el lector de Word' }); document.head.append(sc); });
+  async function leerWord(a) {
+    await cargarMammoth();
+    const { value: html } = await mammoth.convertToHtml({ arrayBuffer: await a.file.arrayBuffer() }, { styleMap: ["p[style-name='Title'] => h1:fresh", "p[style-name='Título'] => h1:fresh", "p[style-name='Titre'] => h1:fresh", "p[style-name='Subtitle'] => h2:fresh", "p[style-name='Subtítulo'] => h2:fresh"] });
+    const dom = new DOMParser().parseFromString(html, 'text/html');
+    const lineas = [];
+    let y = 0;
+    const tam = { H1: 20, H2: 16, H3: 14, H4: 12 };
+    const linea = (celdas, alto = 10) => { y += alto * 1.6; if (celdas.length) lineas.push({ y, alto, celdas }); };
+    const recorrer = nodo => {
+      for (const el of nodo.children) {
+        if (el.tagName === 'TABLE') {
+          for (const tr of el.querySelectorAll('tr')) {
+            let x = 0;
+            const celdas = [];
+            for (const td of tr.children) {
+              const span = +td.getAttribute('colspan') || 1;
+              const txt = td.textContent.replace(/\s+/g, ' ').trim();
+              if (txt) celdas.push({ x, fin: x + span * 160 - 10, txt });
+              x += span * 160;
+            }
+            linea(celdas);
+          }
+        } else if (/^(P|H[1-6]|LI)$/.test(el.tagName)) {
+          // Un párrafo con saltos de línea (<br>) son varias líneas
+          const alto = tam[el.tagName] || (el.querySelector('strong') && el.textContent.trim() === el.querySelector('strong').textContent.trim() && el.textContent.length < 80 ? 12 : 10);
+          for (const parte of el.innerHTML.split(/<br\s*\/?>/i)) {
+            const txt = new DOMParser().parseFromString(parte, 'text/html').body.textContent.replace(/\s+/g, ' ').trim();
+            if (txt) linea([{ x: 0, fin: Math.max(40, txt.length * 6), txt }], alto);
+          }
+        } else if (el.children.length) recorrer(el);
+      }
+    };
+    recorrer(dom.body);
+    // Páginas de ~60 líneas para que "página 1" sea el comienzo del documento
+    const paginas = [];
+    for (let i = 0; i < lineas.length; i += 60) paginas.push(lineas.slice(i, i + 60));
+    return { paginas: paginas.length ? paginas : [[]], numPaginas: Math.max(1, paginas.length), leidas: paginas.length, conOcr: 0, sinLeer: 0, camposFormulario: 0, horizontales: 0, info: {} };
+  }
+
   // Hojas de cálculo: cada hoja visible es una "página"; cada fila, una línea; cada celda, una celda con su posición
   async function leerHojaCalculo(a) {
     const wb = XLSX.read(new Uint8Array(await a.file.arrayBuffer()), { cellDates: false, cellStyles: true });
@@ -1194,6 +1305,9 @@
 
   async function leerArchivo(a, i, total) {
     if (RE_HOJA.test(a.nombre)) return leerHojaCalculo(a);
+    if (RE_IMAGEN.test(a.nombre) || /^image\//.test(a.file.type) && !RE_NO_SOPORTADO.test(a.nombre)) { estado(`Documento ${i + 1} de ${total}: leyendo la imagen (OCR)…`); return leerImagen(a); }
+    if (RE_WORD.test(a.nombre)) return leerWord(a);
+    if (RE_NO_SOPORTADO.test(a.nombre)) throw { msg: /\.doc$/i.test(a.nombre) ? 'Word antiguo (.doc): guárdalo como .docx' : 'Formato no soportado: conviértelo a PDF' };
     const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await a.file.arrayBuffer()) }).promise;
     const n = Math.min(pdf.numPages, MAX_PAGINAS);
     const paginas = [], crudas = []; let conOcr = 0, sinLeer = 0, camposFormulario = 0, horizontales = 0, info = {};
@@ -1261,6 +1375,7 @@
       try {
         const { paginas, numPaginas, leidas, conOcr, sinLeer, camposFormulario, horizontales, info } = await leerArchivo(a, i, archivos.length);
         const doc = analizar(paginas);
+        doc.ocr = conOcr > 0;
         if (!doc.lineas.length) throw { msg: 'Sin texto' };
         const meta = { paginas: numPaginas, leidas, camposFormulario, horizontales, ...metadatos(info, doc), idioma: detectarIdioma(doc.lineas.slice(0, 400).map(l => l.texto).join(' ')) };
         doc.meta = meta;
@@ -1492,7 +1607,7 @@
     catch { estado('El navegador no permitió copiar. Descarga el Excel en su lugar.', 'error'); }
   };
 
-  if (/[?&]debug\b/.test(location.search)) window.__motor = { analizar, armarLineas, porColumnas, piezasTexto, tituloInfo, autorDoc, emisorDoc, institucionDoc, clasificar, buscarCon, CAMPOS, TIPOS, dineroDe, fechaDe };
+  if (/[?&]debug\b/.test(location.search)) window.__motor = { leerImagen, leerWord, analizar, armarLineas, porColumnas, piezasTexto, tituloInfo, autorDoc, emisorDoc, institucionDoc, clasificar, buscarCon, CAMPOS, TIPOS, dineroDe, fechaDe };
   libro = EJEMPLO; hojaActiva = 0; pintar(); ocupado(false);
 })();
 </script>
