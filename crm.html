@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>CRM de pacientes</title>
+
+<!--
+  ============================================================
+  CRM SENCILLO
+  ------------------------------------------------------------
+  - Todo se guarda SOLO en este navegador (localStorage).
+    Nada se sube a GitHub ni a ningún servidor.
+  - Usa "Exportar" con frecuencia para tener una copia de seguridad
+    (archivo .json) y "Importar" para recuperarla en otro equipo.
+  - Página no enlazada desde el sitio y marcada "noindex".
+  ============================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --papel:#eff1ee; --papel-2:#e5e9e5; --blanco:#fbfcfa;
+    --tinta:#10303a; --tinta-2:#2e5765; --gris:#5b6c70;
+    --laton:#9c7326; --laton-2:#bd9440;
+    --linea:#c6cec8; --alerta:#a3402b;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--papel);color:var(--tinta);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:16px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2{font-family:"Literata",Georgia,serif;font-weight:500;margin:0}
+  button,input,select,textarea{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--laton);outline-offset:2px}
+
+  .envoltura{max-width:1100px;margin:0 auto;padding:0 16px}
+  header{border-bottom:1px solid var(--linea);background:var(--blanco)}
+  header .envoltura{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding-block:18px}
+  header h1{font-size:1.5rem}
+  header p{margin:2px 0 0;color:var(--gris);font-size:.9rem}
+
+  .btn{border:1px solid var(--tinta);background:var(--tinta);color:var(--blanco);
+    padding:8px 14px;border-radius:6px;cursor:pointer}
+  .btn.sec{background:transparent;color:var(--tinta)}
+  .btn.peligro{background:transparent;color:var(--alerta);border-color:var(--alerta)}
+  .btn.chico{padding:4px 10px;font-size:.85rem}
+  .acciones{display:flex;flex-wrap:wrap;gap:8px}
+
+  .resumen{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:20px 0}
+  .tarjeta{background:var(--blanco);border:1px solid var(--linea);border-radius:8px;padding:12px 14px}
+  .tarjeta b{display:block;font-family:"Literata",serif;font-size:1.6rem;font-weight:500}
+  .tarjeta span{color:var(--gris);font-size:.85rem}
+  .tarjeta.alerta b{color:var(--alerta)}
+
+  .filtros{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .filtros input{flex:1 1 220px}
+  input,select,textarea{background:var(--blanco);border:1px solid var(--linea);border-radius:6px;padding:8px 10px;width:100%}
+  .filtros select{width:auto}
+
+  .lista{display:grid;gap:10px;margin-bottom:40px}
+  .contacto{background:var(--blanco);border:1px solid var(--linea);border-radius:8px;padding:14px;
+    display:grid;grid-template-columns:1fr auto;gap:6px 12px}
+  .contacto h2{font-size:1.1rem}
+  .meta{color:var(--gris);font-size:.9rem;display:flex;flex-wrap:wrap;gap:4px 14px}
+  .meta a{color:var(--tinta-2)}
+  .nota{grid-column:1/-1;margin:4px 0 0;font-size:.92rem;white-space:pre-wrap}
+  .contacto .acciones{align-self:start;justify-content:flex-end}
+  .etiqueta{display:inline-block;font-size:.75rem;padding:1px 8px;border-radius:99px;border:1px solid currentColor;margin-left:6px;vertical-align:middle}
+  .e-prospecto{color:var(--tinta-2)} .e-cita{color:var(--laton)}
+  .e-paciente{color:#2f6b3f} .e-seguimiento{color:#6a4c93} .e-inactivo{color:var(--gris)}
+  .vencido{color:var(--alerta);font-weight:600}
+  .historial{grid-column:1/-1;border-top:1px dashed var(--linea);padding-top:8px;font-size:.88rem}
+  .historial ul{margin:4px 0 8px;padding-left:18px}
+  .historial form{display:flex;gap:6px}
+  .vacio{text-align:center;color:var(--gris);padding:40px 0}
+
+  dialog{border:1px solid var(--linea);border-radius:10px;padding:0;width:min(560px,calc(100% - 32px));background:var(--blanco)}
+  dialog::backdrop{background:rgba(16,48,58,.4)}
+  dialog form{padding:20px;display:grid;gap:12px}
+  .dos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  label{font-size:.85rem;color:var(--gris);display:grid;gap:4px}
+  @media (max-width:560px){
+    .dos{grid-template-columns:1fr}
+    .contacto{grid-template-columns:1fr}
+    .contacto .acciones{justify-content:flex-start}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="envoltura">
+    <div>
+      <h1>CRM de pacientes</h1>
+      <p>Datos guardados solo en este navegador. Exporta una copia con frecuencia.</p>
+    </div>
+    <div class="acciones">
+      <button class="btn" id="nuevo">+ Nuevo contacto</button>
+      <button class="btn sec" id="exportar">Exportar</button>
+      <button class="btn sec" id="exportarCsv">CSV</button>
+      <label class="btn sec" style="display:inline-block;color:var(--tinta)">Importar
+        <input type="file" id="importar" accept=".json" hidden>
+      </label>
+    </div>
+  </div>
+</header>
+
+<main class="envoltura">
+  <section class="resumen" id="resumen" aria-label="Resumen"></section>
+
+  <div class="filtros">
+    <input type="search" id="buscar" placeholder="Buscar por nombre, teléfono, correo o nota…" aria-label="Buscar">
+    <select id="filtroEstado" aria-label="Filtrar por estado">
+      <option value="">Todos los estados</option>
+    </select>
+    <select id="orden" aria-label="Ordenar">
+      <option value="seguimiento">Próximo seguimiento</option>
+      <option value="nombre">Nombre</option>
+      <option value="reciente">Más recientes</option>
+    </select>
+  </div>
+
+  <section class="lista" id="lista" aria-live="polite"></section>
+</main>
+
+<dialog id="dialogo">
+  <form method="dialog" id="formulario">
+    <h2 id="tituloDialogo">Nuevo contacto</h2>
+    <input type="hidden" name="id">
+    <label>Nombre completo *<input name="nombre" required></label>
+    <div class="dos">
+      <label>Teléfono / WhatsApp<input name="telefono" type="tel" placeholder="3001234567"></label>
+      <label>Correo<input name="correo" type="email"></label>
+    </div>
+    <div class="dos">
+      <label>Estado<select name="estado"></select></label>
+      <label>Origen<select name="origen">
+        <option>WhatsApp</option><option>Sitio web</option><option>Referido</option>
+        <option>Redes sociales</option><option>Consultorio</option><option>Otro</option>
+      </select></label>
+    </div>
+    <div class="dos">
+      <label>Motivo de interés<input name="motivo" placeholder="Terapia neural, columna…"></label>
+      <label>Próximo seguimiento<input name="seguimiento" type="date"></label>
+    </div>
+    <label>Notas<textarea name="notas" rows="3"></textarea></label>
+    <div class="acciones" style="justify-content:flex-end">
+      <button class="btn sec" value="cancelar" formnovalidate>Cancelar</button>
+      <button class="btn" value="guardar">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(() => {
+  const CLAVE = 'crm-contactos-v1';
+  const ESTADOS = {
+    prospecto: 'Prospecto', cita: 'Cita agendada', paciente: 'Paciente',
+    seguimiento: 'En seguimiento', inactivo: 'Inactivo'
+  };
+  const $ = s => document.querySelector(s);
+  const hoy = () => new Date().toISOString().slice(0, 10);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  let contactos = cargar();
+  const abiertos = new Set();
+
+  function cargar() {
+    try { return JSON.parse(localStorage.getItem(CLAVE)) || []; }
+    catch { return []; }
+  }
+  function guardar() {
+    try { localStorage.setItem(CLAVE, JSON.stringify(contactos)); }
+    catch { alert('No se pudo guardar en este navegador. Exporta tus datos.'); }
+    pintar();
+  }
+
+  // Opciones de estado en filtros y formulario
+  for (const [v, t] of Object.entries(ESTADOS)) {
+    $('#filtroEstado').add(new Option(t, v));
+    $('#formulario').estado.add(new Option(t, v));
+  }
+
+  function pintarResumen() {
+    const n = e => contactos.filter(c => c.estado === e).length;
+    const vencidos = contactos.filter(c => c.seguimiento && c.seguimiento <= hoy() && c.estado !== 'inactivo').length;
+    $('#resumen').innerHTML = [
+      ['Total', contactos.length], ['Prospectos', n('prospecto')],
+      ['Citas', n('cita')], ['Pacientes', n('paciente')],
+      ['Seguimiento hoy o vencido', vencidos, vencidos ? 'alerta' : '']
+    ].map(([t, v, cl = '']) => `<div class="tarjeta ${cl}"><b>${v}</b><span>${t}</span></div>`).join('');
+  }
+
+  function pintar() {
+    pintarResumen();
+    const q = $('#buscar').value.trim().toLowerCase();
+    const est = $('#filtroEstado').value;
+    const orden = $('#orden').value;
+    let vista = contactos.filter(c =>
+      (!est || c.estado === est) &&
+      (!q || [c.nombre, c.telefono, c.correo, c.motivo, c.notas].join(' ').toLowerCase().includes(q)));
+    vista.sort({
+      nombre: (a, b) => a.nombre.localeCompare(b.nombre, 'es'),
+      reciente: (a, b) => b.creado.localeCompare(a.creado),
+      seguimiento: (a, b) => (a.seguimiento || '9999').localeCompare(b.seguimiento || '9999')
+    }[orden]);
+
+    if (!vista.length) {
+      $('#lista').innerHTML = `<p class="vacio">${contactos.length ? 'Sin resultados.' : 'Aún no hay contactos. Pulsa “+ Nuevo contacto”.'}</p>`;
+      return;
+    }
+    $('#lista').innerHTML = vista.map(c => {
+      const tel = (c.telefono || '').replace(/\D/g, '');
+      const wa = tel ? (tel.length === 10 ? '57' + tel : tel) : '';
+      const vencido = c.seguimiento && c.seguimiento <= hoy() && c.estado !== 'inactivo';
+      const hist = c.historial || [];
+      return `<article class="contacto" data-id="${c.id}">
+        <div>
+          <h2>${esc(c.nombre)}<span class="etiqueta e-${c.estado}">${ESTADOS[c.estado]}</span></h2>
+          <div class="meta">
+            ${tel ? `<a href="https://wa.me/${wa}" target="_blank" rel="noopener">WhatsApp ${esc(c.telefono)}</a>` : ''}
+            ${c.correo ? `<a href="mailto:${esc(c.correo)}">${esc(c.correo)}</a>` : ''}
+            ${c.motivo ? `<span>${esc(c.motivo)}</span>` : ''}
+            <span>Origen: ${esc(c.origen)}</span>
+            ${c.seguimiento ? `<span class="${vencido ? 'vencido' : ''}">Seguimiento: ${c.seguimiento}</span>` : ''}
+          </div>
+        </div>
+        <div class="acciones">
+          <button class="btn sec chico" data-accion="historial">Historial (${hist.length})</button>
+          <button class="btn sec chico" data-accion="editar">Editar</button>
+          <button class="btn peligro chico" data-accion="borrar">Borrar</button>
+        </div>
+        ${c.notas ? `<p class="nota">${esc(c.notas)}</p>` : ''}
+        ${abiertos.has(c.id) ? `<div class="historial">
+          <ul>${hist.map(h => `<li><b>${h.fecha}</b> — ${esc(h.texto)}</li>`).join('') || '<li>Sin interacciones registradas.</li>'}</ul>
+          <form data-accion="interaccion">
+            <input name="texto" placeholder="Llamada, mensaje, consulta…" required aria-label="Nueva interacción">
+            <button class="btn chico">Añadir</button>
+          </form>
+        </div>` : ''}
+      </article>`;
+    }).join('');
+  }
+
+  function abrir(c) {
+    const f = $('#formulario');
+    f.reset();
+    $('#tituloDialogo').textContent = c ? 'Editar contacto' : 'Nuevo contacto';
+    f.id.value = c?.id || '';
+    for (const k of ['nombre','telefono','correo','estado','origen','motivo','seguimiento','notas'])
+      if (c) f[k].value = c[k] || '';
+    $('#dialogo').showModal();
+  }
+
+  $('#nuevo').onclick = () => abrir();
+
+  $('#dialogo').addEventListener('close', () => {
+    if ($('#dialogo').returnValue !== 'guardar') return;
+    const f = $('#formulario');
+    const datos = Object.fromEntries(new FormData(f));
+    datos.nombre = datos.nombre.trim();
+    if (!datos.nombre) return;
+    const i = contactos.findIndex(c => c.id === datos.id);
+    if (i >= 0) contactos[i] = { ...contactos[i], ...datos };
+    else contactos.push({ ...datos, id: crypto.randomUUID(), creado: new Date().toISOString(), historial: [] });
+    guardar();
+  });
+
+  $('#lista').addEventListener('click', e => {
+    const b = e.target.closest('button[data-accion]');
+    if (!b) return;
+    const id = b.closest('.contacto').dataset.id;
+    const c = contactos.find(x => x.id === id);
+    if (b.dataset.accion === 'editar') abrir(c);
+    if (b.dataset.accion === 'borrar' && confirm(`¿Borrar a ${c.nombre}?`)) {
+      contactos = contactos.filter(x => x.id !== id); guardar();
+    }
+    if (b.dataset.accion === 'historial') {
+      abiertos.has(id) ? abiertos.delete(id) : abiertos.add(id); pintar();
+    }
+  });
+
+  $('#lista').addEventListener('submit', e => {
+    e.preventDefault();
+    const id = e.target.closest('.contacto').dataset.id;
+    const c = contactos.find(x => x.id === id);
+    (c.historial ||= []).unshift({ fecha: hoy(), texto: e.target.texto.value.trim() });
+    guardar();
+  });
+
+  for (const s of ['#buscar', '#filtroEstado', '#orden'])
+    $(s).addEventListener('input', pintar);
+
+  function descargar(nombre, contenido, tipo) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([contenido], { type: tipo }));
+    a.download = nombre; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  $('#exportar').onclick = () =>
+    descargar(`crm-${hoy()}.json`, JSON.stringify(contactos, null, 2), 'application/json');
+  $('#exportarCsv').onclick = () => {
+    const cols = ['nombre','telefono','correo','estado','origen','motivo','seguimiento','notas'];
+    const celda = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const csv = [cols.join(','), ...contactos.map(c => cols.map(k => celda(k === 'estado' ? ESTADOS[c[k]] : c[k])).join(','))].join('\n');
+    descargar(`crm-${hoy()}.csv`, '﻿' + csv, 'text/csv');
+  };
+  $('#importar').onchange = async e => {
+    const archivo = e.target.files[0];
+    if (!archivo) return;
+    try {
+      const datos = JSON.parse(await archivo.text());
+      if (!Array.isArray(datos)) throw 0;
+      if (confirm(`Importar ${datos.length} contactos? Reemplazará los ${contactos.length} actuales.`)) {
+        contactos = datos; guardar();
+      }
+    } catch { alert('Archivo no válido.'); }
+    e.target.value = '';
+  };
+
+  pintar();
+})();
+</script>
+</body>
+</html>
