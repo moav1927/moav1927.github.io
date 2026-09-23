@@ -124,13 +124,13 @@
       <ul class="archivos" id="archivos" aria-label="Archivos cargados"></ul>
 
       <label class="campo" for="pedido">¿Qué datos necesitas de cada documento?
-        <small>Sepáralos con comas. Déjalo vacío para que elija los datos según el tipo de documento.</small>
+        <small>Sepáralos con comas, o pregunta: «¿de qué son las facturas?», «¿de qué tratan las tesis?». Déjalo vacío para que elija los datos según el tipo de documento.</small>
         <textarea id="pedido" placeholder="Ej.: número, fecha, proveedor, NIT, total"></textarea>
       </label>
       <div class="presets" id="presets" aria-label="Sugerencias">
-        <button type="button" data-v="número, fecha, proveedor, NIT, cliente, subtotal, IVA, retención, total, moneda">Facturas</button>
+        <button type="button" data-v="número, fecha, proveedor, NIT, cliente, concepto, categoría, subtotal, IVA, retención, total, moneda">Facturas</button>
         <button type="button" data-v="número, fecha, cliente, dirección, ciudad, transportador, placa">Remisiones</button>
-        <button type="button" data-v="título, autor, institución, fecha, páginas, resumen">Informes y tesis</button>
+        <button type="button" data-v="título, autor, institución, fecha, páginas, temas, resumen">Informes y tesis</button>
         <button type="button" data-v="">Automático</button>
       </div>
 
@@ -194,30 +194,30 @@
     { id: 'factura', nombre: 'Factura', plural: 'Facturas', comercial: true,
       titulo: ['factura electronica de venta', 'factura de venta', 'factura electronica', 'factura', 'tax invoice', 'commercial invoice', 'retail invoice', 'invoice', 'facture', 'rechnung', 'factuur', 'fattura', 'fatura', 'nota fiscal', 'bill of supply'],
       claves: ['cufe', 'resolucion dian', 'iva', 'subtotal', 'total a pagar', 'invoice number', 'invoice date', 'amount due', 'balance due', 'bill to', 'vat', 'gst', 'gstin', 'tva', 'mwst', 'ust', 'btw', 'montant ht', 'total ttc', 'rechnungsnummer', 'rechnungsdatum', 'factuurnummer', 'factuurdatum', 'due date', 'payment terms', 'fecha de vencimiento', 'net 30', 'vervaldatum', 'unit price', 'qty', 'quantity'],
-      campos: ['numero', 'fecha', 'emisor', 'nit', 'cliente', 'subtotal', 'iva', 'retencion', 'total', 'moneda'] },
+      campos: ['numero', 'fecha', 'emisor', 'nit', 'cliente', 'concepto', 'categoria', 'subtotal', 'iva', 'retencion', 'total', 'moneda'] },
     { id: 'recibo', nombre: 'Recibo', plural: 'Recibos', comercial: true,
       titulo: ['recibo de caja', 'recibo de pago', 'recibo', 'payment receipt', 'sales receipt', 'receipt', 'recu', 'quittung', 'kwitantie', 'ricevuta', 'comprovante'],
       claves: ['paid', 'pagado', 'amount paid', 'payment mode', 'payment method', 'cash', 'efectivo', 'transaction id', 'booking id', 'check in', 'check out'],
-      campos: ['numero', 'fecha', 'emisor', 'cliente', 'total', 'moneda', 'formapago'] },
+      campos: ['numero', 'fecha', 'emisor', 'cliente', 'concepto', 'categoria', 'total', 'moneda', 'formapago'] },
     { id: 'remision', nombre: 'Remisión', plural: 'Remisiones', comercial: true,
       titulo: ['remision', 'nota de entrega', 'guia de despacho', 'orden de despacho', 'nota de remision', 'delivery note', 'packing slip', 'packing list', 'bill of lading', 'bon de livraison', 'lieferschein', 'pakbon', 'guia de remessa'],
       claves: ['despacho', 'despachado', 'recibido por', 'recibi conforme', 'entregado por', 'transportador', 'conductor', 'placa', 'bultos', 'delivered', 'shipped', 'carrier', 'tracking', 'consignee', 'shipper'],
-      campos: ['numero', 'fecha', 'emisor', 'cliente', 'direccion', 'ciudad', 'transportador', 'placa'] },
+      campos: ['numero', 'fecha', 'emisor', 'cliente', 'concepto', 'direccion', 'ciudad', 'transportador', 'placa'] },
     { id: 'cotizacion', nombre: 'Cotización', plural: 'Cotizaciones', comercial: true,
       titulo: ['cotizacion', 'propuesta economica', 'oferta comercial', 'quotation', 'quote', 'estimate', 'proforma', 'pro forma', 'devis', 'angebot', 'offerte', 'preventivo', 'orcamento'],
       claves: ['validez de la oferta', 'validez', 'tiempo de entrega', 'valid until', 'validity', 'valable', 'gultig'],
-      campos: ['numero', 'fecha', 'emisor', 'cliente', 'subtotal', 'iva', 'total', 'moneda'] },
+      campos: ['numero', 'fecha', 'emisor', 'cliente', 'concepto', 'categoria', 'subtotal', 'iva', 'total', 'moneda'] },
     { id: 'orden', nombre: 'Orden de compra', plural: 'Órdenes de compra', comercial: true,
       titulo: ['orden de compra', 'orden de servicio', 'purchase order', 'bon de commande', 'bestellung', 'inkooporder', 'ordine di acquisto'],
       claves: ['proveedor', 'fecha de entrega', 'autorizado por', 'po number', 'ship to', 'delivery date'],
-      campos: ['numero', 'fecha', 'emisor', 'proveedor', 'subtotal', 'iva', 'total', 'moneda'] },
+      campos: ['numero', 'fecha', 'emisor', 'proveedor', 'concepto', 'categoria', 'subtotal', 'iva', 'total', 'moneda'] },
     { id: 'nota', nombre: 'Nota crédito/débito', plural: 'Notas crédito/débito', comercial: true,
       titulo: ['nota credito', 'nota debito', 'nota de credito', 'nota de debito', 'credit note', 'credit memo', 'debit note', 'avoir', 'gutschrift', 'creditnota', 'nota di credito'],
       claves: ['factura referencia', 'original invoice', 'concepto'],
-      campos: ['numero', 'fecha', 'emisor', 'cliente', 'total', 'moneda'] },
+      campos: ['numero', 'fecha', 'emisor', 'cliente', 'concepto', 'categoria', 'total', 'moneda'] },
     { id: 'cobro', nombre: 'Cuenta de cobro', plural: 'Cuentas de cobro', comercial: true,
       titulo: ['cuenta de cobro'], claves: ['debe a', 'la suma de', 'por concepto de'],
-      campos: ['numero', 'fecha', 'emisor', 'cliente', 'total', 'moneda'] },
+      campos: ['numero', 'fecha', 'emisor', 'cliente', 'concepto', 'categoria', 'total', 'moneda'] },
     { id: 'extracto', nombre: 'Extracto', plural: 'Extractos', comercial: true,
       titulo: ['extracto bancario', 'extracto', 'estado de cuenta', 'bank statement', 'account statement', 'statement of account', 'releve de compte', 'kontoauszug', 'rekeningafschrift'],
       claves: ['saldo anterior', 'saldo final', 'saldo actual', 'movimientos', 'retiros', 'consignaciones', 'opening balance', 'closing balance', 'previous balance', 'deposits', 'withdrawals', 'solde'],
@@ -229,31 +229,31 @@
     { id: 'acta', nombre: 'Acta', plural: 'Actas',
       titulo: ['acta de', 'acta', 'minutes of', 'minutes', 'proces-verbal', 'proces verbal', 'protokoll', 'notulen', 'verbale', 'agenda', 'orden del dia', 'votacion nominal'],
       claves: ['asistentes', 'orden del dia', 'compromisos', 'se da inicio', 'attendees', 'quorum', 'motion', 'seconded', 'adjourned', 'seance', 'presences', 'sitzung', 'call to order', 'approval of minutes', 'board of', 'meeting'],
-      campos: ['titulo', 'fecha', 'emisor', 'paginas', 'resumen'] },
+      campos: ['titulo', 'fecha', 'emisor', 'paginas', 'temas', 'resumen'] },
     { id: 'tesis', nombre: 'Tesis', plural: 'Tesis',
       titulo: ['tesis doctoral', 'tesis de maestria', 'tesis', 'trabajo de grado', 'trabajo de fin de grado', 'thesis', 'dissertation', 'these', 'doktorarbeit', 'masterarbeit', 'bachelorarbeit', 'proefschrift', 'tese', 'tesi di laurea'],
       claves: ['doctor of philosophy', 'degree of', 'master of', 'partial fulfillment', 'acknowledgements', 'agradecimientos', 'declaration', 'supervisor', 'director de tesis', 'advisor', 'bibliography', 'bibliografia', 'chapter', 'capitulo', 'university', 'universidad', 'faculty', 'facultad'],
-      campos: ['titulo', 'autor', 'institucion', 'fecha', 'paginas', 'palabrasclave', 'resumen'] },
+      campos: ['titulo', 'autor', 'institucion', 'fecha', 'paginas', 'palabrasclave', 'temas', 'resumen'] },
     { id: 'articulo', nombre: 'Artículo académico', plural: 'Artículos académicos',
       titulo: ['working paper', 'working papers', 'preprint', 'journal of', 'proceedings of', 'conference on', 'revista'],
       claves: ['abstract', 'keywords', 'palabras clave', 'doi', 'references', 'referencias', 'journal', 'proceedings', 'arxiv', 'et al', 'introduction', 'related work', 'conclusion'],
-      campos: ['titulo', 'autor', 'fecha', 'institucion', 'palabrasclave', 'paginas', 'resumen'] },
+      campos: ['titulo', 'autor', 'fecha', 'institucion', 'palabrasclave', 'paginas', 'temas', 'resumen'] },
     { id: 'libro', nombre: 'Libro o apuntes', plural: 'Libros y apuntes',
       titulo: ['lecture notes', 'apuntes', 'skript', 'manual', 'handbook', 'guia de usuario', 'user guide', 'user manual', 'tutorial', 'course notes', 'libro', 'instructions for', 'instruction', 'instructions', 'instrucciones para', 'instructivo', 'benutzerhandbuch', 'handbuch', 'mode d emploi', 'guide d utilisation', 'configuration guide', 'redbook', 'redpaper'],
       claves: ['table of contents', 'contents', 'indice', 'inhaltsverzeichnis', 'sommaire', 'chapter', 'capitulo', 'kapitel', 'chapitre', 'preface', 'prologo', 'vorwort', 'auflage', 'edition', 'isbn', 'ubungsaufgaben', 'exercises', 'ejercicios'],
-      campos: ['titulo', 'autor', 'fecha', 'paginas', 'resumen'] },
+      campos: ['titulo', 'autor', 'fecha', 'paginas', 'temas', 'resumen'] },
     { id: 'norma', nombre: 'Norma o reglamento', plural: 'Normas y reglamentos',
       titulo: ['federal register', 'act of', 'public law', 'pub. l', 'statute', 'code of federal regulations', 'proposed rules', 'proposed rule', 'final rule', 'regulation', 'reglamento', 'ley', 'decreto', 'resolucion', 'circular', 'norma tecnica', 'standard', 'rules for', 'directive', 'directiva', 'reglement', 'verordnung', 'gesetz'],
       claves: ['section', 'seccion', 'article', 'articulo', 'paragraph', 'shall', 'deberan', 'pursuant', 'cfr', 'u.s.c', 'effective date', 'agency', 'requirements', 'requisitos', 'rules', 'comments'],
-      campos: ['titulo', 'numero', 'fecha', 'emisor', 'paginas', 'resumen'] },
+      campos: ['titulo', 'numero', 'fecha', 'emisor', 'paginas', 'temas', 'resumen'] },
     { id: 'transcripcion', nombre: 'Transcripción', plural: 'Transcripciones',
       titulo: ['transcript', 'transcripcion', 'transcription', 'hearing', 'deposition', 'oral argument', 'in the supreme court', 'court of appeals'],
       claves: ['the court', 'justice', 'petitioner', 'respondent', 'witness', 'examination', 'proceedings', 'argument', 'counsel'],
-      campos: ['titulo', 'fecha', 'paginas', 'resumen'] },
+      campos: ['titulo', 'fecha', 'paginas', 'temas', 'resumen'] },
     { id: 'informe', nombre: 'Informe', plural: 'Informes',
       titulo: ['informe tecnico', 'informe de', 'informe', 'reporte', 'report', 'rapport', 'bericht', 'relatorio', 'relazione', 'estudio', 'study', 'assessment', 'evaluation', 'memoria de calculo', 'plan directeur', 'white paper'],
       claves: ['introduccion', 'introduction', 'objetivo', 'objective', 'alcance', 'scope', 'metodologia', 'methodology', 'conclusiones', 'conclusions', 'recomendaciones', 'recommendations', 'findings', 'executive summary', 'resumen ejecutivo', 'highlights', 'table of contents', 'anexo', 'annex', 'appendix', 'elaborado por', 'prepared by'],
-      campos: ['titulo', 'autor', 'fecha', 'institucion', 'paginas', 'resumen'] },
+      campos: ['titulo', 'autor', 'fecha', 'institucion', 'paginas', 'temas', 'resumen'] },
     { id: 'formulario', nombre: 'Formulario', plural: 'Formularios',
       titulo: ['formulario', 'application form', 'registration form', 'solicitud', 'formulaire', 'formular', 'tax return', 'anexo', 'declaracion', 'demande de', 'cerfa'],
       claves: ['please fill', 'diligencie', 'signature', 'firma del', 'check one', 'date of birth', 'fecha de nacimiento', 'tick', 'if yes', 'please complete', 'tax return', 'dni', 'd./dna', 'nie', 'pasaporte', 'cerfa', 'formulaire', 'nombre y apellidos', 'domicilio', 'firmado'],
@@ -269,7 +269,7 @@
     { id: 'carta', nombre: 'Carta o memorando', plural: 'Cartas y memorandos',
       titulo: ['memorandum', 'memorando', 'memo', 'oficio', 'circular interna', 'carta'],
       claves: ['to whom it may concern', 'dear', 'estimado', 'estimada', 'apreciado', 'atentamente', 'cordialmente', 'best regards', 'kind regards', 'sincerely', 'yours faithfully', 'saludos', 'cordialement', 'mit freundlichen', 'a quien corresponda', 'asunto', 'subject'],
-      campos: ['fecha', 'emisor', 'cliente', 'titulo', 'resumen'] },
+      campos: ['fecha', 'emisor', 'cliente', 'titulo', 'temas', 'resumen'] },
     { id: 'plano', nombre: 'Plano', plural: 'Planos',
       titulo: ['plano', 'planos', 'drawing', 'dessin', 'blueprint', 'plan de', 'site plan', 'floor plan'],
       claves: ['escala', 'echelle', 'scale', 'lamina', 'sheet', 'dibujo', 'dibujado por', 'drawn by', 'checked by', 'fachada', 'planta', 'elevation', 'legend', 'leyenda', 'legende', 'niveau', 'nivel', 'cota', 'rev'],
@@ -277,13 +277,13 @@
     { id: 'presentacion', nombre: 'Presentación', plural: 'Presentaciones',
       titulo: ['presentacion', 'presentation', 'slides', 'diapositivas', 'webinar', 'keynote'],
       claves: ['agenda', 'thank you', 'gracias', 'questions', 'preguntas', 'outline'],
-      campos: ['titulo', 'autor', 'fecha', 'paginas', 'resumen'] },
+      campos: ['titulo', 'autor', 'fecha', 'paginas', 'temas', 'resumen'] },
     { id: 'datos', nombre: 'Tabla de datos', plural: 'Tablas de datos',
       titulo: ['list of', 'listado', 'lista de', 'relacion de', 'estadisticas', 'statistics', 'summary of contents', 'schedule of'],
       claves: [],
       campos: ['titulo', 'fecha', 'emisor', 'paginas', 'cantidaditems'] },
   ];
-  const OTRO = { id: 'otro', nombre: 'Sin clasificar', plural: 'Sin clasificar', campos: ['titulo', 'fecha', 'emisor', 'paginas', 'resumen'] };
+  const OTRO = { id: 'otro', nombre: 'Sin clasificar', plural: 'Sin clasificar', campos: ['titulo', 'fecha', 'emisor', 'paginas', 'temas', 'resumen'] };
   const COMERCIALES = new Set(TIPOS.filter(t => t.comercial).map(t => t.id));
 
   // =====================================================================
@@ -318,6 +318,9 @@
     institucion: { etiqueta: 'Institución', tipo: 'texto', syn: ['universidad', 'university', 'institucion', 'institution', 'facultad', 'faculty', 'department', 'departamento'] },
     palabrasclave: { etiqueta: 'Palabras clave', tipo: 'largo', syn: ['palabras clave', 'keywords', 'key words', 'mots-cles', 'mots cles', 'schlusselworter', 'schlagworter', 'trefwoorden', 'palavras-chave', 'parole chiave', 'index terms'] },
     paciente: { etiqueta: 'Paciente', tipo: 'texto', syn: ['paciente', 'nombre del paciente', 'patient name', 'patient', 'nom du patient', 'nombre'] },
+    concepto: { etiqueta: 'Concepto', tipo: 'largo', syn: ['concepto', 'por concepto de', 'descripcion del servicio', 'description of services'] },
+    categoria: { etiqueta: 'Categoría', tipo: 'texto', syn: [] },
+    temas: { etiqueta: 'Temas principales', tipo: 'largo', syn: [] },
     idioma: { etiqueta: 'Idioma', tipo: 'texto', syn: [] },
     paginas: { etiqueta: 'Páginas', tipo: 'numero', syn: [] },
     resumen: { etiqueta: 'Resumen', tipo: 'resumen', syn: [] },
@@ -340,8 +343,11 @@
     'institucion': 'institucion', 'universidad': 'institucion', 'university': 'institucion', 'facultad': 'institucion', 'institution': 'institucion',
     'palabras clave': 'palabrasclave', 'keywords': 'palabrasclave', 'idioma': 'idioma', 'lengua': 'idioma', 'language': 'idioma',
     'paginas': 'paginas', 'numero de paginas': 'paginas', 'pages': 'paginas', 'extension': 'paginas',
-    'paciente': 'paciente', 'patient': 'paciente', 'resumen': 'resumen', 'abstract': 'resumen', 'summary': 'resumen', 'sintesis': 'resumen', 'descripcion': 'resumen', 'de que trata': 'resumen',
-    'items': 'cantidaditems', 'cantidad de items': 'cantidaditems', 'productos': 'cantidaditems', 'filas': 'cantidaditems',
+    'paciente': 'paciente', 'patient': 'paciente', 'resumen': 'resumen', 'abstract': 'resumen', 'summary': 'resumen', 'sintesis': 'resumen', 'descripcion': 'resumen',
+    'items': 'cantidaditems', 'cantidad de items': 'cantidaditems', 'filas': 'cantidaditems',
+    'concepto': 'concepto', 'productos': 'concepto', 'servicios': 'concepto', 'que se compro': 'concepto', 'detalle': 'concepto', 'descripcion de la compra': 'concepto',
+    'categoria': 'categoria', 'sector': 'categoria', 'tipo de gasto': 'categoria', 'rubro': 'categoria',
+    'tema': 'temas', 'temas': 'temas', 'temas principales': 'temas', 'de que trata': 'temas', 'de que tratan': 'temas', 'topic': 'temas', 'topics': 'temas',
     'tipo': null, 'tipo de documento': null, 'clasificacion': null, 'archivo': null, 'nombre del archivo': null,
   };
 
@@ -1115,7 +1121,7 @@
       if (d.emisor) partes.push(`de ${d.emisor}`);
       if (d.cliente) partes.push(`para ${d.cliente}`);
       if (typeof d.total === 'number') partes.push(`por ${fmtMonto(d.total, d.moneda)}`);
-      return partes.join(' ') + (items ? `; ${items} ítem${items === 1 ? '' : 's'}.` : '.');
+      return partes.join(' ') + (d.concepto ? `: ${d.concepto}.` : items ? `; ${items} ítem${items === 1 ? '' : 's'}.` : '.');
     }
     if (tipo.id === 'datos') {
       const t = doc.tablas.slice().sort((a, b) => b.filas.length - a.filas.length)[0];
@@ -1126,8 +1132,145 @@
     return [d.titulo && !norm(cuerpo).startsWith(norm(d.titulo)) ? d.titulo + '.' : '', cuerpo].filter(Boolean).join(' ');
   }
 
+  // ---------- ¿De qué es? Ítems, concepto y categoría de gasto ----------
+  const RE_COL_DESC = /(descrip|detalle|concepto|articulo|producto|item|servicio|omschrijving|designation|beschreibung|description|artikel|particular|product)/;
+  const RE_NO_ITEM = /^(sub ?total|total|iva|base|impuesto|retencion|irpf|descuento|saldo|tarifa|valor|cantidad items|precio unitario|taxes?|vat|tva|btw|mwst)\b/;
+  // Celdas de encabezado o de condiciones que se cuelan en la columna de descripción
+  const noEsItem = t => { const n = norm(t); if (/@|https?:|www\.|:\s*$|[,;]$|--|\b\d{4} ?[A-Z]{2}\b/.test(t) || /^[A-Z0-9\-_/]{8,}$/.test(t.trim()) || /\b(invoice date|due date|kvk|iban|bic|swift|aufsichtsrat|vorstand|vorsitz|geschaftsfuhrer|t\.?a\.?v|payment|paid|betaald|ideal|nequi|daviplata|autorizacion|resolucion|order (no|number|date)|tax \d)/.test(n)) return true; return /\b(vencimiento|condiciones de pago|forma de pago|medio de pago|id\.? del cliente|de factura|n\.? ?o? ?º|fecha|nit|cliente|telefono|direccion|email|correo)\b/.test(n) && (/:/.test(t) || t === t.toUpperCase() || n.split(' ').length <= 4); };
+  function itemsDoc(doc) {
+    if (doc._items) return doc._items;
+    const items = [];
+    const limpiar = t => String(t).replace(/^\s*(\d+([.,]\d+)?\s*(x|und|un|uds?)?\s+)?(\[?[A-Z]{0,4}[-_]?\d{2,}[\w-]*\]?\s*[-–:]?\s*)?/i, '').replace(/\s*\((x\d+|\d+([.,]\d+)?\s*x\s*[^)]*)\)$/i, '').replace(/\s+/g, ' ').trim();
+    for (let t of doc.tablas) {
+      // encabezado metido dentro de las filas ("Artikel Omschrijving | … | Bedrag")
+      if (!t.columnas.some(c => RE_COL_DESC.test(norm(c)))) {
+        const h = t.filas.findIndex(f => f.some(c => RE_COL_DESC.test(norm(c || ''))) && !f.some(c => /\d/.test(c || '')));
+        if (h >= 0 && h < t.filas.length - 1) t = { columnas: t.filas[h].map(c => c || ''), filas: t.filas.slice(h + 1) };
+      }
+      const cols = t.columnas.map(norm);
+      let di = cols.findIndex(c => RE_COL_DESC.test(c));
+      const porEncabezado = di >= 0;
+      if (di < 0) {
+        // la columna con más letras
+        let mejor = -1;
+        t.columnas.forEach((_, j) => { const letras = t.filas.reduce((s, f) => s + (String(f[j] || '').match(/\p{L}/gu) || []).length, 0) / Math.max(1, t.filas.length); if (letras > mejor) { mejor = letras; di = j; } });
+        if (mejor < 6) continue;
+      }
+      let mi = -1;
+      for (let j = t.columnas.length - 1; j >= 0; j--) if (j !== di && t.filas.filter(f => typeof dineroDe(f[j] || '') === 'number').length >= t.filas.length * 0.6) { mi = j; break; }
+      for (const f of t.filas) {
+        const desc = limpiar(f[di] || '');
+        if ((desc.match(/\p{L}/gu) || []).length < 3 || RE_NO_ITEM.test(norm(desc)) || esEtiqueta(desc) || noEsItem(desc)) continue;
+        const monto = mi >= 0 ? dineroDe(f[mi] || '') : null;
+        if ((!porEncabezado || mi >= 0) && typeof monto !== 'number') continue;
+        items.push({ desc, monto });
+      }
+    }
+    // Sin tablas (tiquetes POS, OCR): líneas entre el encabezado de ítems y el subtotal/total
+    if (!items.length) {
+      const i0 = doc.lineas.findIndex(l => /\b(cant|cantidad|qty)\b/.test(l.textoN) && /\b(detalle|descrip|articulo|producto|item|concepto)/.test(l.textoN));
+      if (i0 >= 0) for (const l of doc.lineas.slice(i0 + 1, i0 + 30)) {
+        if (RE_NO_ITEM.test(l.textoN) || /^(cantidad items|total items|precio unitario)/.test(l.textoN)) { if (/total/.test(l.textoN)) break; continue; }
+        const celda = l.celdas.slice().sort((a, b) => (b.match(/\p{L}/gu) || []).length - (a.match(/\p{L}/gu) || []).length)[0] || '';
+        const desc = limpiar(celda.replace(/\s+[\d.,$€]+(\s+[\d.,$€]+)*$/, ''));
+        if ((desc.match(/\p{L}/gu) || []).length >= 4 && !esEtiqueta(desc) && !noEsItem(desc)) items.push({ desc, monto: dineroDe(l.celdas.at(-1)) });
+      }
+    }
+    return doc._items = items;
+  }
+  function conceptoDoc(doc) {
+    const v = buscar(doc, CAMPOS.concepto);
+    if (v) return v;
+    const items = itemsDoc(doc);
+    if (!items.length) return null;
+    const unicos = [];
+    for (const it of items) if (!unicos.some(u => norm(u.desc) === norm(it.desc))) unicos.push(it);
+    const orden = unicos.some(u => typeof u.monto === 'number') ? unicos.slice().sort((a, b) => (b.monto || 0) - (a.monto || 0)) : unicos;
+    const top = orden.slice(0, 3).map(u => u.desc.length > 60 ? u.desc.slice(0, 57) + '…' : u.desc);
+    return top.join('; ') + (unicos.length > 3 ? ` (y ${unicos.length - 3} más)` : '');
+  }
+  // Categorías de gasto: palabras (sin tildes) que las delatan
+  const CATEGORIAS = [
+    ['Salud e insumos médicos', 'guante tapaboca jeringa medic clinic hospital odontolog dental corona radiograf farmac laboratorio vacuna veterinar esteriliz desparasit gasa lidocaina antiseptic zirconio paciente ips eps quirurg biomedic'],
+    ['Ferretería y construcción', 'pintura rodillo brocha cemento ladrillo tuberia conduit cable breaker tablero electric lija cinta herramienta tornillo fachada bajante reforma obra construc ferreter concreto varilla plomeria'],
+    ['Tecnología y software', 'software saas apple ipad iphone macbook mouse teclado impresora nintendo samsung celular smartphone notebook electronica licencia computador laptop portatil monitor tablet nube cloud hosting servidor aws amazon web dominio internet fibra telecom microsd sandisk memoria plan datos glacier compute elastic informatica'],
+    ['Transporte y logística', 'flete transporte envio cargue descargue mensajeria despacho shipping delivery courier encomienda'],
+    ['Servicios profesionales', 'asesor consultor estudio de impacto auditor contab declaracion honorario diseno identidad corporativa legal abogad monitoreo capacitacion formacion curso'],
+    ['Mantenimiento y reparación', 'mantenimiento reparacion revision mano de obra taller freno repuesto onderhoud'],
+    ['Alimentos y bebidas', 'agua pool cafe alimento comida restaurante bebida food snack almuerzo'],
+    ['Papelería e impresión', 'folleto cartel tarjeton impresion papel cuaderno imprenta papeleria toner'],
+    ['Hospedaje y viajes', 'hotel hospedaje habitacion check in oyo tiquete vuelo booking alojamiento'],
+    ['Ropa y calzado', 'remera camisa vestido pantalon zapato calzado talle uniforme'],
+    ['Publicidad y medios', 'anuncio publicidad annonce justificatif marketing pauta'],
+    ['Muebles y oficina', 'office chair silla escritorio mueble furniture archivador'],
+    ['Servicios públicos y telecomunicaciones', 'energia electricidad acueducto alcantarillado gas natural telefonia celular abonne abonnement freebox'],
+  ].map(([n, pal]) => [n, pal.split(' ').filter(Boolean)]);
+  function categoriaDoc(doc, datos) {
+    const texto = ' ' + norm([...itemsDoc(doc).map(i => i.desc), datos.concepto ?? datos._concepto ?? '', datos.emisor ?? datos._emisor ?? ''].join(' ')) + ' ';
+    let mejor = null, max = 0;
+    for (const [n, pal] of CATEGORIAS) {
+      const p = pal.reduce((s, k) => s + (texto.includes(' ' + k) ? 1 : 0), 0);
+      if (p > max) { max = p; mejor = n; }
+    }
+    if (mejor) return mejor;
+    // sin pistas en los ítems: la primera página, exigiendo dos palabras de la misma categoría
+    const pag = ' ' + norm(doc.lineas.filter(l => l.pagina === 1).slice(0, 80).map(l => l.texto).join(' ')) + ' ';
+    for (const [n, pal] of CATEGORIAS) {
+      const p = pal.reduce((s, k) => s + (pag.includes(' ' + k) ? 1 : 0), 0);
+      if (p >= 2 && p > max) { max = p; mejor = n; }
+    }
+    return mejor || 'Otros';
+  }
+
+  // ---------- Temas principales (tesis, artículos, informes…) ----------
+  const VACIAS = new Set(('de la que el en y a los del se las por un para con no una su al lo como mas pero sus le ya o este si porque esta entre cuando muy sin sobre tambien me hasta hay donde quien desde todo nos durante todos uno les ni contra otros ese eso ante ellos e esto mi antes algunos que unos yo otro otras otra el tanto esa estos mucho quienes nada muchos cual poco ella estar estas algunas algo nosotros cada puede pueden ser son fue han sido tiene tienen hace hacer asi segun dos tres parte forma caso tipo manera vez veces bien sobre cuales mediante traves ademas debe deben cual donde siendo sera seran estos estas cuyo cuya '
+    + 'the of and to in a is that for it as was with be by on not he this are or his from at which but have an they you were her she there been one all we their its has had more when will would who so can no if out so said what up about into than them could only other time some these two may then do first any my now such like our over also new most just made after even many must before through back years where much your well should very because does each how those both being same under while last might great since against right three still own however another between few without here well used using use based show shows shown within upon thus therefore although among whether either figure table section chapter page pages et al ie eg '
+    + 'le les des et est une du pour dans au sur aux par ce qui ne pas plus sont ou avec cette ces son sa ses leur leurs elle il ils nous vous mais comme tout tous etre fait faire '
+    + 'der die und das ist mit von den fur nicht ein eine wird dem im auf zu sich auch als wie bei oder aus nach werden sind wenn noch nur kann dass einer eines einem diese dieser '
+    + 'het een van voor met niet op zijn wij uw bij naar ook deze te '
+    + 'os do da dos das em nao ao pelo pela sao um uma na no com para '
+    + 'il di che della per non sono gli nel alla dei delle '
+    + 'lorem ipsum dolor sit amet consectetur adipiscing elit sed eiusmod tempor incididunt labore dolore magna aliqua enim minim veniam quis nostrud exercitation ullamco laboris nisi aliquip commodo consequat duis aute irure reprehenderit voluptate velit esse cillum fugiat nulla pariatur excepteur sint occaecat cupidatat proident sunt culpa officia deserunt mollit anim laborum '
+    + 'please came away little form line attach exit report page aqui '
+    + 'information informacion summary abstract introduction introduccion conclusion conclusiones resumen results resultados second third fourth following example examples number include includes including provide provided public general attendu considerant abbildung bemerkung definition satz beweis lemma beispiel heisst dann gilt also sowie gibt jede jeder alle wurde wurden haben durch uber unter zwischen dont aussi ainsi ete avoir peut selon '
+    + 'tabla figura capitulo pagina seccion ejemplo anexo usted ustedes tabla cuadro grafico numero total valor fecha anos ano mismo misma cada gran mayor menor nuevo nueva primer primera segundo segunda http https www com org pdf').split(' '));
+  function temasDoc(doc, n = 5) {
+    const clave = buscar(doc, CAMPOS.palabrasclave);
+    if (clave) return clave.split(/[,;·•|]|\s{2,}/).map(t => t.trim().replace(/\.$/, '')).filter(t => t.length > 2).slice(0, n).join(', ');
+    const frec = {}, forma = {}, bi = {};
+    let total = 0;
+    for (const l of doc.lineas.filter(l => l.pagina <= 60).slice(0, 6000)) {
+      const palabras = l.texto.split(/[^\p{L}\-']+/u).filter(Boolean);
+      let prev = null;
+      for (const w of palabras) {
+        const k = norm(w).replace(/^-+|-+$/g, '');
+        if (k.length < 4 || VACIAS.has(k) || /\d/.test(k)) { prev = null; continue; }
+        frec[k] = (frec[k] || 0) + 1; total++;
+        (forma[k] ??= {})[w] = (forma[k][w] || 0) + 1;
+        if (prev) bi[prev + ' ' + k] = (bi[prev + ' ' + k] || 0) + 1;
+        prev = k;
+      }
+    }
+    if (total < 30) return null;
+    const bonito = k => { const f = Object.entries(forma[k] || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || k; return f === f.toUpperCase() && f.length > 4 ? f[0] + f.slice(1).toLowerCase() : f; };
+    const cand = [];
+    for (const [k, c] of Object.entries(bi)) if (c >= 3) cand.push([k, c * 2.2]);
+    for (const [k, c] of Object.entries(frec)) if (c >= 3) cand.push([k, c * (k.length >= 7 ? 1.15 : 1)]);
+    cand.sort((a, b) => b[1] - a[1]);
+    const elegidos = [];
+    for (const [k] of cand) {
+      if (elegidos.some(e => e.includes(k) || k.includes(e))) continue;
+      elegidos.push(k);
+      if (elegidos.length >= n) break;
+    }
+    return elegidos.map(k => k.split(' ').map(bonito).join(' ')).join(', ') || null;
+  }
+
   function extraerCampo(doc, clave, tipo, datos, meta) {
     switch (clave) {
+      case 'concepto': return COMERCIALES.has(tipo.id) ? conceptoDoc(doc) : null;
+      case 'categoria': return COMERCIALES.has(tipo.id) ? categoriaDoc(doc, datos) : null;
+      case 'temas': return COMERCIALES.has(tipo.id) ? null : temasDoc(doc);
       case 'numero': return numeroDoc(doc, tipo);
       case 'cliente': return tipo.id === 'carta' ? destinatarioCarta(doc) : clienteDoc(doc)?.v ?? null;
       case 'titulo': return (v => v && v.split(/\s+/).length >= 2 ? v : null)(buscar(doc, CAMPOS.titulo)) || (tipo.id === 'carta' ? buscar(doc, { tipo: 'texto', syn: ['asunto', 'subject', 're', 'ref', 'referencia', 'objet', 'betreff', 'onderwerp'] }) : null) || (!tipo.comercial && meta.tituloMeta) || tituloInfo(doc)?.texto || meta.tituloMeta || null;
@@ -1176,6 +1319,21 @@
     return { etiqueta: texto.trim().replace(/^./, c => c.toUpperCase()), tipo: /valor|total|precio|monto|costo|saldo|pago|iva|impuesto|price|cost|amount/.test(n) ? 'dinero' : /fecha|date/.test(n) ? 'fecha' : 'texto', syn: [n] };
   }
   function interpretarPedido(txt) {
+    // Preguntas en lenguaje natural sobre el contenido se convierten en columnas
+    const extra = [];
+    txt = txt.split(/[\n;,]|(?<=\?)/).map(p => {
+      const n = norm(p).replace(/[¿?¡!]/g, '').trim();
+      if (!/\?|^(de )?que |^cual|^sobre que|^de que/.test(norm(p).replace(/^¿/, '')) && !/^(de|sobre) que/.test(n) && !/^(el |los |la |las )?temas? (de|del)\b/.test(n)) return p;
+      if (/(de|sobre) que (son|es|era|eran|fueron|se trata|trata|tratan)|que (se )?(compr|vend|pag|factur)|que productos|que servicios|en que (se )?gast|concepto/.test(n)) {
+        if (/tesis|articulo|informe|libro|documento|trabajo|trata/.test(n) && !/factura|compra|gasto|recibo|cotizacion/.test(n)) extra.push('temas');
+        else extra.push('concepto', 'categoria');
+        if ((/documento/.test(n) || !/tesis|articulo|informe|libro|trabajo/.test(n)) && !/factura|compra|gasto|recibo|cotizacion/.test(n)) extra.push('concepto', 'categoria');
+        return '';
+      }
+      if (/tema|trata|asunto|sobre que/.test(n)) { extra.push('temas'); if (/documento|archivo/.test(n)) extra.push('concepto', 'categoria'); return ''; }
+      return p;
+    }).join(',');
+    txt = [txt, ...new Set(extra)].filter(Boolean).join(',');
     const partes = txt.split(/[,;\n]|\s+y\s+|\s+and\s+/).map(s => s.trim()).filter(Boolean);
     const campos = [], vistos = new Set();
     for (const p of partes) {
@@ -1392,10 +1550,10 @@
           datos[k] = c?.libre ? buscar(doc, c.libre) : extraerCampo(doc, k, tipo, datos, meta);
         }
         // Datos base para el resumen, los totales y los duplicados, aunque no se hayan pedido
-        const baseCampos = COMERCIALES.has(tipo.id) || tipo.id === 'contrato' ? ['numero', 'fecha', 'emisor', 'cliente', 'total', 'moneda'] : ['titulo', 'fecha'];
+        const baseCampos = COMERCIALES.has(tipo.id) ? ['numero', 'fecha', 'emisor', 'cliente', 'total', 'moneda', 'concepto', 'categoria'] : tipo.id === 'contrato' ? ['numero', 'fecha', 'emisor', 'cliente', 'total', 'moneda', 'temas'] : ['titulo', 'fecha', 'temas'];
         for (const k of baseCampos) if (!(k in datos)) datos['_' + k] = extraerCampo(doc, k, tipo, datos, meta);
         const b = k => datos[k] ?? datos['_' + k];
-        datos.resumen = resumenDoc(doc, tipo, { numero: b('numero'), fecha: b('fecha'), emisor: b('emisor'), cliente: b('cliente'), total: b('total'), moneda: b('moneda'), titulo: b('titulo') });
+        datos.resumen = resumenDoc(doc, tipo, { numero: b('numero'), fecha: b('fecha'), emisor: b('emisor'), cliente: b('cliente'), total: b('total'), moneda: b('moneda'), titulo: b('titulo'), concepto: b('concepto') });
         docs.push({ archivo: a.nombre, paginas: numPaginas, conOcr, sinLeer, tipo, confianza, datos, doc, idioma: meta.idioma });
         a.estado = tipo.nombre + (conOcr ? ' · OCR' : '') + (leidas < numPaginas ? ` · ${leidas} de ${numPaginas} págs.` : '');
         a.clase = 'ok';
@@ -1439,7 +1597,8 @@
     let faltantes = 0;
     const filas = lista.map(d => {
       const vals = claves.map(k => d.datos[k] ?? '');
-      const f = etiquetas.filter((_, j) => vals[j] === '' || vals[j] === null);
+      const noAplica = k => (['concepto', 'categoria'].includes(k) && !COMERCIALES.has(d.tipo.id)) || (k === 'temas' && COMERCIALES.has(d.tipo.id));
+      const f = etiquetas.filter((_, j) => (vals[j] === '' || vals[j] === null) && !noAplica(claves[j]));
       if (d.confianza === 'baja') f.unshift('tipo de documento');
       if (d.sinLeer) f.push(`${d.sinLeer} páginas escaneadas sin leer`);
       if (f.length) faltantes++;
@@ -1491,11 +1650,33 @@
     const porRevisar = hojasDatos.reduce((s, h) => s + h.faltantes, 0);
     const paginasTot = ok.reduce((s, d) => s + d.paginas, 0);
     const largos = ok.filter(d => d.paginas >= 30).sort((a, b) => b.paginas - a.paginas);
+    // ¿De qué tratan? Gasto por categoría y temas en común
+    const porCategoria = {};
+    for (const d of ok) {
+      if (!COMERCIALES.has(d.tipo.id)) continue;
+      const c = d.datos.categoria ?? d.datos._categoria ?? 'Sin identificar';
+      const x = (porCategoria[c] ??= { n: 0, montos: {} });
+      x.n++;
+      const v = tot(d); if (v !== null) { const m = mon(d) || 'sin moneda'; x.montos[m] = (x.montos[m] || 0) + v; }
+    }
+    const catOrden = Object.entries(porCategoria).sort((a, b) => b[1].n - a[1].n);
+    const temasLote = {};
+    for (const d of ok) {
+      if (COMERCIALES.has(d.tipo.id)) continue;
+      const t = d.datos.temas ?? d.datos._temas;
+      if (t) for (const x of String(t).split(', ')) { const k = norm(x); (temasLote[k] ??= { forma: x, n: 0 }).n++; }
+    }
+    const nNoCom = ok.filter(d => !COMERCIALES.has(d.tipo.id)).length;
+    const temasPorDoc = ok.filter(d => !COMERCIALES.has(d.tipo.id) && (d.datos.temas ?? d.datos._temas)).map(d => [d.archivo, d.tipo.nombre, d.datos.temas ?? d.datos._temas]);
+    const repetidos = Object.values(temasLote).filter(x => x.n >= 2).sort((a, b) => b.n - a.n);
+    const temasComunes = Object.values(temasLote).filter(x => x.n >= 2 || nNoCom === 1).sort((a, b) => b.n - a.n).slice(0, 8);
     const texto = [
       `Se procesaron ${docs.length} documento${docs.length === 1 ? '' : 's'} (${paginasTot.toLocaleString('es-CO')} páginas): ${lista || 'ninguno legible'}.`,
       errores.length ? `${errores.length === 1 ? 'Uno no se pudo leer' : errores.length + ' no se pudieron leer'} (${errores.map(d => d.error.toLowerCase()).filter((v, i, a) => a.indexOf(v) === i).join(', ')}).` : '',
       textoIdiomas && Object.keys(idiomas).length > 1 ? `Idiomas: ${textoIdiomas}.` : '',
       frasesDinero.length ? `Sumas por tipo: ${frasesDinero.join('; ')}.` : '',
+      catOrden.length ? `Los documentos comerciales son principalmente de ${catOrden.slice(0, 4).map(([c, x]) => `${c.toLowerCase()} (${x.n})`).join(', ')}.` : '',
+      temasComunes.length ? `Temas ${nNoCom === 1 ? 'del documento' : 'en común'}: ${temasComunes.map(x => x.forma + (x.n > 1 ? ` (${x.n})` : '')).join(', ')}.` : (temasPorDoc.length ? `Temas por documento: ${temasPorDoc.slice(0, 5).map(([a, , t]) => `${a.replace(/\.[^.]+$/, '')} (${t.split(', ').slice(0, 3).join(', ')})`).join('; ')}${temasPorDoc.length > 5 ? '; …' : ''}.` : ''),
       largos.length ? `El más extenso es «${largos[0].datos.titulo ?? largos[0].datos._titulo ?? largos[0].archivo}» (${largos[0].paginas} páginas).` : '',
       duplicados.length ? `Hay ${duplicados.length} posible${duplicados.length === 1 ? '' : 's'} duplicado${duplicados.length === 1 ? '' : 's'} (mismo número y emisor).` : '',
       porRevisar ? `${porRevisar} documento${porRevisar === 1 ? ' tiene' : 's tienen'} datos que no se encontraron: revisa la columna «Por revisar».` : 'Se encontraron todos los datos buscados.',
@@ -1509,6 +1690,9 @@
     const porMoneda = {};
     for (const d of ok) if (COMERCIALES.has(d.tipo.id) && tot(d) !== null) { const m = mon(d) || 'sin moneda'; (porMoneda[m] ??= { n: 0, suma: 0 }); porMoneda[m].n++; porMoneda[m].suma += tot(d); }
     resumen.pie = [[], ['Resumen', texto],
+      ...(catOrden.length ? [[], ['¿De qué son? Documentos comerciales por categoría'], ['Categoría', 'Documentos', 'Suma'], ...catOrden.map(([c, x]) => [c, x.n, Object.entries(x.montos).map(([m, v]) => fmtMonto(v, m === 'sin moneda' ? '' : m)).join(' + ')])] : []),
+      ...(temasPorDoc.length ? [[], ['¿De qué tratan? Temas de tesis, artículos, informes y otros documentos'], ['Archivo', 'Tipo', 'Temas principales'], ...temasPorDoc.slice(0, 60)] : []),
+      ...(repetidos.length ? [[], ['Temas que se repiten en varios documentos'], ['Tema', 'Documentos'], ...repetidos.slice(0, 15).map(x => [x.forma, x.n])] : []),
       ...(Object.keys(porMoneda).length ? [[], ['Totales por moneda (documentos comerciales)'], ['Moneda', 'Documentos', 'Suma'], ...Object.entries(porMoneda).map(([m, x]) => [m, x.n, x.suma])] : []),
       ...(duplicados.length ? [[], ['Posibles duplicados'], ['Tipo', 'Número', 'Archivo', 'Repetido en'], ...duplicados] : []),
       ...(errores.length ? [[], ['Archivos no leídos'], ...errores.map(d => [d.archivo, d.error])] : [])];
