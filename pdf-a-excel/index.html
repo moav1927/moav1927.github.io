@@ -110,7 +110,7 @@
 <div class="envoltura">
   <header>
     <h1>Muchos PDF, <em>un solo Excel</em></h1>
-    <p>Sube 1, 10 o 50 documentos —facturas, recibos, remisiones, informes, tesis, normas, listados…— en español, inglés, francés, alemán, neerlandés, portugués o italiano. La herramienta los clasifica, saca los datos que pidas de cada uno y arma un Excel con un resumen, los totales por moneda y el detalle.</p>
+    <p>Sube 1, 10 o 50 documentos —facturas, recibos, remisiones, informes, tesis, artículos, libros, normas, formularios, cartas, planos, listados…— en español, inglés, francés, alemán, neerlandés, portugués o italiano. La herramienta los clasifica, saca los datos que pidas de cada uno y arma un Excel con un resumen, los totales por moneda y el detalle.</p>
     <div class="sellos"><span class="sello">Gratis</span><span class="sello">Sin cuenta</span><span class="sello">Tus PDF no salen de tu dispositivo</span></div>
   </header>
 
@@ -175,7 +175,7 @@
 <script>
 (() => {
   const $ = s => document.querySelector(s);
-  const MAX_PAGINAS = 400;   // páginas leídas por documento
+  const MAX_PAGINAS = 1000;  // páginas leídas por documento
   const MAX_OCR = 25;        // páginas escaneadas que se leen con OCR por documento (el OCR es lento)
   const base = new URL('./lib/', location.href).href;
   pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js';
@@ -235,15 +235,15 @@
       claves: ['doctor of philosophy', 'degree of', 'master of', 'partial fulfillment', 'acknowledgements', 'agradecimientos', 'declaration', 'supervisor', 'director de tesis', 'advisor', 'bibliography', 'bibliografia', 'chapter', 'capitulo', 'university', 'universidad', 'faculty', 'facultad'],
       campos: ['titulo', 'autor', 'institucion', 'fecha', 'paginas', 'palabrasclave', 'resumen'] },
     { id: 'articulo', nombre: 'Artículo académico', plural: 'Artículos académicos',
-      titulo: [],
+      titulo: ['working paper', 'working papers', 'preprint', 'journal of', 'proceedings of', 'conference on', 'revista'],
       claves: ['abstract', 'keywords', 'palabras clave', 'doi', 'references', 'referencias', 'journal', 'proceedings', 'arxiv', 'et al', 'introduction', 'related work', 'conclusion'],
       campos: ['titulo', 'autor', 'fecha', 'institucion', 'palabrasclave', 'paginas', 'resumen'] },
     { id: 'libro', nombre: 'Libro o apuntes', plural: 'Libros y apuntes',
-      titulo: ['lecture notes', 'apuntes', 'skript', 'manual', 'handbook', 'guia de usuario', 'user guide', 'user manual', 'tutorial', 'course notes', 'libro'],
+      titulo: ['lecture notes', 'apuntes', 'skript', 'manual', 'handbook', 'guia de usuario', 'user guide', 'user manual', 'tutorial', 'course notes', 'libro', 'instructions for', 'instruction', 'instructions', 'instrucciones para', 'instructivo', 'benutzerhandbuch', 'handbuch', 'mode d emploi', 'guide d utilisation', 'configuration guide', 'redbook', 'redpaper'],
       claves: ['table of contents', 'contents', 'indice', 'inhaltsverzeichnis', 'sommaire', 'chapter', 'capitulo', 'kapitel', 'chapitre', 'preface', 'prologo', 'vorwort', 'auflage', 'edition', 'isbn', 'ubungsaufgaben', 'exercises', 'ejercicios'],
       campos: ['titulo', 'autor', 'fecha', 'paginas', 'resumen'] },
     { id: 'norma', nombre: 'Norma o reglamento', plural: 'Normas y reglamentos',
-      titulo: ['federal register', 'proposed rules', 'proposed rule', 'final rule', 'regulation', 'reglamento', 'ley', 'decreto', 'resolucion', 'circular', 'norma tecnica', 'standard', 'rules for', 'directive', 'directiva', 'reglement', 'verordnung', 'gesetz'],
+      titulo: ['federal register', 'act of', 'public law', 'pub. l', 'statute', 'code of federal regulations', 'proposed rules', 'proposed rule', 'final rule', 'regulation', 'reglamento', 'ley', 'decreto', 'resolucion', 'circular', 'norma tecnica', 'standard', 'rules for', 'directive', 'directiva', 'reglement', 'verordnung', 'gesetz'],
       claves: ['section', 'seccion', 'article', 'articulo', 'paragraph', 'shall', 'deberan', 'pursuant', 'cfr', 'u.s.c', 'effective date', 'agency', 'requirements', 'requisitos', 'rules', 'comments'],
       campos: ['titulo', 'numero', 'fecha', 'emisor', 'paginas', 'resumen'] },
     { id: 'transcripcion', nombre: 'Transcripción', plural: 'Transcripciones',
@@ -255,8 +255,8 @@
       claves: ['introduccion', 'introduction', 'objetivo', 'objective', 'alcance', 'scope', 'metodologia', 'methodology', 'conclusiones', 'conclusions', 'recomendaciones', 'recommendations', 'findings', 'executive summary', 'resumen ejecutivo', 'highlights', 'table of contents', 'anexo', 'annex', 'appendix', 'elaborado por', 'prepared by'],
       campos: ['titulo', 'autor', 'fecha', 'institucion', 'paginas', 'resumen'] },
     { id: 'formulario', nombre: 'Formulario', plural: 'Formularios',
-      titulo: ['formulario', 'application form', 'registration form', 'solicitud', 'formulaire', 'formular'],
-      claves: ['please fill', 'diligencie', 'signature', 'firma del', 'check one', 'date of birth', 'fecha de nacimiento'],
+      titulo: ['formulario', 'application form', 'registration form', 'solicitud', 'formulaire', 'formular', 'tax return', 'anexo', 'declaracion', 'demande de', 'cerfa'],
+      claves: ['please fill', 'diligencie', 'signature', 'firma del', 'check one', 'date of birth', 'fecha de nacimiento', 'tick', 'if yes', 'please complete', 'tax return', 'dni', 'd./dna', 'nie', 'pasaporte', 'cerfa', 'formulaire', 'nombre y apellidos', 'domicilio', 'firmado'],
       campos: ['titulo', 'fecha', 'emisor', 'paginas'] },
     { id: 'certificado', nombre: 'Certificado', plural: 'Certificados',
       titulo: ['certificado', 'certificacion', 'constancia', 'certificate', 'certification', 'attestation', 'bescheinigung', 'zertifikat', 'certificaat'],
@@ -266,12 +266,24 @@
       titulo: ['resultado de laboratorio', 'resultados de laboratorio', 'historia clinica', 'laboratory report', 'lab report', 'medical report', 'informe medico', 'pathology report', 'body composition'],
       claves: ['paciente', 'patient', 'valor de referencia', 'reference range', 'diagnostico', 'diagnosis', 'medico', 'physician', 'specimen', 'muestra'],
       campos: ['paciente', 'fecha', 'emisor', 'resumen'] },
+    { id: 'carta', nombre: 'Carta o memorando', plural: 'Cartas y memorandos',
+      titulo: ['memorandum', 'memorando', 'memo', 'oficio', 'circular interna', 'carta'],
+      claves: ['to whom it may concern', 'dear', 'estimado', 'estimada', 'apreciado', 'atentamente', 'cordialmente', 'best regards', 'kind regards', 'sincerely', 'yours faithfully', 'saludos', 'cordialement', 'mit freundlichen', 'a quien corresponda', 'asunto', 'subject'],
+      campos: ['fecha', 'emisor', 'cliente', 'titulo', 'resumen'] },
+    { id: 'plano', nombre: 'Plano', plural: 'Planos',
+      titulo: ['plano', 'planos', 'drawing', 'dessin', 'blueprint', 'plan de', 'site plan', 'floor plan'],
+      claves: ['escala', 'echelle', 'scale', 'lamina', 'sheet', 'dibujo', 'dibujado por', 'drawn by', 'checked by', 'fachada', 'planta', 'elevation', 'legend', 'leyenda', 'legende', 'niveau', 'nivel', 'cota', 'rev'],
+      campos: ['titulo', 'fecha', 'emisor', 'proyecto', 'paginas'] },
+    { id: 'presentacion', nombre: 'Presentación', plural: 'Presentaciones',
+      titulo: ['presentacion', 'presentation', 'slides', 'diapositivas', 'webinar', 'keynote'],
+      claves: ['agenda', 'thank you', 'gracias', 'questions', 'preguntas', 'outline'],
+      campos: ['titulo', 'autor', 'fecha', 'paginas', 'resumen'] },
     { id: 'datos', nombre: 'Tabla de datos', plural: 'Tablas de datos',
       titulo: ['list of', 'listado', 'lista de', 'relacion de', 'estadisticas', 'statistics', 'summary of contents', 'schedule of'],
       claves: [],
       campos: ['titulo', 'fecha', 'emisor', 'paginas', 'cantidaditems'] },
   ];
-  const OTRO = { id: 'otro', nombre: 'Sin clasificar', plural: 'Sin clasificar', campos: ['titulo', 'fecha', 'emisor', 'paginas'] };
+  const OTRO = { id: 'otro', nombre: 'Sin clasificar', plural: 'Sin clasificar', campos: ['titulo', 'fecha', 'emisor', 'paginas', 'resumen'] };
   const COMERCIALES = new Set(TIPOS.filter(t => t.comercial).map(t => t.id));
 
   // =====================================================================
@@ -302,7 +314,7 @@
     placa: { etiqueta: 'Placa', tipo: 'codigo', syn: ['placa', 'placa vehiculo', 'license plate', 'plate'] },
     titulo: { etiqueta: 'Título', tipo: 'texto', syn: ['titulo', 'title', 'asunto', 'subject', 'titre', 'titel', 'betreff', 'onderwerp', 'oggetto'] },
     proyecto: { etiqueta: 'Proyecto', tipo: 'texto', syn: ['proyecto', 'obra', 'nombre del proyecto', 'project', 'projet', 'projekt', 'progetto', 'projeto'] },
-    autor: { etiqueta: 'Autor', tipo: 'texto', syn: ['elaborado por', 'preparado por', 'presentado por', 'autor', 'autores', 'author', 'authors', 'written by', 'prepared by', 'presented by', 'submitted by', 'auteur', 'verfasser', 'verfasst von'] },
+    autor: { etiqueta: 'Autor', tipo: 'nombre', syn: ['elaborado por', 'preparado por', 'presentado por', 'autor', 'autores', 'author', 'authors', 'written by', 'prepared by', 'presented by', 'submitted by', 'auteur', 'verfasser', 'verfasst von'] },
     institucion: { etiqueta: 'Institución', tipo: 'texto', syn: ['universidad', 'university', 'institucion', 'institution', 'facultad', 'faculty', 'department', 'departamento'] },
     palabrasclave: { etiqueta: 'Palabras clave', tipo: 'largo', syn: ['palabras clave', 'keywords', 'key words', 'mots-cles', 'mots cles', 'schlusselworter', 'schlagworter', 'trefwoorden', 'palavras-chave', 'parole chiave', 'index terms'] },
     paciente: { etiqueta: 'Paciente', tipo: 'texto', syn: ['paciente', 'nombre del paciente', 'patient name', 'patient', 'nom du patient', 'nombre'] },
@@ -393,10 +405,11 @@
   async function piezasTexto(pag) {
     const alto = pag.getViewport({ scale: 1 }).height;
     const { items } = await pag.getTextContent();
-    return items.filter(it => it.str.trim()).map(it => {
+    const piezas = items.filter(it => it.str.trim()).map(it => {
       const h = Math.abs(it.transform[3]) || Math.abs(it.transform[0]) || 10;
       return { x: it.transform[4], fin: it.transform[4] + it.width, y: alto - it.transform[5], alto: h, txt: it.str };
     });
+    return piezas;
   }
   async function obtenerOcr() {
     if (ocrWorker) return ocrWorker;
@@ -455,8 +468,11 @@
     for (let f = 0.25; f <= 0.75; f += 0.01) {
       const x = minX + W * f;
       let cruzan = 0, ambos = 0, unaPorLado = 0;
-      for (const l of lineas) {
-        if (l.celdas.some(c => c.x < x - 2 && c.fin > x + 2)) { cruzan++; continue; }
+      const cruza = lineas.map(l => l.celdas.some(c => c.x < x - 2 && c.fin > x + 2));
+      const primera = cruza.indexOf(false), ultima = cruza.lastIndexOf(false);
+      for (let k = 0; k < lineas.length; k++) {
+        const l = lineas[k];
+        if (cruza[k]) { if (k > primera && k < ultima) cruzan++; continue; }
         const iz = l.celdas.filter(c => c.fin <= x), de = l.celdas.filter(c => c.x >= x);
         if (iz.length && de.length) { ambos++; if (iz.length === 1 && de.length === 1) unaPorLado++; }
       }
@@ -566,8 +582,9 @@
   }
   function detectarIdioma(texto) {
     const t = ' ' + norm(texto).replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ') + ' ';
-    const arabe = (texto.match(/[؀-ۿﹰ-﻿]/g) || []).length;
-    if (arabe > texto.length * 0.2) return 'Árabe';
+    const letras = (texto.match(/\p{L}/gu) || []).length || 1;
+    for (const [nombre, re] of [['Árabe', /[\u0600-\u06FF\uFE70-\uFEFF]/g], ['Hebreo', /[\u0590-\u05FF]/g], ['Coreano', /[\uAC00-\uD7AF\u1100-\u11FF]/g], ['Japonés', /[\u3040-\u30FF]/g], ['Chino', /[\u4E00-\u9FFF]/g], ['Ruso', /[\u0400-\u04FF]/g], ['Griego', /[\u0370-\u03FF]/g]])
+      if ((texto.match(re) || []).length > letras * 0.3) return nombre;
     const puntos = Object.entries(IDIOMAS).map(([id, palabras]) => [id, palabras.reduce((n, p) => n + (t.match(new RegExp(' ' + p + ' ', 'g')) || []).length, 0)]).sort((a, b) => b[1] - a[1]);
     const [[mejor, max], [, segundo]] = puntos;
     // En documentos cortos basta con pocas palabras si ningún otro idioma compite
@@ -650,7 +667,7 @@
       };
       for (const l of ls) {
         const texto = l.celdas.map(c => c.txt).join('   ');
-        lineas.push({ pagina, texto, textoN: norm(texto), celdas: l.celdas.map(c => c.txt), cx: l.celdas, alto: l.alto });
+        lineas.push({ pagina, texto, textoN: norm(texto), celdas: l.celdas.map(c => c.txt), cx: l.celdas, alto: l.alto, y: l.y });
         const pares = clavesValor(l.celdas);
         if (pares) { cerrar(); pares.forEach(([k, v]) => kv.push({ label: k, labelN: norm(k).replace(/[:.#]+$/, ''), valor: v, pagina, pos: lineas.length - 1 })); continue; }
         if (l.celdas.length >= 2) {
@@ -665,6 +682,23 @@
     });
     const utiles = tablas.filter(t => t.filas.length >= 1 && !(t.filas.length === 1 && t.columnas.every(c => !/^Columna/.test(c))));
     return { kv, lineas, tablas: utiles, ratioTabla: lineas.length ? enTablas / lineas.length : 0 };
+  }
+
+  // Metadatos del PDF (título, autor, fecha de creación): se usan solo si parecen reales
+  function metadatos(info, doc) {
+    const r = {};
+    const texto1 = ' ' + doc.lineas.filter(l => l.pagina <= 2).map(l => l.textoN).join(' ') + ' ';
+    const t = String(info.Title || '').trim();
+    if (t.length >= 6 && t.length <= 250 && !/^(microsoft (word|powerpoint|excel)|untitled|sin t[ií]tulo|document\d*$|documento\d*$|presentation|slide|\S+\.(docx?|pdf|tex|indd|qxd|dvi|pptx?|xlsx?))/i.test(t)) {
+      const palabras = norm(t).split(/[^a-z0-9]+/).filter(w => w.length >= 4);
+      // Solo si el título aparece en el propio documento (evita títulos de plantillas viejas)
+      if (palabras.length && palabras.filter(w => texto1.includes(w)).length >= palabras.length * 0.6) r.tituloMeta = t.replace(/\s+/g, ' ');
+    }
+    const a = String(info.Author || '').trim();
+    if (a.length >= 4 && a.length <= 150 && /\p{L}{2}/u.test(a) && !/^(user|usuario|admin|administrator|owner|unknown|microsoft|adobe|pdf|root|default|author|autor|hp|dell|lenovo|windows)\b/i.test(a) && !/@|\.com\b|ARRAY\(|HASH\(|^[\W\d]+$|:/.test(a)) r.autorMeta = a.replace(/\s+/g, ' ');
+    const d = String(info.CreationDate || '').match(/(?:D:)?(\d{4})(\d{2})(\d{2})/);
+    if (d && +d[1] >= 1990 && +d[1] <= 2100) r.fechaMeta = `${d[1]}-${d[2]}-${d[3]}`;
+    return r;
   }
 
   // =====================================================================
@@ -686,15 +720,36 @@
       }
       for (const k of t.claves) p += Math.min(2, cuenta(cuerpo, k)) * 1.5;
       if (t.id === 'formulario' && meta.camposFormulario) p += 8 + Math.min(6, meta.camposFormulario);
+      if (t.id === 'norma') p -= t.claves.reduce((s, k) => s + Math.min(2, cuenta(cuerpo, k)), 0) * 0.5;   // sus palabras del cuerpo son muy comunes
+      if (t.id === 'norma' && (cuerpo.match(/\b(shall|are to be|is to be|must be|deberan?|doit|doivent|muss|mussen)\b/g) || []).length >= 6) p += 6;   // lenguaje de obligación, propio de reglamentos
+      if (t.id === 'articulo' || t.id === 'tesis') {
+        if (doc.lineas.filter(l => l.pagina <= 2).some(l => /^(abstract|resumen|resume|zusammenfassung)\b/.test(l.textoN))) p += 6;
+        if (doc.lineas.some(l => /^(\d+\.?\s*)?(references|bibliography|referencias|bibliografia|literatur|literaturverzeichnis|bibliographie)\s*$/.test(l.textoN))) p += 4;
+        if (doc.lineas.some(l => l.pagina === 1 && /@/.test(l.texto))) p += 3;
+      }
+      if (t.id === 'plano') {
+        // Un plano lleva escala (1:100…) o se llama así; "drawing" suelto no basta
+        if (doc.lineas.some(l => /\b1\s?:\s?(20|25|50|75|100|125|150|200|250|500|1000|2000|5000)\b/.test(l.texto))) p += 6;
+        else if (!inicio.some(l => /\b(plano|planos|blueprint|floor plan|site plan)\b/.test(l.textoN))) p *= 0.3;
+      }
+      if (t.id === 'presentacion' && meta.horizontales >= meta.leidas * 0.7 && meta.leidas >= 3 && doc.lineas.length / meta.leidas < 30) p += 12;
+      if (t.id === 'carta' && doc.lineas.slice(0, 12).some(l => /^(dear|estimad|apreciad|to whom|a quien|senor|madame|monsieur|sehr geehrte)/.test(l.textoN))) p += 6;
+      if (t.id === 'libro' && meta.paginas >= 40) p += doc.lineas.filter(l => l.pagina <= 20).some(l => /^(table of contents|contents|indice|inhaltsverzeichnis|sommaire|chapter 1|capitulo 1)\b/.test(l.textoN)) ? 8 : 4;
       puntajes.push([t, p]);
     }
     puntajes.sort((a, b) => b[1] - a[1]);
+    doc._puntajes = puntajes.slice(0, 5).map(([t, p]) => t.id + ':' + p.toFixed(1)).join(' ');
     let [mejor, pMejor] = puntajes[0];
     const segundo = puntajes[1][1];
     // Documentos donde casi todo son tablas: son listados/tablas de datos (salvo documentos comerciales claros)
     if (doc.ratioTabla >= 0.6 && !mejor.comercial && pMejor < 16 && doc.lineas.length >= 12)
       return { tipo: TIPOS.find(t => t.id === 'datos'), confianza: 'media' };
-    if (pMejor < 6) return doc.ratioTabla >= 0.45 && doc.lineas.length >= 12 ? { tipo: TIPOS.find(t => t.id === 'datos'), confianza: 'media' } : { tipo: OTRO, confianza: 'baja' };
+    const datos = TIPOS.find(t => t.id === 'datos');
+    if (pMejor < 6) {
+      if (doc.ratioTabla >= 0.45 && doc.lineas.length >= 12 || doc.ratioTabla >= 0.8 && doc.lineas.length >= 4) return { tipo: datos, confianza: 'media' };
+      if (meta.paginas >= 40) return { tipo: TIPOS.find(t => t.id === 'libro'), confianza: 'media' };
+      return { tipo: OTRO, confianza: 'baja' };
+    }
     return { tipo: mejor, confianza: pMejor - segundo >= 6 ? 'alta' : 'media' };
   }
 
@@ -721,6 +776,7 @@
         c = c.replace(/[.,;]$/, '');
         return c.length <= 30 && !fechaDe(c) && !PALABRAS_ETIQUETA.test(c) ? c : null;
       }
+      case 'nombre': { const n = limpiarAutores(v); return pareceNombre(n) ? n : null; }
       case 'largo': return v.length > 2 && v.length <= 400 ? v.replace(/\s+/g, ' ') : null;
       default: {
         if (v.length < 2 || v.length > 140 || !/\p{L}{2}/u.test(v) || /www\.|https?:|@/.test(v)) return null;
@@ -822,7 +878,10 @@
     const p1 = doc.lineas.filter(l => l.pagina === 1);
     const altos = doc.lineas.slice(0, 400).map(l => l.alto).sort((a, b) => a - b);
     const normal = altos[Math.floor(altos.length / 2)] || 1;
-    const candidatas = p1.slice(0, 40).filter(lineaNombre);
+    const lineaTitulo = l => lineaNombre(l) || (RE_KV.test(sinRenglon(l)) && l.alto > normal * 1.2 && !/@|www\.|https?:/.test(l.textoN));
+    const ys = p1.map(l => l.y).filter(y => y != null);
+    const arriba = ys.length ? Math.min(...ys) + (Math.max(...ys) - Math.min(...ys)) * 0.45 : Infinity;
+    const candidatas = p1.slice(0, 18).filter(l => (l.y == null || l.y <= arriba) && lineaTitulo(l) && !/(\.{4,}|…)\s*\d*\s*$/.test(l.texto) && (l.textoN.match(/\p{L}{3,}/gu) || []).length >= 2 && (l.texto.match(/\p{L}/gu) || []).length >= 6 && !/^(table of contents|contents|indice|inhaltsverzeichnis|sommaire|spacer text|please wait)/.test(l.textoN) && !/\b[a-z0-9-]+\.(com|org|net|edu|gov|co)\b/.test(l.textoN));
     if (!candidatas.length) return doc._titulo = null;
     const max = Math.max(...candidatas.map(l => l.alto));
     let i = p1.indexOf(candidatas.find(l => l.alto >= max * 0.95));
@@ -830,11 +889,12 @@
       const mayus = candidatas.find(l => { const x = sinRenglon(l); return x === x.toUpperCase() && x.length > 8; });
       return doc._titulo = mayus ? { texto: sinRenglon(mayus).replace(/\s{2,}/g, ' '), i: p1.indexOf(mayus), alto: mayus.alto } : null;
     }
+    while (i > 0 && p1[i - 1].alto >= max * 0.9 && p1[i - 1].alto <= max * 1.05 && lineaTitulo(p1[i - 1])) i--;
     const partes = [sinRenglon(p1[i])];
-    while (partes.length < 3 && p1[i + 1] && p1[i + 1].alto >= max * 0.9 && lineaNombre(p1[i + 1])) partes.push(sinRenglon(p1[++i]));
+    while (partes.length < 3 && p1[i + 1] && p1[i + 1].alto >= max * 0.9 && lineaTitulo(p1[i + 1])) partes.push(sinRenglon(p1[++i]));
     return doc._titulo = { texto: partes.join(' ').replace(/\s+/g, ' ').trim(), i, alto: max };
   }
-  const RE_INSTITUCION = /\b(universidad|university|universite|universitat|universiteit|universita|college|institut[eo]?|instituto|facultad|faculty|fakultat|school of|escuela|department of|departamento de|departement|ministry|ministerio|secretaria|bureau|agency|agencia|administration|commission|comision|council|consejo|comite|committee|municipalite|municipalidad|municipio|alcaldia|gobierno|government|city of|ville de|office of)\b/;
+  const RE_INSTITUCION = /\b(universidad|university|universite|universitat|universiteit|universita|college|institut[eo]?|instituto|facultad|faculty|fakultat|school of|escuela|department of|departamento de|departement|ministry|ministerio|secretaria|bureau|agency|agencia|administration|commission|comision|council|consejo|comite|committee|municipalite|municipalidad|municipio|alcaldia|gobierno|government|city of|ville de|office of|office|research|laboratory|laboratorio|corporation|foundation|fundacion)\b/;
   function institucionDoc(doc) {
     const v = buscar(doc, CAMPOS.institucion);
     if (v) return v;
@@ -845,11 +905,13 @@
     const uni = celdas.find(c => /universi|college|school of|escuela|facultad|faculty/.test(norm(c)));
     return uni || celdas[0] || null;
   }
-  const NO_NOMBRE = new Set('report year fiscal date total page table summary section chapter department annual final contents introduction abstract figure notice program plan board meeting agenda university school college city county state national federal public service services company invoice order number name address street road avenue calle carrera rue the of for in on with using a an to by and data analysis results result study guide manual document example version edition'.split(' '));
-  const pareceNombre = t => {
+  const NO_NOMBRE = new Set('report year fiscal date total page table summary section chapter department annual final contents introduction abstract figure notice program plan board meeting agenda university school college city county state national federal public service services company invoice order number name address street road avenue calle carrera rue the of for in on with using a an to by and data analysis results result study guide manual document example version edition general instructions instruction introduction part chapter section appendix net profit revenue income sales growth capital market markets goods overview highlights review working papers paper model models system systems learning deep analysis dataset'.split(' '));
+  const limpiarAutores = t => t.replace(/[∗*†‡§¶⋆#$+]|\([^\p{L}\p{N}]*\)|(?<=\p{L})\s?\d{1,2}(?:,\d{1,2})*(?=\s|,|$)/gu, ' ').replace(/\s+,/g, ',').replace(/\s+/g, ' ').replace(/[,\s]+$/, '').trim();
+  const pareceNombre = t0 => {
+    const t = limpiarAutores(t0);
     const limpio = t.replace(/[,;]|\band\b|\by\b|\bet\b|\bund\b/g, ' ');
     const palabras = limpio.split(/\s+/).filter(Boolean);
-    if (palabras.length < 2 || palabras.length > 12 || /\d|:|@/.test(t) || t.length > 90) return false;
+    if (palabras.length < 2 || palabras.length > 16 || /\d|:|@/.test(t) || t.length > 140) return false;
     if (palabras.some(p => NO_NOMBRE.has(norm(p)))) return false;
     const mayus = palabras.filter(p => /^\p{Lu}/u.test(p) || /^(de|del|van|von|da|di|le|la)$/i.test(p)).length;
     return mayus === palabras.length && !RE_INSTITUCION.test(norm(t));
@@ -857,6 +919,7 @@
   function autorDoc(doc, tipo) {
     const v = buscar(doc, CAMPOS.autor);
     if (v || tipo?.comercial) return v;
+    if (doc.meta?.autorMeta) return doc.meta.autorMeta;
     for (const l of doc.lineas.filter(l => l.pagina <= 2).slice(0, 60)) {
       const m = l.texto.match(/^(?:by|por|par|von|door|di|autor(?:es)?|author(?:s)?)\s*:?\s+(.{3,90})$/i);
       if (m && pareceNombre(m[1])) return m[1].trim();
@@ -864,11 +927,16 @@
     const t = tituloInfo(doc);
     if (!t) return null;
     const p1 = doc.lineas.filter(l => l.pagina === 1);
-    for (const l of p1.slice(t.i + 1, t.i + 7)) {
+    for (const l of p1.slice(t.i + 1, t.i + 8)) {
       if (l.alto >= t.alto * 0.95) continue;
-      if (pareceNombre(l.texto)) return l.texto.replace(/\s{2,}/g, ' ');
-      const c = l.celdas.length <= 2 && l.celdas.find(c => pareceNombre(c) && !/[\/()]/.test(c));
-      if (c) return c;
+      if (pareceNombre(l.texto)) {
+        // Los autores pueden seguir en las líneas siguientes
+        let r = l.texto.replace(/\s{2,}/g, ', '), k = p1.indexOf(l);
+        while (p1[k + 1] && Math.abs(p1[k + 1].alto - l.alto) < 0.5 && pareceNombre(p1[k + 1].texto.replace(/^(and|y|et|und)\s+/i, 'X Y ')) && r.length < 300) r += ', ' + p1[++k].texto.replace(/\s{2,}/g, ', ');
+        return limpiarAutores(r).replace(/,\s*,/g, ',');
+      }
+      const c = l.celdas.length <= 3 && l.celdas.find(c => pareceNombre(c) && !/[\/]/.test(c));
+      if (c) return limpiarAutores(c);
     }
     return null;
   }
@@ -878,6 +946,7 @@
   const RE_SUFIJO_MAY = /\b(SA|AG|KG|BV|NV|AB|OY|SAS|SPA|SARL)\b|\b(B\.V\.|N\.V\.)(?!\w)/;
   const RE_LEGAL = /\b(siret|siren|rcs|kvk|iban|au capital|handelsregister|hrb|amtsgericht|registered office|company (reg|number)|nit|gstin|cin|vat reg|cif|nif|rfc)\b/i;
   function emisorDoc(doc, tipo) {
+    if (!tipo.comercial && tipo.id !== 'carta') { const inst = institucionDoc(doc); if (inst || !['plano', 'informe', 'certificado', 'acta', 'contrato', 'laboratorio'].includes(tipo.id)) return inst; }
     const v = buscar(doc, CAMPOS.emisor);
     if (v) return v;
     const palabrasTipo = [...(tipo.titulo || []), 'invoice', 'factura', 'receipt', 'copy', 'copia', 'kopie'];
@@ -893,6 +962,7 @@
       cands.push({ nombre: nombre.replace(/[,;]$/, ''), veces: cuenta(todo, nucleo), i });
     }));
     if (cands.length) { cands.sort((a, b) => b.veces - a.veces || a.i - b.i); return cands[0].nombre; }
+    if (!tipo.comercial && tipo.id !== 'carta') return null;
     // Nombre junto a los datos legales: en la misma línea o justo encima
     const junto = {};
     doc.lineas.forEach((l, i) => {
@@ -911,6 +981,27 @@
     }
     return null;
   }
+  // Cartas y memorandos: firma (después de la despedida), destinatario (saludo o "Para:") y asunto
+  const RE_DESPEDIDA = /^(atentamente|cordialmente|saludos|un saludo|best regards|kind regards|regards|sincerely|yours (truly|faithfully|sincerely)|cordialement|bien a vous|mit freundlichen|met vriendelijke|distinti saluti)\b/;
+  function firmaCarta(doc) {
+    const i = doc.lineas.findIndex(l => RE_DESPEDIDA.test(l.textoN));
+    if (i < 0) return null;
+    const resto = doc.lineas[i].texto.replace(/^[^,]*,\s*/, '');
+    if (resto !== doc.lineas[i].texto && pareceNombre(resto)) return limpiarAutores(resto);
+    for (const l of doc.lineas.slice(i + 1, i + 5)) { const t = l.texto.replace(/\s{2,}/g, ' '); if (pareceNombre(t) || /^\p{Lu}\p{Ll}+(\s\p{Lu}\p{Ll}+){0,3}$/u.test(t)) return t; }
+    return null;
+  }
+  function destinatarioCarta(doc) {
+    const v = buscar(doc, { tipo: 'texto', syn: ['para', 'to', 'destinatario', 'a', 'an', 'aan', 'dirigido a'] });
+    if (v) return v;
+    for (const l of doc.lineas.slice(0, 20)) {
+      const m = l.texto.match(/^(?:dear|estimad[oa]s?|apreciad[oa]s?|señor(?:es|a)?|madame|monsieur|sehr geehrte[rs]?|beste)\s+(.{2,60}?)[,:]?$/i);
+      if (m) return m[1];
+      if (/^(to whom it may concern|a quien corresponda|a quien pueda interesar)/i.test(l.texto)) return l.texto.replace(/[,:]$/, '');
+    }
+    return null;
+  }
+
   function monedaDoc(doc, rawTotal) {
     const m = rawTotal && monedaDe(rawTotal);
     if (m && m !== '$') return m;
@@ -941,7 +1032,7 @@
       }
       texto = [primera, ...sig].join(' ');
     } else {
-      let k = doc.lineas.findIndex(l => sinRenglon(l).length >= 60 && /\p{Ll}{3}/u.test(l.texto));
+      let k = doc.lineas.findIndex(l => sinRenglon(l).length >= 60 && /\p{Ll}{3}/u.test(l.texto) && !/(\.{3,}|…)\s*\d/.test(l.texto));
       if (k < 0) k = 0;
       texto = doc.lineas.slice(k, k + 10).map(sinRenglon).join(' ');
     }
@@ -973,8 +1064,9 @@
   function extraerCampo(doc, clave, tipo, datos, meta) {
     switch (clave) {
       case 'numero': return numeroDoc(doc, tipo);
-      case 'titulo': return buscar(doc, CAMPOS.titulo) || tituloInfo(doc)?.texto || null;
-      case 'emisor': return emisorDoc(doc, tipo);
+      case 'cliente': return tipo.id === 'carta' ? destinatarioCarta(doc) : buscar(doc, CAMPOS.cliente);
+      case 'titulo': return (v => v && v.split(/\s+/).length >= 2 ? v : null)(buscar(doc, CAMPOS.titulo)) || (tipo.id === 'carta' ? buscar(doc, { tipo: 'texto', syn: ['asunto', 'subject', 're', 'ref', 'referencia', 'objet', 'betreff', 'onderwerp'] }) : null) || (!tipo.comercial && meta.tituloMeta) || tituloInfo(doc)?.texto || meta.tituloMeta || null;
+      case 'emisor': return tipo.id === 'carta' ? (firmaCarta(doc) || buscar(doc, CAMPOS.emisor)) : emisorDoc(doc, tipo);
       case 'proveedor': return buscar(doc, CAMPOS.proveedor) || emisorDoc(doc, tipo);
       case 'autor': return autorDoc(doc, tipo);
       case 'institucion': return institucionDoc(doc);
@@ -983,13 +1075,12 @@
       case 'fecha': {
         const v = buscar(doc, CAMPOS.fecha);
         if (v) return v;
-        for (const l of doc.lineas.slice(0, 400)) {
-          if (CAMPOS.fecha.excluir.some(x => l.textoN.includes(x))) continue;
-          const f = fechaDe(l.texto);
-          if (f) return f;
-        }
+        const sinExcluir = l => !CAMPOS.fecha.excluir.some(x => l.textoN.includes(x));
+        for (const l of doc.lineas.filter(l => l.pagina === 1 && sinExcluir(l))) { const f = fechaDe(l.texto); if (f) return f; }
         for (const l of doc.lineas.filter(l => l.pagina <= 2)) { const f = fechaDe(l.texto, false, true); if (f) return f; }
-        return null;
+        if (!tipo.comercial && meta.fechaMeta) return meta.fechaMeta;
+        for (const l of doc.lineas.slice(0, 400).filter(sinExcluir)) { const f = fechaDe(l.texto); if (f) return f; }
+        return meta.fechaMeta || null;
       }
       case 'nit': {
         const v = buscar(doc, CAMPOS.nit);
@@ -1039,13 +1130,16 @@
   async function leerArchivo(a, i, total) {
     const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await a.file.arrayBuffer()) }).promise;
     const n = Math.min(pdf.numPages, MAX_PAGINAS);
-    const paginas = []; let conOcr = 0, sinLeer = 0, camposFormulario = 0;
+    const paginas = [], crudas = []; let conOcr = 0, sinLeer = 0, camposFormulario = 0, horizontales = 0, info = {};
     try {
       try { const f = await pdf.getFieldObjects(); camposFormulario = f ? Object.keys(f).length : 0; } catch { }
+      try { info = (await pdf.getMetadata())?.info || {}; } catch { }
       for (let p = 1; p <= n; p++) {
         if (cancelado) throw { cancel: true };
         if (p % 20 === 0) estado(`Documento ${i + 1} de ${total}: página ${p} de ${n}…`);
         const pag = await pdf.getPage(p);
+        const vp = pag.getViewport({ scale: 1 });
+        if (vp.width > vp.height * 1.1) horizontales++;
         let piezas = $('#forzarOcr').checked ? [] : await piezasTexto(pag);
         if (piezas.map(x => x.txt).join('').replace(/\s/g, '').length < 20) {
           if (conOcr < MAX_OCR) {
@@ -1053,11 +1147,19 @@
             piezas = await piezasOcr(pag); conOcr++;
           } else sinLeer++;
         }
-        paginas.push(porColumnas(armarLineas(piezas)));
+        crudas.push(piezas);
         pag.cleanup();
       }
+      // Descarta el texto diminuto (rótulos dentro de figuras): se compara con el tamaño típico del documento
+      const pesos = [];
+      for (const ps of crudas.slice(0, 40)) for (const x of ps) pesos.push([x.alto, x.txt.length]);
+      pesos.sort((a, b) => a[0] - b[0]);
+      const totalCar = pesos.reduce((s, x) => s + x[1], 0);
+      let acum = 0, tipico = 10;
+      for (const [a, c] of pesos) { acum += c; if (acum >= totalCar / 2) { tipico = a; break; } }
+      for (const ps of crudas) paginas.push(porColumnas(armarLineas(ps.filter(x => x.alto >= tipico * 0.45))));
     } finally { pdf.destroy(); }
-    return { paginas, numPaginas: pdf.numPages ?? n, leidas: n, conOcr, sinLeer, camposFormulario };
+    return { paginas, numPaginas: pdf.numPages ?? n, leidas: n, conOcr, sinLeer, camposFormulario, horizontales, info };
   }
 
   $('#convertir').onclick = async () => {
@@ -1072,10 +1174,11 @@
       a.estado = 'Leyendo…'; pintarArchivos();
       estado(`Leyendo documento ${i + 1} de ${archivos.length}: ${a.nombre}`); progreso(i / archivos.length);
       try {
-        const { paginas, numPaginas, leidas, conOcr, sinLeer, camposFormulario } = await leerArchivo(a, i, archivos.length);
+        const { paginas, numPaginas, leidas, conOcr, sinLeer, camposFormulario, horizontales, info } = await leerArchivo(a, i, archivos.length);
         const doc = analizar(paginas);
         if (!doc.lineas.length) throw { msg: 'Sin texto' };
-        const meta = { paginas: numPaginas, camposFormulario, idioma: detectarIdioma(doc.lineas.slice(0, 400).map(l => l.texto).join(' ')) };
+        const meta = { paginas: numPaginas, leidas, camposFormulario, horizontales, ...metadatos(info, doc), idioma: detectarIdioma(doc.lineas.slice(0, 400).map(l => l.texto).join(' ')) };
+        doc.meta = meta;
         idiomaActual = meta.idioma;
         // ¿Día/mes o mes/día? Lo decide una fecha inequívoca del propio documento; si no hay, mes/día solo en inglés con dólares
         let dm = 0, md = 0;
