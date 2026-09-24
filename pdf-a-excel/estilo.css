@@ -95,7 +95,8 @@ progress{width:100%;height:6px;accent-color:var(--libro)}
 
 /* La ventana del Excel (vista previa del resultado) */
 .libro{background:var(--blanco);border:1px solid var(--linea);border-radius:var(--radio);overflow:hidden;display:flex;flex-direction:column;min-width:0;box-shadow:var(--sombra)}
-@media (min-width:961px){.libro{position:sticky;top:14px;height:calc(100vh - 28px);min-height:520px;max-height:900px}}
+/* En PC la vista previa mide lo mismo que la columna de pasos (termina con el paso 3): no aporta altura propia y se estira */
+@media (min-width:961px){.mesa{align-items:stretch}.pasos{align-content:start}.libro{contain:size;min-height:460px}}
 @media (max-width:960px){.libro{height:75vh;min-height:460px}}
 .libro-cab{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 12px 10px 14px;background:var(--libro);color:#fff}
 .libro-cab .nombre{display:flex;align-items:center;gap:9px;min-width:0}
