@@ -3,12 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Facturas DIAN a Excel · libro de compras gratis</title>
+<title>Cuadra para contadores · facturas DIAN a Excel</title>
 <meta name="description" content="Para contadores: sube los ZIP o XML de las facturas electrónicas DIAN (y también PDF o fotos) y obtén el libro de compras o ventas, resumen por proveedor, IVA por tarifa y retenciones en Excel. Gratis, sin cuenta y sin subir tus archivos.">
 <meta name="theme-color" content="#2d5f4a">
+<link rel="icon" href="../pdf-a-excel/marca/icono.svg" type="image/svg+xml">
+<link rel="icon" href="../pdf-a-excel/marca/icono-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="../pdf-a-excel/marca/icono-180.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Cuadra">
+<meta property="og:title" content="Cuadra para contadores · facturas DIAN a Excel">
+<meta property="og:description" content="Para contadores: sube los ZIP o XML de las facturas electrónicas DIAN (y también PDF o fotos) y obtén el libro de compras o ventas, resumen por proveedor, IVA por tarifa y retenciones en Excel. Gratis, sin cuenta y sin subir tus archivos.">
+<meta property="og:image" content="https://moav1927.github.io/pdf-a-excel/marca/compartir.png">
+<meta property="og:url" content="https://moav1927.github.io/contadores/">
+<meta name="twitter:card" content="summary_large_image">
 <!--
   ============================================================
-  PDF A EXCEL — funciona 100 % en el navegador
+  CUADRA (PDF a Excel) — funciona 100 % en el navegador
   ------------------------------------------------------------
   - No usa servidores, IA externa ni cuentas: los archivos nunca salen del equipo.
   - Todo va incluido en /pdf-a-excel/lib (sin CDNs ni fuentes externas):
@@ -22,13 +32,13 @@
   ============================================================
 -->
 <link rel="preload" href="../pdf-a-excel/lib/fuentes/zilla-slab-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="../pdf-a-excel/estilo.css?v=16">
+<link rel="stylesheet" href="../pdf-a-excel/estilo.css?v=17">
 </head>
 <body data-modo="contadores">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="tinta"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7" result="r"/><feDisplacementMap in="SourceGraphic" in2="r" scale="2.4"/></filter></svg>
 <div class="envoltura">
   <div class="barra">
-    <a class="marca" href="../pdf-a-excel/"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="1" width="20" height="20" rx="4" fill="#2d5f4a"/><path d="M1 8h20M1 14h20M8 8v13M15 8v13" stroke="#e1ebe3" stroke-width="1.4"/><rect x="1" y="1" width="20" height="7" rx="4" fill="#a57a26"/><rect x="1" y="5" width="20" height="3" fill="#a57a26"/></svg>PDF a Excel</a>
+    <a class="marca" href="../pdf-a-excel/" aria-label="Cuadra, inicio"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"> <rect width="64" height="64" rx="14" fill="#2d5f4a"/> <path d="M15 10h22l12 12v32H15z" fill="#fbfcf8"/> <path d="M37 10v12h12z" fill="#c9dccf"/> <path d="M20 18h12M20 23.5h9" stroke="#9db5a7" stroke-width="3" stroke-linecap="round"/> <path d="M15 31h34M15 42.5h34M26.5 31v23M38 31v23" stroke="#2d5f4a" stroke-width="2.4"/> <rect x="26.5" y="42.5" width="11.5" height="11.5" fill="#a57a26"/> <circle cx="48" cy="48" r="11" fill="#5b3e8f" stroke="#fbfcf8" stroke-width="3"/> <path d="M42.8 48.3l3.6 3.6 6.8-7.4" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/> </svg><span>Cuadra<small>PDF a Excel</small></span></a>
     <nav class="secciones" aria-label="Secciones"><a href="../pdf-a-excel/">Documentos en general</a><a href="../contadores/" aria-current="page">Contadores · Facturas DIAN</a></nav>
   </div>
   <header>
@@ -186,12 +196,12 @@
         <p>Reconoce los formatos habituales en varios idiomas («Total:», «Invoice No.», «NIT», «Escala», «Drawn by»…). Las fotos y escaneados se leen con OCR (reconocimiento de texto en imágenes): la primera vez se descargan unos 6 MB que quedan guardados en el navegador.</p>
       </details>
   </aside>
-  <footer class="pie"><span>PDF a Excel para contadores · hecho en Colombia, gratis para todos.</span><span>Tus archivos se leen en tu equipo y no se guardan en ningún lado.</span></footer>
+  <footer class="pie"><span>Cuadra para contadores · hecho en Colombia y gratis para todos.</span><span>Tus archivos se leen en tu equipo y no se guardan en ningún lado.</span></footer>
 </div>
 
 <script src="../pdf-a-excel/lib/pdf.min.js"></script>
 <script src="../pdf-a-excel/lib/xlsx.full.min.js"></script>
 <script src="../pdf-a-excel/lib/tesseract.min.js"></script>
-<script src="../pdf-a-excel/motor.js?v=16"></script>
+<script src="../pdf-a-excel/motor.js?v=17"></script>
 </body>
 </html>
