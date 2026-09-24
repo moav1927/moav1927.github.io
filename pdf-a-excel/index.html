@@ -3,48 +3,51 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PDF a Excel</title>
-<meta name="description" content="Sube uno o muchos documentos (PDF, fotos, Word, Excel, planos, facturas electrónicas): los clasifica, extrae los datos que pidas y arma un Excel con resumen y totales. Gratis, sin cuenta y sin subir tus archivos.">
+<title>PDF a Excel · tus documentos pasados en limpio</title>
+<meta name="description" content="Extractor de información de PDF gratis: sube facturas, remisiones, planos, informes o fotos y descarga un Excel ordenado con resumen y totales. Sin cuenta y sin subir tus archivos.">
+<meta name="theme-color" content="#2d5f4a">
 <!--
   ============================================================
   PDF A EXCEL — funciona 100 % en el navegador
   ------------------------------------------------------------
   - No usa servidores, IA externa ni cuentas: los archivos nunca salen del equipo.
-  - Librerías incluidas en /pdf-a-excel/lib (sin depender de CDNs):
+  - Todo va incluido en /pdf-a-excel/lib (sin CDNs ni fuentes externas):
       pdf.js 3.11.174 (leer PDF), SheetJS 0.18.5 (crear .xlsx),
       tesseract.js 5.1.1 + idioma español (OCR para escaneados),
-      mammoth 1.8.0 (Word) y fflate 0.8.2 (ZIP de facturas electrónicas).
+      mammoth 1.8.0 (Word), fflate 0.8.2 (ZIP de facturas electrónicas),
+      fuentes Zilla Slab e IBM Plex (licencia OFL, en lib/fuentes).
   - El motor está en /pdf-a-excel/motor.js y los estilos en /pdf-a-excel/estilo.css
     (los comparten las dos páginas). Estas páginas se generan desde una plantilla.
   - Clasificación y extracción por reglas: ver TIPOS, CAMPOS y ROTULO en motor.js.
   ============================================================
 -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=14">
+<link rel="preload" href="lib/fuentes/zilla-slab-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="estilo.css?v=15">
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="tinta"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7" result="r"/><feDisplacementMap in="SourceGraphic" in2="r" scale="2.4"/></filter></svg>
 <div class="envoltura">
   <div class="barra">
-    <a class="marca" href="../pdf-a-excel/"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="1" width="20" height="20" rx="4" fill="#2d5f4a"/><path d="M1 8h20M1 14h20M8 8v13M15 8v13" stroke="#e3ede7" stroke-width="1.4"/><rect x="1" y="1" width="20" height="7" rx="4" fill="#9c7326"/><rect x="1" y="5" width="20" height="3" fill="#9c7326"/></svg>PDF a Excel</a>
+    <a class="marca" href="../pdf-a-excel/"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="1" width="20" height="20" rx="4" fill="#2d5f4a"/><path d="M1 8h20M1 14h20M8 8v13M15 8v13" stroke="#e1ebe3" stroke-width="1.4"/><rect x="1" y="1" width="20" height="7" rx="4" fill="#a57a26"/><rect x="1" y="5" width="20" height="3" fill="#a57a26"/></svg>PDF a Excel</a>
     <nav class="secciones" aria-label="Secciones"><a href="../pdf-a-excel/" aria-current="page">Documentos en general</a><a href="../contadores/">Contadores · Facturas DIAN</a></nav>
   </div>
   <header>
     <div class="texto">
-      <h1>Muchos documentos, <em>un solo Excel</em></h1>
-      <p>Facturas, remisiones, informes, tesis, planos, listados… en varios idiomas. Los clasifica, saca los datos que pidas y arma un Excel con resumen y totales.</p>
+      <h1>Tus documentos, <em>pasados en limpio</em> a Excel.</h1>
+      <p>Suelta el arrume de facturas, remisiones, planos o informes y recibe un Excel ordenado, con resumen y totales. Gratis, sin cuenta y sin que tus archivos salgan de tu computador.</p>
+      <a class="que-es" href="#que-es">¿Qué es un extractor de información y para qué sirve?</a>
     </div>
-    <div class="sellos"><span class="sello">Gratis</span><span class="sello">Sin cuenta</span><span class="sello">Tus archivos no salen de tu equipo</span></div>
+    <div class="sello" aria-label="Procesado en tu equipo, sin cuenta"><b>Procesado</b><span class="fecha-sello">&nbsp;</span><small>en tu equipo · sin cuenta</small></div>
   </header>
 
   <main class="mesa">
     <div class="pasos">
       <section class="paso" aria-labelledby="p1">
-        <h2 id="p1"><span class="n">1</span>Sube tus documentos</h2>
+        <span class="pestana" aria-hidden="true">Paso 1</span>
+        <h2 id="p1">Trae tus documentos</h2>
         <label class="soltar" id="zona" for="entrada">
-          <b>Elegir archivos</b>
-          <span class="sub">o arrástralos aquí. Puedes elegir muchos a la vez.</span>
+          <b>Suelta aquí el arrume</b>
+          <span class="sub">o haz clic para elegir archivos. Pueden ser muchos a la vez.</span>
           <span class="formatos"><span class="dest">PDF</span><span>Fotos</span><span>Word</span><span>Excel</span><span>ZIP / XML</span></span>
           <input type="file" id="entrada" accept="application/pdf,.pdf,.zip,.xml,.xlsx,.xlsm,.xls,.ods,.csv,.docx,image/*,.png,.jpg,.jpeg,.webp,.bmp,.gif" multiple hidden>
         </label>
@@ -53,7 +56,8 @@
       </section>
 
       <section class="paso" aria-labelledby="p2">
-        <h2 id="p2"><span class="n">2</span>Elige qué datos sacar</h2>
+        <span class="pestana" aria-hidden="true">Paso 2</span>
+        <h2 id="p2">¿Qué datos quieres?</h2>
         <div class="presets" id="presets" aria-label="Sugerencias">
           <button type="button" data-v="" aria-pressed="true">Automático</button>
           <button type="button" data-v="número, fecha, proveedor, NIT, cliente, concepto, categoría, subtotal, IVA, retención, total, moneda" aria-pressed="false">Facturas</button>
@@ -62,13 +66,14 @@
           <button type="button" data-v="número de plano, título, proyecto, escala, fecha, revisión, dibujó, revisó, aprobó, observaciones" aria-pressed="false">Planos</button>
         </div>
         <textarea id="pedido" aria-labelledby="p2" aria-describedby="ayudaPedido" placeholder="Ej.: número, fecha, proveedor, NIT, total"></textarea>
-        <p class="campo-ayuda" id="ayudaPedido">Escríbelos separados por comas o pregunta «¿de qué son las facturas?». Vacío = automático según el tipo de documento.</p>
+        <p class="campo-ayuda" id="ayudaPedido">Escríbelos separados por comas o pregunta «¿de qué son las facturas?». Si lo dejas vacío, se escogen según el tipo de documento.</p>
       </section>
 
       <section class="paso" aria-labelledby="p3">
-        <h2 id="p3"><span class="n">3</span>Procesa y descarga</h2>
+        <span class="pestana" aria-hidden="true">Paso 3</span>
+        <h2 id="p3">Pásalo a Excel</h2>
         <div class="botones">
-          <button class="btn grande" id="convertir" disabled>Procesar documentos</button>
+          <button class="btn grande" id="convertir" disabled>Pasar a Excel</button>
           <button class="btn sec" id="detener" hidden>Detener</button>
         </div>
         <progress id="progreso" max="1" value="0" hidden></progress>
@@ -88,7 +93,7 @@
 
     <section class="libro" aria-label="Vista previa del Excel">
       <div class="libro-cab">
-        <div class="nombre"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="1" width="20" height="20" rx="4" fill="#ffffff"/><path d="M1 8h20M1 14h20M8 8v13M15 8v13" stroke="#2d5f4a" stroke-width="1.4"/><rect x="1" y="1" width="20" height="7" rx="4" fill="#9c7326"/><rect x="1" y="5" width="20" height="3" fill="#9c7326"/></svg><h2 id="titulo"></h2></div>
+        <div class="nombre"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="1" width="20" height="20" rx="4" fill="#ffffff"/><path d="M1 8h20M1 14h20M8 8v13M15 8v13" stroke="#2d5f4a" stroke-width="1.4"/><rect x="1" y="1" width="20" height="7" rx="4" fill="#a57a26"/><rect x="1" y="5" width="20" height="3" fill="#a57a26"/></svg><h2 id="titulo"></h2></div>
         <div class="botones">
           <button class="btn sec" id="copiar">Copiar hoja</button>
           <button class="btn claro" id="descargar" disabled>Descargar Excel</button>
@@ -98,13 +103,70 @@
       <div class="tabla-caja" id="tablaCaja"></div>
       <div class="pestanas" id="pestanas" role="tablist" aria-label="Hojas"></div>
       <div class="cifras" id="cifras"></div>
+      <div class="sello sello-listo" id="selloListo" aria-hidden="true"><b>Listo</b><span class="fecha-sello">&nbsp;</span><small>pasado en limpio</small></div>
     </section>
   </main>
+
+  <section class="explica" id="que-es" aria-labelledby="t-que-es">
+    <div class="explica-a">
+      <div class="texto">
+        <h2 id="t-que-es">¿Qué es un extractor de información de PDF?</h2>
+        <p>Es una herramienta que <b>lee tus documentos y copia a una tabla los datos que importan</b>: el número de la factura, la fecha, el NIT, el total, el título de un plano o el autor de una tesis. Es lo que harías tú a mano, documento por documento, pero en segundos y sin errores de digitación.</p>
+        <p>Un PDF está hecho para verse bien, no para sumarse ni filtrarse. Cuando tienes 10, 50 o 200, pasarlos a Excel a mano toma horas. El extractor los lee todos, los clasifica, deja una fila por documento y calcula los totales.</p>
+      </div>
+      <div class="diagrama" aria-label="Ejemplo: de una factura en PDF a una fila de Excel">
+        <div class="papel" aria-hidden="true">
+          <span class="enc">Ferretería La Campana</span>
+          <span class="marca-dato"><span class="n">1</span><span>Factura FE-3021</span></span>
+          <span class="marca-dato"><span class="n">2</span><span>14/08/2026</span></span>
+          <span class="raya"></span><span class="raya corta"></span>
+          <span class="marca-dato"><span class="n">3</span><span>NIT 811.045.678-9</span></span>
+          <span class="raya"></span><span class="raya"></span><span class="raya corta"></span>
+          <span class="marca-dato"><span class="n">4</span><span>Total $ 3.164.140</span></span>
+        </div>
+        <span class="flecha" aria-hidden="true">➜</span>
+        <div class="mini-excel">
+          <div class="top">facturas.xlsx</div>
+          <table>
+            <thead><tr><th><span class="n">1</span> Número</th><th><span class="n">2</span> Fecha</th><th><span class="n">3</span> NIT</th><th><span class="n">4</span> Total</th></tr></thead>
+            <tbody>
+              <tr><td>FE-3021</td><td>2026-08-14</td><td>811.045.678-9</td><td class="num">3.164.140</td></tr>
+              <tr><td>FV-0457</td><td>2026-08-20</td><td>900.555.444-1</td><td class="num">700.000</td></tr>
+              <tr class="total"><td>TOTAL</td><td></td><td></td><td class="num">3.864.140</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="usos" aria-label="¿Para qué sirve?">
+      <article class="uso">
+        <h3>Contabilidad</h3>
+        <p>Causar las compras del mes sin digitar factura por factura.</p>
+        <div class="ej"><span>50 facturas o ZIP de la DIAN</span><span>libro de compras, IVA y retenciones</span></div>
+        <a href="../contadores/">Ir a la sección para contadores</a>
+      </article>
+      <article class="uso">
+        <h3>Administración y compras</h3>
+        <p>Armar la relación de remisiones, cotizaciones o cuentas de cobro.</p>
+        <div class="ej"><span>Una carpeta de remisiones</span><span>tabla con fechas, clientes y totales</span></div>
+      </article>
+      <article class="uso">
+        <h3>Ingeniería y obra</h3>
+        <p>Sacar el listado de planos con los datos del rótulo.</p>
+        <div class="ej"><span>El juego de planos en PDF</span><span>número, título, escala, fecha y firmas</span></div>
+      </article>
+      <article class="uso">
+        <h3>Estudio e investigación</h3>
+        <p>Organizar la bibliografía de un trabajo o un semillero.</p>
+        <div class="ej"><span>Tesis y artículos</span><span>título, autor, año y temas principales</span></div>
+      </article>
+    </div>
+  </section>
 
   <aside class="ayuda" aria-label="Ayuda">
       <div class="tarjeta">
         <h3>Tus archivos no se suben</h3>
-        <p>La página lee los documentos dentro de tu navegador. Nada se envía a un servidor, no hay cuenta y no se guarda nada al cerrar.</p>
+        <p>Todo se lee dentro de tu navegador. Nada se envía a un servidor, no hay cuenta y no queda nada guardado al cerrar la página.</p>
       </div>
       <details>
         <summary>¿Qué computador necesito?<span class="breve">PDF con texto, Word, Excel y XML van rápido en casi cualquier equipo. Las fotos y los escaneados son más lentos: ideal 8 GB de RAM; con 4 GB también funciona, con paciencia.</span><span class="mas">Ver detalles</span></summary>
@@ -117,14 +179,15 @@
       </details>
       <details>
         <summary>¿Cómo lee los documentos?<span class="breve">Con reglas, sin inteligencia artificial: busca etiquetas como «Total», «NIT» o «Escala». Lo que no encuentra queda en amarillo y en la columna «Por revisar».</span><span class="mas">Ver detalles</span></summary>
-        <p>Reconoce los formatos habituales en varios idiomas («Total:», «Invoice No.», «NIT», «Escala», «Drawn by»…). Las fotos y escaneados se leen con OCR: la primera vez se descargan unos 6 MB que quedan guardados en el navegador.</p>
+        <p>Reconoce los formatos habituales en varios idiomas («Total:», «Invoice No.», «NIT», «Escala», «Drawn by»…). Las fotos y escaneados se leen con OCR (reconocimiento de texto en imágenes): la primera vez se descargan unos 6 MB que quedan guardados en el navegador.</p>
       </details>
   </aside>
+  <footer class="pie"><span>PDF a Excel · hecho en Colombia, gratis para todos.</span><span>Tus archivos se leen en tu equipo y no se guardan en ningún lado.</span></footer>
 </div>
 
 <script src="lib/pdf.min.js"></script>
 <script src="lib/xlsx.full.min.js"></script>
 <script src="lib/tesseract.min.js"></script>
-<script src="motor.js?v=14"></script>
+<script src="motor.js?v=15"></script>
 </body>
 </html>

@@ -1654,6 +1654,7 @@
 
   $('#convertir').onclick = async () => {
     cancelado = false;
+    $('#selloListo')?.classList.remove('ver');
     archivos.forEach(a => { a.estado = 'Pendiente'; a.clase = ''; });
     ocupado(true);
     const pedido = interpretarPedido($('#pedido').value);
@@ -1977,8 +1978,14 @@
       ['2026-09-02', 'Factura electrónica de venta', 'TA877', '800222333-5', 'Transportes Andinos Ltda.', 6210000, 0, 62100, 6210000, 'COP', 'PDF (revisar)'],
       ['', 'TOTAL COP', '', '', '', { t: 'n', v: 10788000 }, { t: 'n', v: 780220 }, { t: 'n', v: 225175 }, { t: 'n', v: 11418220 }, '', '']] }]
   };
+  // Sello fechador: la fecha de hoy, como en la oficina
+  const MESES_SELLO = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+  const hoy = new Date();
+  document.querySelectorAll('.fecha-sello').forEach(e => e.textContent = `${String(hoy.getDate()).padStart(2, '0')} ${MESES_SELLO[hoy.getMonth()]} ${hoy.getFullYear()}`);
   function mostrar(datos) {
     libro = datos; esEjemplo = false; hojaActiva = Math.min(1, datos.hojas.length - 1); pintar();
+    const sello = $('#selloListo');
+    if (sello) { sello.classList.remove('ver'); void sello.offsetWidth; sello.classList.add('ver'); }
     if (matchMedia('(max-width: 960px)').matches) $('.libro').scrollIntoView({ behavior: 'smooth', block: 'start' });   // en celular el resultado queda debajo
   }
   const valorCelda = v => (v && typeof v === 'object') ? v.v : v;
