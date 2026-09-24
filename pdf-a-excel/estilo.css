@@ -161,7 +161,7 @@ tr.relleno td{height:30px}
 .cifras{display:flex;flex-wrap:wrap;gap:4px 18px;padding:6px 14px;background:var(--libro-2);border-top:1px solid var(--linea);font-size:.78rem;color:var(--tinta-2);flex:none}
 .cifra b{font-family:var(--dato);font-weight:600;color:var(--tinta);margin-right:4px}
 /* El sello "Listo" cae sobre la hoja al terminar */
-.sello-listo{position:absolute;right:26px;top:118px;z-index:5;pointer-events:none;background:rgba(251,252,248,.55);visibility:hidden}
+.sello-listo{position:absolute;right:34px;bottom:84px;z-index:5;pointer-events:none;background:rgba(251,252,248,.55);visibility:hidden}
 .sello-listo.ver{visibility:visible;animation:estampar .42s cubic-bezier(.2,1.6,.4,1) both}
 @keyframes estampar{from{opacity:0;transform:rotate(-14deg) scale(1.9)}to{opacity:.9;transform:rotate(-8deg) scale(1)}}
 
@@ -218,3 +218,10 @@ tr.relleno td{height:30px}
 .ayuda details[open] .mas::after{content:"Ver menos ▴";font-size:.8rem}
 .ayuda p,.ayuda li{font-size:.84rem;line-height:1.45;color:var(--gris)}
 .pie{border-top:1px solid var(--linea);padding:14px 0 28px;font-size:.8rem;color:var(--gris);display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between}
+/* Diagrama de contadores: el ZIP del correo con su PDF y su XML */
+.archivo-zip{display:flex;align-items:center;gap:6px;font-family:var(--dato);font-size:.68rem;color:var(--gris);padding:3px 5px;border:1px solid var(--rejilla);border-radius:4px;background:var(--hoja)}
+.archivo-zip i{margin-left:auto;font-style:normal;font-family:var(--texto);font-size:.62rem}
+.archivo-zip .ext{flex:none;font-weight:600;font-size:.58rem;color:#fff;background:#b0413a;border-radius:3px;padding:1px 4px}
+.archivo-zip.xml{border-color:var(--libro);color:var(--tinta)}
+.archivo-zip.xml .ext{background:var(--libro)}
+.archivo-zip.xml i{color:var(--libro);font-weight:600}

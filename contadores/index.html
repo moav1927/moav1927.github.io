@@ -22,7 +22,7 @@
   ============================================================
 -->
 <link rel="preload" href="../pdf-a-excel/lib/fuentes/zilla-slab-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="../pdf-a-excel/estilo.css?v=15">
+<link rel="stylesheet" href="../pdf-a-excel/estilo.css?v=16">
 </head>
 <body data-modo="contadores">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="tinta"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7" result="r"/><feDisplacementMap in="SourceGraphic" in2="r" scale="2.4"/></filter></svg>
@@ -35,9 +35,9 @@
     <div class="texto">
       <h1>Tus facturas electrónicas, <em>cuadradas</em> en Excel.</h1>
       <p>Sube los ZIP tal como llegan al correo. Sale el libro de compras o ventas, el resumen por proveedor, el IVA por tarifa y las retenciones. Gratis, sin cuenta y sin subir nada a internet.</p>
-      <a class="que-es" href="#que-es">¿Qué es un extractor de información y para qué sirve?</a>
+      <a class="que-es" href="#que-es">¿Qué hace con tus facturas y para qué sirve?</a>
     </div>
-    <div class="sello" aria-label="Procesado en tu equipo, sin cuenta"><b>Procesado</b><span class="fecha-sello">&nbsp;</span><small>en tu equipo · sin cuenta</small></div>
+    <div class="sello" aria-label="Recibido: facturas DIAN · sin cuenta"><b>Recibido</b><span class="fecha-sello">&nbsp;</span><small>facturas DIAN · sin cuenta</small></div>
   </header>
 
   <main class="mesa">
@@ -103,36 +103,37 @@
       <div class="tabla-caja" id="tablaCaja"></div>
       <div class="pestanas" id="pestanas" role="tablist" aria-label="Hojas"></div>
       <div class="cifras" id="cifras"></div>
-      <div class="sello sello-listo" id="selloListo" aria-hidden="true"><b>Listo</b><span class="fecha-sello">&nbsp;</span><small>pasado en limpio</small></div>
+      <div class="sello sello-listo" id="selloListo" aria-hidden="true"><b>Cuadrado</b><span class="fecha-sello">&nbsp;</span><small>libro de compras</small></div>
     </section>
   </main>
 
   <section class="explica" id="que-es" aria-labelledby="t-que-es">
     <div class="explica-a">
       <div class="texto">
-        <h2 id="t-que-es">¿Qué es un extractor de información de PDF?</h2>
-        <p>Es una herramienta que <b>lee tus documentos y copia a una tabla los datos que importan</b>: el número de la factura, la fecha, el NIT, el total, el título de un plano o el autor de una tesis. Es lo que harías tú a mano, documento por documento, pero en segundos y sin errores de digitación.</p>
-        <p>Un PDF está hecho para verse bien, no para sumarse ni filtrarse. Cuando tienes 10, 50 o 200, pasarlos a Excel a mano toma horas. El extractor los lee todos, los clasifica, deja una fila por documento y calcula los totales.</p>
+        <h2 id="t-que-es">¿Qué hace con tus facturas electrónicas?</h2>
+        <p>Cada factura electrónica llega al correo con un <b>ZIP que trae dos archivos</b>: el PDF, que sirve para verla, y el XML, que es el documento que valida la DIAN y tiene todos los datos exactos.</p>
+        <p>La herramienta abre esos ZIP, lee el XML y arma el <b>libro de compras en Excel</b>: una fila por factura con NIT, CUFE, base, IVA por tarifa, INC y retenciones. Las notas crédito restan solas y los totales quedan listos para causar y para las declaraciones. Te ahorras digitar factura por factura.</p>
       </div>
-      <div class="diagrama" aria-label="Ejemplo: de una factura en PDF a una fila de Excel">
-        <div class="papel" aria-hidden="true">
-          <span class="enc">Ferretería La Campana</span>
-          <span class="marca-dato"><span class="n">1</span><span>Factura FE-3021</span></span>
-          <span class="marca-dato"><span class="n">2</span><span>14/08/2026</span></span>
-          <span class="raya"></span><span class="raya corta"></span>
-          <span class="marca-dato"><span class="n">3</span><span>NIT 811.045.678-9</span></span>
-          <span class="raya"></span><span class="raya"></span><span class="raya corta"></span>
-          <span class="marca-dato"><span class="n">4</span><span>Total $ 3.164.140</span></span>
+      <div class="diagrama" aria-label="Ejemplo: de los ZIP del correo al libro de compras">
+        <div class="papel carpeta-zip" aria-hidden="true">
+          <span class="enc">FC55410.zip</span>
+          <span class="archivo-zip"><span class="ext">PDF</span>FC55410.pdf <i>para verla</i></span>
+          <span class="archivo-zip xml"><span class="ext">XML</span>FC55410.xml <i>datos exactos</i></span>
+          <span class="raya"></span>
+          <span class="marca-dato"><span class="n">1</span><span>NIT 811045678-9</span></span>
+          <span class="marca-dato"><span class="n">2</span><span>Base 1.467.000</span></span>
+          <span class="marca-dato"><span class="n">3</span><span>IVA 19 % 189.130</span></span>
+          <span class="marca-dato"><span class="n">4</span><span>ReteFuente 36.675</span></span>
         </div>
         <span class="flecha" aria-hidden="true">➜</span>
         <div class="mini-excel">
-          <div class="top">facturas.xlsx</div>
+          <div class="top">libro-de-compras.xlsx</div>
           <table>
-            <thead><tr><th><span class="n">1</span> Número</th><th><span class="n">2</span> Fecha</th><th><span class="n">3</span> NIT</th><th><span class="n">4</span> Total</th></tr></thead>
+            <thead><tr><th>Número</th><th><span class="n">1</span> NIT</th><th><span class="n">2</span> Base</th><th><span class="n">3</span> IVA</th><th><span class="n">4</span> ReteFte</th></tr></thead>
             <tbody>
-              <tr><td>FE-3021</td><td>2026-08-14</td><td>811.045.678-9</td><td class="num">3.164.140</td></tr>
-              <tr><td>FV-0457</td><td>2026-08-20</td><td>900.555.444-1</td><td class="num">700.000</td></tr>
-              <tr class="total"><td>TOTAL</td><td></td><td></td><td class="num">3.864.140</td></tr>
+              <tr><td>FC55410</td><td>811045678-9</td><td class="num">1.467.000</td><td class="num">189.130</td><td class="num">36.675</td></tr>
+              <tr><td>NC120</td><td>811045678-9</td><td class="num">-49.000</td><td class="num">-9.310</td><td class="num">0</td></tr>
+              <tr class="total"><td>TOTAL</td><td></td><td class="num">1.418.000</td><td class="num">179.820</td><td class="num">36.675</td></tr>
             </tbody>
           </table>
         </div>
@@ -140,25 +141,24 @@
     </div>
     <div class="usos" aria-label="¿Para qué sirve?">
       <article class="uso">
-        <h3>Contabilidad</h3>
-        <p>Causar las compras del mes sin digitar factura por factura.</p>
-        <div class="ej"><span>50 facturas o ZIP de la DIAN</span><span>libro de compras, IVA y retenciones</span></div>
-        <a href="../contadores/">Ir a la sección para contadores</a>
+        <h3>Causación de compras</h3>
+        <p>Registrar las compras del mes sin digitar cada factura.</p>
+        <div class="ej"><span>Los ZIP de todos los proveedores</span><span>libro de compras con base, IVA y retenciones</span></div>
       </article>
       <article class="uso">
-        <h3>Administración y compras</h3>
-        <p>Armar la relación de remisiones, cotizaciones o cuentas de cobro.</p>
-        <div class="ej"><span>Una carpeta de remisiones</span><span>tabla con fechas, clientes y totales</span></div>
+        <h3>Declaración de IVA</h3>
+        <p>Tener a la mano el IVA descontable del período.</p>
+        <div class="ej"><span>Las facturas del bimestre</span><span>IVA por tarifa: 19 %, 5 % y 0 %</span></div>
       </article>
       <article class="uso">
-        <h3>Ingeniería y obra</h3>
-        <p>Sacar el listado de planos con los datos del rótulo.</p>
-        <div class="ej"><span>El juego de planos en PDF</span><span>número, título, escala, fecha y firmas</span></div>
+        <h3>Retención en la fuente</h3>
+        <p>Revisar lo retenido a cada tercero antes de declarar.</p>
+        <div class="ej"><span>Las facturas del mes</span><span>ReteFuente, ReteIVA y ReteICA por tarifa</span></div>
       </article>
       <article class="uso">
-        <h3>Estudio e investigación</h3>
-        <p>Organizar la bibliografía de un trabajo o un semillero.</p>
-        <div class="ej"><span>Tesis y artículos</span><span>título, autor, año y temas principales</span></div>
+        <h3>Cartera y proveedores</h3>
+        <p>Saber qué se debe, a quién y cuándo vence.</p>
+        <div class="ej"><span>Facturas a crédito</span><span>vencimientos y total por proveedor</span></div>
       </article>
     </div>
   </section>
@@ -186,12 +186,12 @@
         <p>Reconoce los formatos habituales en varios idiomas («Total:», «Invoice No.», «NIT», «Escala», «Drawn by»…). Las fotos y escaneados se leen con OCR (reconocimiento de texto en imágenes): la primera vez se descargan unos 6 MB que quedan guardados en el navegador.</p>
       </details>
   </aside>
-  <footer class="pie"><span>PDF a Excel · hecho en Colombia, gratis para todos.</span><span>Tus archivos se leen en tu equipo y no se guardan en ningún lado.</span></footer>
+  <footer class="pie"><span>PDF a Excel para contadores · hecho en Colombia, gratis para todos.</span><span>Tus archivos se leen en tu equipo y no se guardan en ningún lado.</span></footer>
 </div>
 
 <script src="../pdf-a-excel/lib/pdf.min.js"></script>
 <script src="../pdf-a-excel/lib/xlsx.full.min.js"></script>
 <script src="../pdf-a-excel/lib/tesseract.min.js"></script>
-<script src="../pdf-a-excel/motor.js?v=15"></script>
+<script src="../pdf-a-excel/motor.js?v=16"></script>
 </body>
 </html>
