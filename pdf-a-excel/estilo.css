@@ -146,3 +146,5 @@ tbody tr:not(.cab):hover td{background:#f4f0e2}
 .ayuda details[open] .mas{font-size:0}
 .ayuda details[open] .mas::after{content:"Ver menos ▴";font-size:.8rem}
 .ayuda p,.ayuda li{font-size:.84rem;line-height:1.45;color:var(--gris)}
+tr.relleno td{height:30px}
+tbody tr.relleno:hover td{background:transparent}

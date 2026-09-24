@@ -1982,6 +1982,21 @@
     if (matchMedia('(max-width: 960px)').matches) $('.libro').scrollIntoView({ behavior: 'smooth', block: 'start' });   // en celular el resultado queda debajo
   }
   const valorCelda = v => (v && typeof v === 'object') ? v.v : v;
+  // Filas vacías numeradas hasta llenar la vista, como una hoja de Excel (sin espacio en blanco debajo)
+  function rellenarFilas() {
+    const caja = $('#tablaCaja'), tbody = caja.querySelector('tbody');
+    if (!tbody) return;
+    tbody.querySelectorAll('tr.relleno').forEach(tr => tr.remove());
+    const filas = tbody.rows, ultima = filas[filas.length - 1];
+    if (!ultima || caja.querySelector('.vacio')) return;
+    const alto = ultima.getBoundingClientRect().height || 30;
+    const falta = Math.ceil((caja.clientHeight - caja.querySelector('table').getBoundingClientRect().height) / alto);
+    if (falta <= 0) return;
+    const n0 = filas.length + 1, ncol = ultima.cells.length - 1;
+    tbody.insertAdjacentHTML('beforeend', Array.from({ length: Math.min(falta, 200) }, (_, i) => `<tr class="relleno" aria-hidden="true"><th class="fila">${n0 + i}</th>${'<td></td>'.repeat(ncol)}</tr>`).join(''));
+  }
+  let esperaRelleno;
+  addEventListener('resize', () => { clearTimeout(esperaRelleno); esperaRelleno = setTimeout(rellenarFilas, 150); });
   function pintar() {
     $('#titulo').innerHTML = esc(libro.titulo) + (esEjemplo ? '<span class="chip">Ejemplo</span>' : '');
     $('#cifras').innerHTML = libro.cifras.map(([n, t]) => `<span class="cifra"><b>${esc(typeof n === 'number' ? n.toLocaleString('es-CO') : n)}</b>${esc(t)}</span>`).join('');
@@ -2000,6 +2015,7 @@
     $('#tablaCaja').innerHTML = `<table><thead><tr><th class="fila"></th>${cols.map((_, j) => `<th>${colLetra(j)}</th>`).join('')}</tr></thead><tbody><tr class="cab"><th class="fila">1</th>${cols.map(c => `<td title="${esc(c)}">${esc(c)}</td>`).join('')}</tr>${
       h.filas.slice(0, 1000).map((f, i) => `<tr class="${i >= n - nt ? 'total' : ''}"><th class="fila">${i + 2}</th>${cols.map((_, j) => celda(f[j] ?? '', i, j)).join('')}</tr>`).join('')
     }</tbody></table>${n > 1000 ? `<p class="vacio">Vista previa de 1.000 de ${n.toLocaleString('es-CO')} filas. El Excel las incluye todas.</p>` : ''}`;
+    rellenarFilas();
     $('#pestanas').innerHTML = libro.hojas.map((x, i) =>
       `<button role="tab" aria-selected="${i === hojaActiva}" data-i="${i}">${esc(x.nombre)} · ${x.nombre === 'Tablas' ? x.filas.filter(f => f.length === 1).length : x.filas.length - (x.nTotales || 0)}</button>`).join('');
   }
