@@ -1,117 +1,148 @@
-/* PDF a Excel — estilos comunes de /pdf-a-excel/ y /contadores/ */
+/* PDF a Excel — estilos comunes de /pdf-a-excel/ y /contadores/
+   Personalidad: el auxiliar de oficina ordenado que "pasa en limpio" el arrume de papeles.
+   Materiales: papel de libro contable, separadores de carpeta AZ, sello fechador de tinta morada. */
+@font-face{font-family:"Zilla Slab";font-weight:500;font-display:swap;src:url(lib/fuentes/zilla-slab-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Zilla Slab";font-weight:700;font-display:swap;src:url(lib/fuentes/zilla-slab-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Sans";font-weight:400;font-display:swap;src:url(lib/fuentes/ibm-plex-sans-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Sans";font-weight:500;font-display:swap;src:url(lib/fuentes/ibm-plex-sans-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Sans";font-weight:600;font-display:swap;src:url(lib/fuentes/ibm-plex-sans-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-weight:400;font-display:swap;src:url(lib/fuentes/ibm-plex-mono-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-weight:600;font-display:swap;src:url(lib/fuentes/ibm-plex-mono-latin-600-normal.woff2) format("woff2")}
+
 :root{
-  --papel:#edf0eb; --papel-2:#e2e7e1; --blanco:#fbfcfa;
-  --tinta:#12303a; --tinta-2:#2e5664; --gris:#5a6b6f;
-  --laton:#9c7326; --laton-2:#c79a42;
-  --libro:#2d5f4a; --libro-2:#e3ede7;          /* verde de libro contable: la ventana del Excel */
-  --linea:#c8d0c9; --rejilla:#dfe5e0; --error:#a3402b; --ok:#2d6b43; --aviso:#f6efdc;
-  --radio:12px; --sombra:0 1px 2px rgba(18,48,58,.06),0 8px 24px -12px rgba(18,48,58,.18);
+  --papel:#ebeee6;      /* papel de libro contable */
+  --papel-2:#dfe5dc;
+  --hoja:#fbfcf8;
+  --tinta:#14303a; --tinta-2:#33586a; --gris:#5b6b6e;
+  --libro:#2d5f4a; --libro-2:#e1ebe3;   /* verde de libro contable: el Excel */
+  --sello:#5b3e8f; --sello-2:#ece6f4;   /* tinta de sello fechador */
+  --laton:#a57a26; --laton-2:#f3ead6;   /* gancho de carpeta */
+  --linea:#c7d0c6; --rejilla:#dde4dc; --error:#a3402b; --ok:#2d6b43; --aviso:#f6efd9;
+  --titulo:"Zilla Slab",Rockwell,"Roboto Slab",Georgia,serif;
+  --texto:"IBM Plex Sans",system-ui,sans-serif;
+  --dato:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --radio:12px; --sombra:0 1px 0 rgba(20,48,58,.05),0 10px 24px -14px rgba(20,48,58,.28);
 }
 *{box-sizing:border-box}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--papel);color:var(--tinta);
-  font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-h1,h2,h3{font-family:"Literata",Georgia,serif;font-weight:500;margin:0;text-wrap:balance}
+body{margin:0;background:var(--papel);color:var(--tinta);font-family:var(--texto);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--titulo);font-weight:700;margin:0;text-wrap:balance;letter-spacing:-.005em}
 button,input,textarea{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--laton);outline-offset:2px}
+a{color:var(--libro)}
+:focus-visible{outline:2px solid var(--sello);outline-offset:2px}
 .envoltura{max-width:1480px;margin:0 auto;padding:0 20px}
 @media (max-width:600px){.envoltura{padding:0 16px}}
 
-/* Barra superior: marca y secciones */
+/* ---------- Sello fechador (la firma visual del sitio) ---------- */
+.sello{display:inline-grid;justify-items:center;gap:1px;color:var(--sello);border:2.5px solid currentColor;border-radius:7px;padding:6px 14px 5px;
+  box-shadow:inset 0 0 0 2px var(--papel),inset 0 0 0 3.5px currentColor;font-family:var(--titulo);text-transform:uppercase;letter-spacing:.12em;line-height:1.05;
+  transform:rotate(-6deg);filter:url(#tinta);opacity:.9;user-select:none}
+.sello b{font-size:1.15rem;font-weight:700}
+.sello .fecha-sello{font-family:var(--dato);font-size:.78rem;letter-spacing:.08em;border-block:1.5px solid currentColor;padding:1px 6px;margin:2px 0}
+.sello small{font-size:.62rem;font-weight:500;letter-spacing:.14em}
+
+/* ---------- Barra superior ---------- */
 .barra{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 24px;border-bottom:1px solid var(--linea);padding-top:12px}
-.marca{display:flex;align-items:center;gap:8px;font-family:"Literata",serif;font-size:1.05rem;padding-bottom:9px;color:var(--tinta);text-decoration:none}
+.marca{display:flex;align-items:center;gap:8px;font-family:var(--titulo);font-weight:700;font-size:1.1rem;padding-bottom:9px;color:var(--tinta);text-decoration:none}
 .marca svg{flex:none}
-.secciones{display:flex;gap:2px;margin-left:auto}
-.secciones a{padding:8px 14px;border:1px solid transparent;border-bottom:0;border-radius:8px 8px 0 0;color:var(--gris);text-decoration:none;font-size:.9rem;margin-bottom:-1px;white-space:nowrap}
-.secciones a:hover{color:var(--tinta);background:var(--papel-2)}
-.secciones a[aria-current="page"]{background:var(--blanco);border-color:var(--linea);color:var(--tinta);font-weight:600}
-@media (max-width:600px){.secciones{margin-left:0;width:100%}.secciones a{flex:1;text-align:center;padding:8px 6px;font-size:.84rem}}
+.secciones{display:flex;gap:4px;margin-left:auto}
+.secciones a{padding:7px 14px 8px;border:1px solid var(--linea);border-bottom:0;border-radius:9px 9px 0 0;color:var(--gris);text-decoration:none;font-size:.88rem;margin-bottom:-1px;white-space:nowrap;background:var(--papel-2)}
+.secciones a:hover{color:var(--tinta)}
+.secciones a[aria-current="page"]{background:var(--hoja);color:var(--tinta);font-weight:600;box-shadow:inset 0 3px 0 var(--libro)}
+@media (max-width:600px){.secciones{margin-left:0;width:100%}.secciones a{flex:1;text-align:center;padding:8px 6px;font-size:.82rem}}
 
-/* Encabezado compacto */
-header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 32px;padding-block:16px 14px}
-header .texto{max-width:760px;display:grid;gap:6px}
-h1{font-size:clamp(1.65rem,3vw,2.3rem);line-height:1.12}
-h1 em{font-style:normal;color:var(--laton)}
-header p{margin:0;color:var(--gris)}
-.sellos{display:flex;flex-wrap:wrap;gap:6px}
-.sello{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;border:1px solid var(--linea);border-radius:99px;padding:3px 10px;color:var(--tinta-2);background:var(--blanco)}
-.sello::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--libro)}
+/* ---------- Encabezado: papel rayado de libro contable y el sello ---------- */
+header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px 40px;padding-block:22px 18px;
+  background:repeating-linear-gradient(to bottom,transparent 0 27px,rgba(45,95,74,.09) 27px 28px)}
+header .texto{max-width:780px;display:grid;gap:8px}
+h1{font-size:clamp(1.9rem,3.6vw,2.9rem);line-height:1.04}
+h1 em{font-style:normal;color:var(--libro);background:linear-gradient(transparent 62%,var(--sello-2) 62% 92%,transparent 92%)}
+header p{margin:0;color:var(--tinta-2);font-size:1.02rem;max-width:66ch}
+.que-es{justify-self:start;font-size:.9rem;font-weight:500;color:var(--sello);text-decoration:none;border-bottom:1.5px dashed currentColor}
+.que-es:hover{border-bottom-style:solid}
+header .sello{margin-right:16px;font-size:1.12em}
+@media (max-width:700px){header{grid-template-columns:1fr}header .sello{justify-self:start;transform:rotate(-4deg) scale(.85);transform-origin:left}}
 
-/* Mesa de trabajo: pasos a la izquierda, el Excel a la derecha */
-.mesa{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:20px;align-items:start;padding-bottom:28px}
+/* ---------- Mesa de trabajo ---------- */
+.mesa{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:20px;align-items:start;padding:8px 0 28px}
 @media (max-width:960px){.mesa{grid-template-columns:1fr}}
-.pasos{display:grid;gap:10px}
-.paso{background:var(--blanco);border:1px solid var(--linea);border-radius:var(--radio);padding:14px 16px;display:grid;gap:10px;box-shadow:var(--sombra)}
-.paso h2{font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:.95rem;font-weight:600;display:flex;align-items:center;gap:10px}
-.paso h2 .n{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--tinta);color:var(--blanco);font-size:.78rem;font-family:"IBM Plex Mono",monospace}
-.paso h2 small{margin-left:auto;font-weight:400;color:var(--gris);font-size:.78rem}
+.pasos{display:grid;gap:22px;padding-top:12px}
 
-.soltar{border:1.5px dashed var(--linea);border-radius:10px;background:var(--papel);padding:14px 14px;display:grid;gap:6px;justify-items:center;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
-.soltar:hover,.soltar.sobre{border-color:var(--libro);background:var(--libro-2)}
-.soltar b{font-weight:600;font-size:1rem}
+/* Cada paso es un separador de carpeta AZ, con su pestaña de color */
+.paso{--c:var(--libro);position:relative;background:var(--hoja);border:1px solid var(--linea);border-top:3px solid var(--c);border-radius:0 var(--radio) var(--radio) var(--radio);padding:16px 16px 14px;display:grid;gap:10px;box-shadow:var(--sombra)}
+.paso:nth-child(2){--c:var(--sello)} .paso:nth-child(3){--c:var(--laton)}
+.paso .pestana{position:absolute;left:-1px;top:-24px;background:var(--c);color:#fff;font-family:var(--titulo);font-weight:700;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px 3px;border-radius:8px 8px 0 0}
+.paso h2{font-size:1.18rem;line-height:1.2}
+.paso h2 small{font-family:var(--texto);font-weight:400;color:var(--gris);font-size:.8rem;margin-left:6px}
+
+.soltar{border:1.5px dashed var(--linea);border-radius:10px;background:repeating-linear-gradient(-45deg,var(--papel) 0 10px,#e6eae1 10px 20px);padding:16px 14px;display:grid;gap:6px;justify-items:center;text-align:center;cursor:pointer;transition:border-color .15s,transform .15s}
+.soltar:hover,.soltar.sobre{border-color:var(--libro);transform:translateY(-1px)}
+.soltar.sobre{background:var(--libro-2)}
+.soltar b{font-family:var(--titulo);font-weight:700;font-size:1.12rem}
 .soltar .sub{color:var(--gris);font-size:.84rem}
-.formatos{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
-.formatos span{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.04em;border:1px solid var(--linea);border-radius:5px;padding:1px 6px;background:var(--blanco);color:var(--tinta-2)}
-.formatos span.dest{border-color:var(--libro);color:var(--libro);font-weight:500}
-.archivos{list-style:none;margin:0;padding:0;max-height:200px;overflow:auto;border:1px solid var(--linea);border-radius:8px;background:var(--blanco)}
+.formatos{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;margin-top:2px}
+.formatos span{font-family:var(--dato);font-size:.68rem;letter-spacing:.04em;border:1px solid var(--linea);border-radius:4px;padding:1px 6px;background:var(--hoja);color:var(--tinta-2)}
+.formatos span.dest{border-color:var(--libro);background:var(--libro);color:#fff}
+.archivos{list-style:none;margin:0;padding:0;max-height:200px;overflow:auto;border:1px solid var(--linea);border-radius:8px;background:var(--hoja)}
 .archivos:empty{display:none}
 .archivos li{display:flex;gap:8px;justify-content:space-between;align-items:center;padding:5px 10px;border-bottom:1px solid var(--rejilla);font-size:.8rem}
 .archivos li:last-child{border-bottom:0}
-.archivos .nom{font-family:"IBM Plex Mono",monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.archivos .nom{font-family:var(--dato);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .archivos .est{flex:none;color:var(--gris);font-size:.74rem}
 .archivos .est.ok{color:var(--ok)} .archivos .est.error{color:var(--error)}
 .archivos button{flex:none;border:0;background:none;color:var(--gris);cursor:pointer;padding:0 2px;font-size:1rem;line-height:1}
 .archivos button:hover{color:var(--error)}
-
-.campo-ayuda{margin:0;font-size:.82rem;color:var(--gris)}
-textarea{background:var(--blanco);border:1px solid var(--linea);border-radius:8px;padding:9px 10px;resize:vertical;min-height:48px;width:100%}
-textarea:focus{border-color:var(--tinta-2)}
-.presets{display:flex;flex-wrap:wrap;gap:6px}
-.presets button{border:1px solid var(--linea);background:var(--blanco);border-radius:99px;padding:3px 11px;font-size:.78rem;cursor:pointer;color:var(--tinta-2)}
-.presets button:hover{border-color:var(--libro);color:var(--libro)}
-.presets button[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:var(--blanco)}
-
-.botones{display:flex;flex-wrap:wrap;gap:8px}
-.btn{border:1px solid var(--tinta);background:var(--tinta);color:var(--blanco);border-radius:8px;padding:10px 18px;font-weight:600;cursor:pointer;transition:background .15s}
-.btn:hover:not(:disabled){background:var(--tinta-2)}
-.btn.grande{flex:1;padding:12px 18px;font-size:1rem}
 .enlace{justify-self:start;border:0;background:none;padding:0;color:var(--gris);font-size:.8rem;text-decoration:underline;cursor:pointer}
 .enlace:hover{color:var(--error)}
+
+.campo-ayuda{margin:0;font-size:.82rem;color:var(--gris)}
+textarea{background:var(--hoja);border:1px solid var(--linea);border-radius:8px;padding:9px 10px;resize:vertical;min-height:48px;width:100%;
+  background-image:repeating-linear-gradient(to bottom,transparent 0 21.5px,var(--rejilla) 21.5px 22.5px);background-attachment:local;background-position:0 8px;line-height:22.5px}
+textarea:focus{border-color:var(--sello);outline:none;box-shadow:0 0 0 3px var(--sello-2)}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets button{border:1px solid var(--linea);background:var(--hoja);border-radius:99px;padding:3px 11px;font-size:.78rem;cursor:pointer;color:var(--tinta-2);transition:all .12s}
+.presets button:hover{border-color:var(--sello);color:var(--sello)}
+.presets button[aria-pressed="true"]{background:var(--sello);border-color:var(--sello);color:#fff}
+
+.botones{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--tinta);background:var(--tinta);color:#fff;border-radius:8px;padding:10px 18px;font-weight:600;cursor:pointer;transition:background .15s,transform .1s}
+.btn:hover:not(:disabled){background:var(--tinta-2)}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn.grande{flex:1;padding:12px 18px;font-size:1.02rem;font-family:var(--titulo);font-weight:700;letter-spacing:.02em;background:var(--libro);border-color:var(--libro);box-shadow:0 3px 0 #1f4636}
+.btn.grande:hover:not(:disabled){background:#27533f}
+.btn.grande:active:not(:disabled){box-shadow:0 1px 0 #1f4636;transform:translateY(2px)}
 .btn.sec{background:transparent;color:var(--tinta);border-color:var(--linea);font-weight:500}
 .btn.sec:hover:not(:disabled){background:var(--papel-2)}
-.btn.verde{background:var(--libro);border-color:var(--libro)}
-.btn.verde:hover:not(:disabled){background:#244d3c}
-.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
 details.opciones summary{cursor:pointer;font-size:.86rem;color:var(--tinta-2)}
 details.opciones[open] summary{margin-bottom:8px}
 .opcion{display:flex;gap:8px;align-items:flex-start;font-size:.84rem;color:var(--tinta-2);margin-top:6px}
-.opcion input{margin-top:3px}
+.opcion input{margin-top:3px;accent-color:var(--libro)}
 .estado{font-size:.88rem;color:var(--gris);min-height:1.4em}
 .estado:empty{display:none}
-.estado.error{color:var(--error)} .estado.ok{color:var(--ok)}
+.estado.error{color:var(--error)} .estado.ok{color:var(--ok);font-weight:500}
 progress{width:100%;height:6px;accent-color:var(--libro)}
 .aviso-equipo{font-size:.82rem;background:var(--aviso);border:1px solid #e3d3a8;border-radius:8px;padding:9px 11px;margin:0;color:var(--tinta-2)}
 
-/* La ventana del Excel (vista previa del resultado) */
-.libro{background:var(--blanco);border:1px solid var(--linea);border-radius:var(--radio);overflow:hidden;display:flex;flex-direction:column;min-width:0;box-shadow:var(--sombra)}
-/* En PC la vista previa mide lo mismo que la columna de pasos (termina con el paso 3): no aporta altura propia y se estira */
+/* ---------- La ventana del Excel ---------- */
+.libro{position:relative;background:var(--hoja);border:1px solid var(--linea);border-radius:var(--radio);overflow:hidden;display:flex;flex-direction:column;min-width:0;box-shadow:var(--sombra);margin-top:12px}
 @media (min-width:961px){.mesa{align-items:stretch}.pasos{align-content:start}.libro{contain:size;min-height:460px}}
 @media (max-width:960px){.libro{height:75vh;min-height:460px}}
 .libro-cab{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 12px 10px 14px;background:var(--libro);color:#fff}
 .libro-cab .nombre{display:flex;align-items:center;gap:9px;min-width:0}
-.libro-cab h2{font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:.95rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.libro-cab h2{font-family:var(--texto);font-size:.95rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .libro-cab .btn{padding:7px 14px;font-size:.86rem}
 .libro-cab .btn.sec{color:#fff;border-color:rgba(255,255,255,.35)}
 .libro-cab .btn.sec:hover:not(:disabled){background:rgba(255,255,255,.12)}
 .libro-cab .btn.claro{background:#fff;color:var(--libro);border-color:#fff}
 .libro-cab .btn.claro:hover:not(:disabled){background:var(--libro-2)}
-.chip{font-family:"IBM Plex Mono",monospace;font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;border:1px solid rgba(255,255,255,.45);border-radius:99px;padding:1px 7px;margin-left:8px;vertical-align:middle;font-weight:400}
-.barra-fx{display:flex;align-items:stretch;border-bottom:1px solid var(--linea);background:var(--blanco);font-size:.86rem}
-.barra-fx .fx{flex:none;display:grid;place-items:center;width:42px;border-right:1px solid var(--linea);font-family:"Literata",serif;font-style:italic;color:var(--gris)}
+.chip{font-family:var(--dato);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;border:1px solid rgba(255,255,255,.45);border-radius:99px;padding:1px 7px;margin-left:8px;vertical-align:middle;font-weight:400}
+.barra-fx{display:flex;align-items:stretch;border-bottom:1px solid var(--linea);background:var(--hoja);font-size:.86rem}
+.barra-fx .fx{flex:none;display:grid;place-items:center;width:42px;border-right:1px solid var(--linea);font-family:Georgia,serif;font-style:italic;color:var(--gris)}
 .barra-fx .resumen{margin:0;padding:8px 12px;color:var(--tinta-2);max-height:6.4em;overflow:auto}
-.tabla-caja{flex:1;min-height:0;overflow:auto;background:var(--blanco)}
-table{border-collapse:separate;border-spacing:0;font-family:"IBM Plex Mono",monospace;font-size:.78rem;font-variant-numeric:tabular-nums;min-width:100%}
+.tabla-caja{flex:1;min-height:0;overflow:auto;background:var(--hoja)}
+table{border-collapse:separate;border-spacing:0;font-family:var(--dato);font-size:.78rem;font-variant-numeric:tabular-nums;min-width:100%}
 th,td{border-right:1px solid var(--rejilla);border-bottom:1px solid var(--rejilla);padding:5px 10px;text-align:left;white-space:nowrap;max-width:360px;overflow:hidden;text-overflow:ellipsis}
 thead th{position:sticky;top:0;z-index:2;background:var(--papel-2);color:var(--gris);font-weight:400;text-align:center;font-size:.7rem;padding:3px 10px}
 th.fila{position:sticky;left:0;z-index:1;color:var(--gris);font-weight:400;background:var(--papel-2);text-align:right;width:1%;font-size:.7rem}
@@ -120,32 +151,70 @@ tr.cab td{font-weight:600;background:var(--libro-2);color:var(--tinta)}
 td.num{text-align:right}
 td.falta{background:var(--aviso)}
 tr.total td{font-weight:600;border-top:2px solid var(--tinta-2)}
-tbody tr:not(.cab):hover td{background:#f4f0e2}
+tbody tr:not(.cab):not(.relleno):hover td{background:#f4f0e2}
+tr.relleno td{height:30px}
 .vacio{padding:24px 16px;color:var(--gris);text-align:center}
 .pestanas{display:flex;gap:1px;overflow-x:auto;background:var(--papel-2);border-top:1px solid var(--linea);padding:0 6px;flex:none}
 .pestanas button{border:0;border-bottom:3px solid transparent;background:transparent;padding:7px 13px;font-size:.8rem;cursor:pointer;white-space:nowrap;color:var(--gris)}
 .pestanas button:hover{color:var(--tinta)}
-.pestanas button[aria-selected="true"]{color:var(--libro);border-bottom-color:var(--libro);background:var(--blanco);font-weight:600}
+.pestanas button[aria-selected="true"]{color:var(--libro);border-bottom-color:var(--libro);background:var(--hoja);font-weight:600}
 .cifras{display:flex;flex-wrap:wrap;gap:4px 18px;padding:6px 14px;background:var(--libro-2);border-top:1px solid var(--linea);font-size:.78rem;color:var(--tinta-2);flex:none}
-.cifra b{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--tinta);margin-right:4px}
+.cifra b{font-family:var(--dato);font-weight:600;color:var(--tinta);margin-right:4px}
+/* El sello "Listo" cae sobre la hoja al terminar */
+.sello-listo{position:absolute;right:26px;top:118px;z-index:5;pointer-events:none;background:rgba(251,252,248,.55);visibility:hidden}
+.sello-listo.ver{visibility:visible;animation:estampar .42s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes estampar{from{opacity:0;transform:rotate(-14deg) scale(1.9)}to{opacity:.9;transform:rotate(-8deg) scale(1)}}
 
-/* Ayuda al pie */
-.ayuda{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;padding-bottom:36px;align-items:start}
+/* ---------- ¿Qué es un extractor de información? ---------- */
+.explica{border-top:1px solid var(--linea);padding:34px 0 10px;display:grid;gap:26px;scroll-margin-top:12px}
+.explica-a{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:28px 44px;align-items:center}
+@media (max-width:900px){.explica-a{grid-template-columns:1fr}}
+.explica h2{font-size:clamp(1.5rem,2.6vw,2.05rem);line-height:1.1}
+.explica p{margin:0;color:var(--tinta-2);font-size:1rem;max-width:62ch}
+.explica .texto{display:grid;gap:12px}
+/* Diagrama: el papel con los datos marcados y la fila de Excel donde caen */
+.diagrama{display:grid;grid-template-columns:minmax(0,.78fr) auto minmax(0,1.22fr);align-items:center;gap:14px}
+@media (max-width:560px){.diagrama{grid-template-columns:1fr}.flecha{transform:rotate(90deg);justify-self:center}}
+.papel{background:#fff;border:1px solid var(--linea);border-radius:4px;padding:24px 14px 16px;box-shadow:3px 4px 0 var(--papel-2),var(--sombra);transform:rotate(-1.5deg);font-size:.72rem;display:grid;gap:5px;color:var(--gris);position:relative}
+.papel::before{content:"";position:absolute;top:-10px;right:26px;width:14px;height:30px;border:2.5px solid var(--laton);border-radius:8px;border-bottom-color:transparent}
+.papel .enc{font-family:var(--titulo);font-weight:700;color:var(--tinta);font-size:.9rem}
+.papel .raya{height:5px;background:var(--rejilla);border-radius:2px}
+.papel .raya.corta{width:60%}
+.marca-dato{display:flex;align-items:center;gap:6px;color:var(--tinta)}
+.marca-dato span:last-child{background:var(--sello-2);box-shadow:0 0 0 2px var(--sello-2);border-radius:2px;font-family:var(--dato)}
+.n{flex:none;display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--sello);color:#fff;font-size:.6rem;font-family:var(--dato);font-weight:600}
+.flecha{color:var(--libro);font-size:1.6rem;line-height:1}
+.mini-excel{overflow-x:auto;border:1px solid var(--linea);border-radius:8px;overflow:hidden;background:var(--hoja);box-shadow:var(--sombra);font-family:var(--dato);font-size:.7rem}
+.mini-excel .top{background:var(--libro);color:#fff;padding:5px 9px;font-family:var(--texto);font-weight:600;font-size:.72rem}
+.mini-excel table{font-size:.68rem;min-width:0;width:100%}
+.mini-excel th,.mini-excel td{padding:4px 5px;max-width:none}
+.mini-excel thead th{position:static;background:var(--libro-2);color:var(--tinta);font-weight:600;text-align:left}
+.mini-excel td.num{text-align:right}
+/* ¿Para qué sirve? */
+.usos{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.uso{background:var(--hoja);border:1px solid var(--linea);border-left:4px solid var(--c,var(--libro));border-radius:4px var(--radio) var(--radio) 4px;padding:14px 16px;display:grid;gap:8px;align-content:start;box-shadow:var(--sombra)}
+.uso:nth-child(2){--c:var(--sello)} .uso:nth-child(3){--c:var(--laton)} .uso:nth-child(4){--c:var(--tinta-2)}
+.uso h3{font-size:1.08rem}
+.uso p{font-size:.88rem;margin:0;color:var(--gris)}
+.uso .ej{display:grid;gap:3px;font-family:var(--dato);font-size:.74rem;color:var(--tinta-2);background:var(--papel);border-radius:6px;padding:7px 9px}
+.uso .ej span::before{content:"→ ";color:var(--c,var(--libro));font-weight:600}
+.uso .ej span:first-child::before{content:"↓ ";}
+.uso a{font-size:.84rem;font-weight:500}
+
+/* ---------- Ayuda al pie ---------- */
+.ayuda{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;padding:18px 0 36px;align-items:start}
 .ayuda details,.ayuda .tarjeta{background:transparent;border:1px solid var(--linea);border-radius:var(--radio);padding:12px 14px;font-size:.84rem;color:var(--gris)}
-.ayuda summary,.ayuda h3{cursor:pointer;color:var(--tinta);font-family:"IBM Plex Sans",system-ui,sans-serif;font-weight:600;font-size:.88rem}
+.ayuda summary,.ayuda h3{cursor:pointer;color:var(--tinta);font-family:var(--titulo);font-weight:700;font-size:1rem}
 .ayuda h3{cursor:default;margin-bottom:6px}
 .ayuda details[open] summary{margin-bottom:6px}
 .ayuda ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}
 .ayuda p{margin:0}
-
 .ayuda summary{list-style:none}
 .ayuda summary::-webkit-details-marker{display:none}
-.ayuda .breve{display:block;margin-top:6px;font-weight:400;color:var(--gris);font-size:.84rem;line-height:1.45}
-.ayuda .mas{display:inline-block;margin-top:6px;font-weight:500;font-size:.8rem;color:var(--libro)}
+.ayuda .breve{display:block;margin-top:6px;font-family:var(--texto);font-weight:400;color:var(--gris);font-size:.84rem;line-height:1.45}
+.ayuda .mas{display:inline-block;margin-top:6px;font-family:var(--texto);font-weight:500;font-size:.8rem;color:var(--libro)}
 .ayuda .mas::after{content:" ▾"}
-.ayuda details[open] .mas::after{content:" ▴"}
 .ayuda details[open] .mas{font-size:0}
 .ayuda details[open] .mas::after{content:"Ver menos ▴";font-size:.8rem}
 .ayuda p,.ayuda li{font-size:.84rem;line-height:1.45;color:var(--gris)}
-tr.relleno td{height:30px}
-tbody tr.relleno:hover td{background:transparent}
+.pie{border-top:1px solid var(--linea);padding:14px 0 28px;font-size:.8rem;color:var(--gris);display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between}
