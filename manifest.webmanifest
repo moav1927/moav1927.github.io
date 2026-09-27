@@ -1,6 +1,6 @@
 {
-  "name": "Cuadra · PDF a Excel",
-  "short_name": "Cuadra",
+  "name": "SheetClerk · PDF a Excel",
+  "short_name": "SheetClerk",
   "description": "Tus documentos, pasados en limpio a Excel. Gratis, sin cuenta y sin subir tus archivos.",
   "lang": "es",
   "start_url": "/pdf-a-excel/",

@@ -1,8 +1,8 @@
-// Cuadra: app instalable que funciona sin internet.
+// SheetClerk: app instalable que funciona sin internet.
 // Solo atiende /pdf-a-excel/ y /contadores/; el resto del sitio pasa directo a la red.
-const CACHE = 'cuadra-19';
+const CACHE = 'sheetclerk-20';
 const L = '/pdf-a-excel/lib/';
-const BASICO = ['/pdf-a-excel/', '/contadores/', '/pdf-a-excel/motor.js?v=19', '/pdf-a-excel/estilo.css?v=19',
+const BASICO = ['/pdf-a-excel/', '/contadores/', '/pdf-a-excel/motor.js?v=20', '/pdf-a-excel/estilo.css?v=20',
   L + 'pdf.min.js', L + 'pdf.worker.min.js', L + 'xlsx.full.min.js', L + 'tesseract.min.js', L + 'fflate.min.js', L + 'mammoth.browser.min.js',
   L + 'fuentes/zilla-slab-latin-500-normal.woff2', L + 'fuentes/zilla-slab-latin-700-normal.woff2',
   L + 'fuentes/ibm-plex-sans-latin-400-normal.woff2', L + 'fuentes/ibm-plex-sans-latin-500-normal.woff2', L + 'fuentes/ibm-plex-sans-latin-600-normal.woff2',
@@ -12,7 +12,7 @@ const propio = url => url.origin === location.origin && /^\/(pdf-a-excel|contado
 
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(BASICO)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(
-  caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('cuadra-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
+  caches.keys().then(ks => Promise.all(ks.filter(k => (k.startsWith('cuadra-') || k.startsWith('sheetclerk-')) && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
