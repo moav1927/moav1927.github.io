@@ -1,0 +1,12 @@
+Cuadra (PDF a Excel)
+Copyright (c) 2026 moav1927. Todos los derechos reservados.
+
+El código, el diseño, los textos, el nombre «Cuadra» y el logo de este sitio
+(carpetas pdf-a-excel/ y contadores/, y los archivos de la raíz) son propiedad
+de su autor. Puedes usar el sitio libremente en https://moav1927.github.io/,
+pero no copiarlo, publicarlo en otro lugar ni venderlo sin autorización escrita.
+
+Las librerías de terceros incluidas en pdf-a-excel/lib/ conservan sus propias
+licencias: pdf.js (Apache 2.0), SheetJS (Apache 2.0), tesseract.js (Apache 2.0),
+mammoth (BSD-2), fflate (MIT) y las fuentes Zilla Slab e IBM Plex (SIL OFL 1.1,
+ver pdf-a-excel/lib/fuentes/).
