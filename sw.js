@@ -1,14 +1,14 @@
 // SheetClerk: app instalable que funciona sin internet.
-// Solo atiende /pdf-a-excel/ y /contadores/; el resto del sitio pasa directo a la red.
-const CACHE = 'sheetclerk-20';
+// Solo atiende las páginas de SheetClerk (/pdf-a-excel/, /contadores/ y /en/, /pt/, /fr/, /de/, /it/); el resto pasa directo a la red.
+const CACHE = 'sheetclerk-21';
 const L = '/pdf-a-excel/lib/';
-const BASICO = ['/pdf-a-excel/', '/contadores/', '/pdf-a-excel/motor.js?v=20', '/pdf-a-excel/estilo.css?v=20',
+const BASICO = ['/pdf-a-excel/', '/contadores/', '/en/', '/pt/', '/fr/', '/de/', '/it/', '/pdf-a-excel/motor.js?v=21', '/pdf-a-excel/estilo.css?v=21', '/pdf-a-excel/lang.js?v=21', '/pdf-a-excel/i18n.js?v=21',
   L + 'pdf.min.js', L + 'pdf.worker.min.js', L + 'xlsx.full.min.js', L + 'tesseract.min.js', L + 'fflate.min.js', L + 'mammoth.browser.min.js',
   L + 'fuentes/zilla-slab-latin-500-normal.woff2', L + 'fuentes/zilla-slab-latin-700-normal.woff2',
   L + 'fuentes/ibm-plex-sans-latin-400-normal.woff2', L + 'fuentes/ibm-plex-sans-latin-500-normal.woff2', L + 'fuentes/ibm-plex-sans-latin-600-normal.woff2',
   L + 'fuentes/ibm-plex-mono-latin-400-normal.woff2', L + 'fuentes/ibm-plex-mono-latin-600-normal.woff2',
   '/pdf-a-excel/marca/icono.svg', '/pdf-a-excel/marca/icono-32.png', '/pdf-a-excel/marca/icono-192.png'];
-const propio = url => url.origin === location.origin && /^\/(pdf-a-excel|contadores)\//.test(url.pathname);
+const propio = url => url.origin === location.origin && /^\/(pdf-a-excel|contadores|en|pt|fr|de|it)\//.test(url.pathname);
 
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(BASICO)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(

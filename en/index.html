@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SheetClerk · PDF to Excel: your documents, neatly copied into a spreadsheet</title>
+<meta name="description" content="Free PDF data extractor: upload invoices, delivery notes, drawings, reports or photos and download a tidy Excel file with a summary and totals. No account, and your files never leave your computer.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' data: blob:; img-src 'self' data: blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#2d5f4a">
+<script src="/pdf-a-excel/lang.js?v=21"></script>
+<link rel="icon" href="/pdf-a-excel/marca/icono.svg" type="image/svg+xml">
+<link rel="icon" href="/pdf-a-excel/marca/icono-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/pdf-a-excel/marca/icono-180.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="canonical" href="https://moav1927.github.io/en/">
+<link rel="alternate" hreflang="es" href="https://moav1927.github.io/pdf-a-excel/">
+<link rel="alternate" hreflang="en" href="https://moav1927.github.io/en/">
+<link rel="alternate" hreflang="pt" href="https://moav1927.github.io/pt/">
+<link rel="alternate" hreflang="fr" href="https://moav1927.github.io/fr/">
+<link rel="alternate" hreflang="de" href="https://moav1927.github.io/de/">
+<link rel="alternate" hreflang="it" href="https://moav1927.github.io/it/">
+<link rel="alternate" hreflang="x-default" href="https://moav1927.github.io/en/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SheetClerk">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="SheetClerk · PDF to Excel: your documents, neatly copied into a spreadsheet">
+<meta property="og:description" content="Free PDF data extractor: upload invoices, delivery notes, drawings, reports or photos and download a tidy Excel file with a summary and totals. No account, and your files never leave your computer.">
+<meta property="og:image" content="https://moav1927.github.io/pdf-a-excel/marca/compartir.png">
+<meta property="og:url" content="https://moav1927.github.io/en/">
+<meta name="twitter:card" content="summary_large_image">
+<!--
+  SheetClerk (PDF a Excel) — funciona 100 % en el navegador; los archivos nunca salen del equipo.
+  Página generada desde una plantilla (idioma: en). Motor: /pdf-a-excel/motor.js · estilos: /pdf-a-excel/estilo.css
+  · textos del motor: /pdf-a-excel/i18n.js. Librerías y fuentes incluidas en /pdf-a-excel/lib (ver LICENSE).
+-->
+<link rel="preload" href="/pdf-a-excel/lib/fuentes/zilla-slab-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/pdf-a-excel/estilo.css?v=21">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="tinta"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7" result="r"/><feDisplacementMap in="SourceGraphic" in2="r" scale="2.4"/></filter></svg>
+<div class="envoltura">
+  <div class="barra">
+    <a class="marca" href="/en/" aria-label="SheetClerk, home"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"> <rect width="64" height="64" rx="14" fill="#2d5f4a"/> <path d="M15 10h22l12 12v32H15z" fill="#fbfcf8"/> <path d="M37 10v12h12z" fill="#c9dccf"/> <path d="M20 18h12M20 23.5h9" stroke="#9db5a7" stroke-width="3" stroke-linecap="round"/> <path d="M15 31h34M15 42.5h34M26.5 31v23M38 31v23" stroke="#2d5f4a" stroke-width="2.4"/> <rect x="26.5" y="42.5" width="11.5" height="11.5" fill="#a57a26"/> <circle cx="48" cy="48" r="11" fill="#5b3e8f" stroke="#fbfcf8" stroke-width="3"/> <path d="M42.8 48.3l3.6 3.6 6.8-7.4" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/> </svg><span>SheetClerk<small>PDF to Excel</small></span></a>
+    <button class="instalar" id="instalar" hidden>Install SheetClerk</button>
+    <details class="idiomas"><summary aria-label="Language"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 12h19M12 2.5c3 3.2 3 15.8 0 19M12 2.5c-3 3.2-3 15.8 0 19" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>EN</summary><ul><li><a href="/pdf-a-excel/" hreflang="es" lang="es" data-lang="es">Español</a></li><li><a href="/en/" hreflang="en" lang="en" data-lang="en" aria-current="page">English</a></li><li><a href="/pt/" hreflang="pt" lang="pt" data-lang="pt">Português</a></li><li><a href="/fr/" hreflang="fr" lang="fr" data-lang="fr">Français</a></li><li><a href="/de/" hreflang="de" lang="de" data-lang="de">Deutsch</a></li><li><a href="/it/" hreflang="it" lang="it" data-lang="it">Italiano</a></li></ul></details>
+    
+  </div>
+  <header>
+    <div class="texto">
+      <h1>Your documents, <em>neatly copied</em> into Excel.</h1>
+      <p>Drop in your pile of invoices, delivery notes, drawings or reports and get back a tidy Excel file with a summary and totals. Free, no account, and your files never leave your computer.</p>
+      <a class="que-es" href="#que-es">What is a data extractor and what is it for?</a>
+    </div>
+    <div class="sello" aria-label="Processed: on your device · no account"><b>Processed</b><span class="fecha-sello">&nbsp;</span><small>on your device · no account</small></div>
+  </header>
+
+  <main class="mesa">
+    <div class="pasos">
+      <section class="paso" aria-labelledby="p1">
+        <span class="pestana" aria-hidden="true">Step 1</span>
+        <h2 id="p1">Bring your documents</h2>
+        <label class="soltar" id="zona" for="entrada">
+          <b>Drop your pile here</b>
+          <span class="sub">or click to choose files. You can pick 100 or more at once.</span>
+          <span class="formatos"><span class="dest">PDF</span><span>Photos</span><span>Word</span><span>Excel</span><span>ZIP / XML</span></span>
+          <input type="file" id="entrada" accept="application/pdf,.pdf,.zip,.xml,.xlsx,.xlsm,.xls,.ods,.csv,.docx,image/*,.png,.jpg,.jpeg,.webp,.bmp,.gif" multiple hidden>
+        </label>
+        <ul class="archivos" id="archivos" aria-label="Uploaded files"></ul>
+        <button class="enlace" id="limpiar" hidden>Remove all files</button>
+      </section>
+
+      <section class="paso" aria-labelledby="p2">
+        <span class="pestana" aria-hidden="true">Step 2</span>
+        <h2 id="p2">What data do you need?</h2>
+        <div class="presets" id="presets" aria-label="Suggestions">
+          <button type="button" data-v="" aria-pressed="true">Automatic</button>
+          <button type="button" data-v="invoice number, date, supplier, tax id, customer, items, category, subtotal, tax, withholding, total, currency" aria-pressed="false">Invoices</button>
+          <button type="button" data-v="number, date, customer, address, city, carrier, license plate" aria-pressed="false">Delivery notes</button>
+          <button type="button" data-v="title, author, institution, date, pages, topics, summary" aria-pressed="false">Reports and theses</button>
+          <button type="button" data-v="drawing number, title, project, scale, date, revision, drawn by, checked by, approved by, notes" aria-pressed="false">Drawings</button>
+        </div>
+        <textarea id="pedido" aria-labelledby="p2" aria-describedby="ayudaPedido" placeholder="E.g.: invoice number, date, supplier, tax id, total"></textarea>
+        <p class="campo-ayuda" id="ayudaPedido">Type them separated by commas, or ask “what are the invoices for?”. Leave it empty and the fields are chosen by document type.</p>
+      </section>
+
+      <section class="paso" aria-labelledby="p3">
+        <span class="pestana" aria-hidden="true">Step 3</span>
+        <h2 id="p3">Turn it into Excel</h2>
+        <div class="botones">
+          <button class="btn grande" id="convertir" disabled>Turn into Excel</button>
+          <button class="btn sec" id="detener" hidden>Stop</button>
+        </div>
+        <progress id="progreso" max="1" value="0" hidden></progress>
+        <div class="estado" id="estado" role="status" aria-live="polite"></div>
+        <p class="aviso-equipo" id="avisoEquipo" hidden>Your device has little memory or a basic processor: PDFs with text, Word and Excel will run normally, but photos and scans may take about 1 minute per page. A lighter mode will be used; close other tabs to speed things up.</p>
+        <details class="opciones">
+          <summary>More options</summary>
+          <label class="opcion" for="conItems"><input type="checkbox" id="conItems" checked>
+            <span>Include the tables from the documents (invoice items and report tables).</span></label>
+          <label class="opcion" for="conTexto"><input type="checkbox" id="conTexto">
+            <span>Include a sheet with all the text, line by line.</span></label>
+          <label class="opcion" for="forzarOcr"><input type="checkbox" id="forzarOcr">
+            <span>Read everything as scanned (OCR). It is slow: use it only if the text comes out wrong.</span></label>
+        </details>
+      </section>
+    </div>
+
+    <section class="libro" aria-label="Excel preview">
+      <div class="libro-cab">
+        <div class="nombre"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="1" width="20" height="20" rx="4" fill="#ffffff"/><path d="M1 8h20M1 14h20M8 8v13M15 8v13" stroke="#2d5f4a" stroke-width="1.4"/><rect x="1" y="1" width="20" height="7" rx="4" fill="#a57a26"/><rect x="1" y="5" width="20" height="3" fill="#a57a26"/></svg><h2 id="titulo"></h2></div>
+        <div class="botones">
+          <button class="btn sec" id="copiar">Copy sheet</button>
+          <button class="btn sec" id="csv" disabled title="Downloads only the sheet you are viewing, as CSV">CSV</button>
+          <button class="btn claro" id="descargar" disabled>Download Excel</button>
+        </div>
+      </div>
+      <div class="barra-fx"><span class="fx" aria-hidden="true">fx</span><p class="resumen" id="resumen"></p></div>
+      <div class="tabla-caja" id="tablaCaja"></div>
+      <div class="pestanas" id="pestanas" role="tablist" aria-label="Sheets"></div>
+      <div class="cifras" id="cifras"></div>
+      <div class="sello sello-listo" id="selloListo" aria-hidden="true"><b>Done</b><span class="fecha-sello">&nbsp;</span><small>neatly copied</small></div>
+    </section>
+  </main>
+
+  <section class="explica" id="que-es" aria-labelledby="t-que-es">
+    <div class="explica-a">
+      <div class="texto">
+        <h2 id="t-que-es">What is a PDF data extractor?</h2>
+        <p>It is a tool that <b>reads your documents and copies the data that matters into a table</b>: the invoice number, the date, the tax ID, the total, the title of a drawing or the author of a thesis. It is what you would do by hand, document by document, but in seconds and without typing mistakes.</p>
+        <p>A PDF is made to look good, not to be added up or filtered. When you have 10, 50 or 200 of them, copying them into Excel by hand takes hours. The extractor reads them all, classifies them, puts one row per document and calculates the totals.</p>
+      </div>
+      <div class="diagrama" aria-label="Example: from a PDF invoice to an Excel row">
+        <div class="papel" aria-hidden="true">
+          <span class="enc">Ferretería La Campana</span>
+          <span class="marca-dato"><span class="n">1</span><span>Invoice FE-3021</span></span>
+          <span class="marca-dato"><span class="n">2</span><span>14/08/2026</span></span>
+          <span class="raya"></span><span class="raya corta"></span>
+          <span class="marca-dato"><span class="n">3</span><span>Tax ID 811.045.678-9</span></span>
+          <span class="raya"></span><span class="raya"></span><span class="raya corta"></span>
+          <span class="marca-dato"><span class="n">4</span><span>Total $ 3.164.140</span></span>
+        </div>
+        <span class="flecha" aria-hidden="true">➜</span>
+        <div class="mini-excel">
+          <div class="top">invoices.xlsx</div>
+          <table>
+            <thead><tr><th><span class="n">1</span> Number</th><th><span class="n">2</span> Date</th><th><span class="n">3</span> Tax ID</th><th><span class="n">4</span> Total</th></tr></thead>
+            <tbody>
+              <tr><td>FE-3021</td><td>2026-08-14</td><td>811.045.678-9</td><td class="num">3.164.140</td></tr>
+              <tr><td>FV-0457</td><td>2026-08-20</td><td>900.555.444-1</td><td class="num">700.000</td></tr>
+              <tr class="total"><td>TOTAL</td><td></td><td></td><td class="num">3.864.140</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="usos" aria-label="What is it for?">
+      <article class="uso">
+        <h3>Accounting</h3>
+        <p>Record the month’s purchases without typing every invoice.</p>
+        <div class="ej"><span>50 invoices</span><span>one table with supplier, tax ID, tax and totals</span></div>
+        
+      </article>
+      <article class="uso">
+        <h3>Office and purchasing</h3>
+        <p>Build the list of delivery notes, quotes or bills.</p>
+        <div class="ej"><span>A folder of delivery notes</span><span>a table with dates, customers and totals</span></div>
+        
+      </article>
+      <article class="uso">
+        <h3>Engineering and construction</h3>
+        <p>Get the drawing list with the title block data.</p>
+        <div class="ej"><span>The set of drawings in PDF</span><span>number, title, scale, date and signatures</span></div>
+        
+      </article>
+      <article class="uso">
+        <h3>Study and research</h3>
+        <p>Organize the bibliography of a paper or a research group.</p>
+        <div class="ej"><span>Theses and articles</span><span>title, author, year and main topics</span></div>
+        
+      </article>
+    </div>
+  </section>
+
+  <aside class="ayuda" aria-label="Help">
+      <div class="tarjeta">
+        <h3>Your files are not uploaded</h3>
+        <p>Everything is read inside your browser. Nothing is sent to a server, there is no account and nothing is kept when you close the page.</p>
+      </div>
+      <details>
+        <summary>What computer do I need?<span class="breve">PDFs with text, Word, Excel and XML are fast on almost any device. Photos and scans are slower: 8 GB of RAM is ideal; 4 GB also works, with patience.</span><span class="mas">See details</span></summary>
+        <ul>
+          <li><b>PDFs with text, Word, Excel and XML:</b> seconds on almost any device, even with 100 files or more.</li>
+          <li><b>Photos and scanned PDFs (OCR):</b> the heavy part. With 8 GB of RAM and 4 cores, about 3 to 10 seconds per page; with 4 GB, 30 seconds to 1 minute.</li>
+          <li><b>Minimum:</b> 4 GB of RAM and an up-to-date Chrome, Edge or Firefox. It works on phones, but slower.</li>
+          <li><b>Tip:</b> close other tabs and upload scans in groups of 5 to 10.</li>
+        </ul>
+      </details>
+      <details>
+        <summary>How does it read documents?<span class="breve">With rules, no artificial intelligence: it looks for labels like “Total”, “Invoice No.” or “Scale”. Whatever it cannot find is shown in yellow and in the “To review” column.</span><span class="mas">See details</span></summary>
+        <p>In the preview you can <b>fix any value with a double-click</b>: totals are recalculated and the change goes into the Excel file. It recognizes common formats in several languages (“Total:”, “Invoice No.”, “Rechnungsdatum”, “Scale”, “Drawn by”…). Photos and scans are read with OCR (text recognition in images): the first time, about 6 MB are downloaded and kept in the browser.</p>
+      </details>
+  </aside>
+  <footer class="pie"><span>SheetClerk · PDF to Excel, made in Colombia and free for everyone.</span><span>Your files are read on your device and are not stored anywhere.</span></footer>
+</div>
+
+<script src="/pdf-a-excel/lib/pdf.min.js"></script>
+<script src="/pdf-a-excel/lib/xlsx.full.min.js"></script>
+<script src="/pdf-a-excel/lib/tesseract.min.js"></script>
+<script src="/pdf-a-excel/i18n.js?v=21"></script>
+<script src="/pdf-a-excel/motor.js?v=21"></script>
+</body>
+</html>

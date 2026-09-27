@@ -8,43 +8,36 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' data: blob:; img-src 'self' data: blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#2d5f4a">
-<link rel="icon" href="../pdf-a-excel/marca/icono.svg" type="image/svg+xml">
-<link rel="icon" href="../pdf-a-excel/marca/icono-32.png" sizes="32x32" type="image/png">
-<link rel="apple-touch-icon" href="../pdf-a-excel/marca/icono-180.png">
+<script src="/pdf-a-excel/lang.js?v=21"></script>
+<link rel="icon" href="/pdf-a-excel/marca/icono.svg" type="image/svg+xml">
+<link rel="icon" href="/pdf-a-excel/marca/icono-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/pdf-a-excel/marca/icono-180.png">
 <link rel="manifest" href="/manifest.webmanifest">
+<link rel="canonical" href="https://moav1927.github.io/contadores/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SheetClerk">
+<meta property="og:locale" content="es_CO">
 <meta property="og:title" content="SheetClerk para contadores · facturas DIAN a Excel">
 <meta property="og:description" content="Para contadores: sube los ZIP o XML de las facturas electrónicas DIAN (y también PDF o fotos) y obtén el libro de compras o ventas, resumen por proveedor, IVA por tarifa y retenciones en Excel. Gratis, sin cuenta y sin subir tus archivos.">
 <meta property="og:image" content="https://moav1927.github.io/pdf-a-excel/marca/compartir.png">
 <meta property="og:url" content="https://moav1927.github.io/contadores/">
-<link rel="canonical" href="https://moav1927.github.io/contadores/">
 <meta name="twitter:card" content="summary_large_image">
 <!--
-  ============================================================
-  CUADRA (PDF a Excel) — funciona 100 % en el navegador
-  ------------------------------------------------------------
-  - No usa servidores, IA externa ni cuentas: los archivos nunca salen del equipo.
-  - Todo va incluido en /pdf-a-excel/lib (sin CDNs ni fuentes externas):
-      pdf.js 3.11.174 (leer PDF), SheetJS 0.18.5 (crear .xlsx),
-      tesseract.js 5.1.1 + idioma español (OCR para escaneados),
-      mammoth 1.8.0 (Word), fflate 0.8.2 (ZIP de facturas electrónicas),
-      fuentes Zilla Slab e IBM Plex (licencia OFL, en lib/fuentes).
-  - El motor está en /pdf-a-excel/motor.js y los estilos en /pdf-a-excel/estilo.css
-    (los comparten las dos páginas). Estas páginas se generan desde una plantilla.
-  - Clasificación y extracción por reglas: ver TIPOS, CAMPOS y ROTULO en motor.js.
-  ============================================================
+  SheetClerk (PDF a Excel) — funciona 100 % en el navegador; los archivos nunca salen del equipo.
+  Página generada desde una plantilla (idioma: es). Motor: /pdf-a-excel/motor.js · estilos: /pdf-a-excel/estilo.css
+  · textos del motor: /pdf-a-excel/i18n.js. Librerías y fuentes incluidas en /pdf-a-excel/lib (ver LICENSE).
 -->
-<link rel="preload" href="../pdf-a-excel/lib/fuentes/zilla-slab-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="../pdf-a-excel/estilo.css?v=20">
+<link rel="preload" href="/pdf-a-excel/lib/fuentes/zilla-slab-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/pdf-a-excel/estilo.css?v=21">
 </head>
 <body data-modo="contadores">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="tinta"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7" result="r"/><feDisplacementMap in="SourceGraphic" in2="r" scale="2.4"/></filter></svg>
 <div class="envoltura">
   <div class="barra">
-    <a class="marca" href="../pdf-a-excel/" aria-label="SheetClerk, inicio"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"> <rect width="64" height="64" rx="14" fill="#2d5f4a"/> <path d="M15 10h22l12 12v32H15z" fill="#fbfcf8"/> <path d="M37 10v12h12z" fill="#c9dccf"/> <path d="M20 18h12M20 23.5h9" stroke="#9db5a7" stroke-width="3" stroke-linecap="round"/> <path d="M15 31h34M15 42.5h34M26.5 31v23M38 31v23" stroke="#2d5f4a" stroke-width="2.4"/> <rect x="26.5" y="42.5" width="11.5" height="11.5" fill="#a57a26"/> <circle cx="48" cy="48" r="11" fill="#5b3e8f" stroke="#fbfcf8" stroke-width="3"/> <path d="M42.8 48.3l3.6 3.6 6.8-7.4" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/> </svg><span>SheetClerk<small>PDF a Excel</small></span></a>
+    <a class="marca" href="/pdf-a-excel/" aria-label="SheetClerk, inicio"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"> <rect width="64" height="64" rx="14" fill="#2d5f4a"/> <path d="M15 10h22l12 12v32H15z" fill="#fbfcf8"/> <path d="M37 10v12h12z" fill="#c9dccf"/> <path d="M20 18h12M20 23.5h9" stroke="#9db5a7" stroke-width="3" stroke-linecap="round"/> <path d="M15 31h34M15 42.5h34M26.5 31v23M38 31v23" stroke="#2d5f4a" stroke-width="2.4"/> <rect x="26.5" y="42.5" width="11.5" height="11.5" fill="#a57a26"/> <circle cx="48" cy="48" r="11" fill="#5b3e8f" stroke="#fbfcf8" stroke-width="3"/> <path d="M42.8 48.3l3.6 3.6 6.8-7.4" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/> </svg><span>SheetClerk<small>PDF a Excel</small></span></a>
     <button class="instalar" id="instalar" hidden>Instalar SheetClerk</button>
-    <nav class="secciones" aria-label="Secciones"><a href="../pdf-a-excel/">Documentos en general</a><a href="../contadores/" aria-current="page">Contadores · Facturas DIAN</a></nav>
+    <details class="idiomas"><summary aria-label="Idioma"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 12h19M12 2.5c3 3.2 3 15.8 0 19M12 2.5c-3 3.2-3 15.8 0 19" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>ES</summary><ul><li><a href="/pdf-a-excel/" hreflang="es" lang="es" data-lang="es">Español</a></li><li><a href="/en/" hreflang="en" lang="en" data-lang="en">English</a></li><li><a href="/pt/" hreflang="pt" lang="pt" data-lang="pt">Português</a></li><li><a href="/fr/" hreflang="fr" lang="fr" data-lang="fr">Français</a></li><li><a href="/de/" hreflang="de" lang="de" data-lang="de">Deutsch</a></li><li><a href="/it/" hreflang="it" lang="it" data-lang="it">Italiano</a></li></ul></details>
+    <nav class="secciones" aria-label="Secciones"><a href="/pdf-a-excel/">Documentos en general</a><a href="/contadores/" aria-current="page">Contadores · Facturas DIAN</a></nav>
   </div>
   <header>
     <div class="texto">
@@ -209,9 +202,9 @@
   <footer class="pie"><span>SheetClerk para contadores · hecho en Colombia y gratis para todos.</span><span>Tus archivos se leen en tu equipo y no se guardan en ningún lado.</span></footer>
 </div>
 
-<script src="../pdf-a-excel/lib/pdf.min.js"></script>
-<script src="../pdf-a-excel/lib/xlsx.full.min.js"></script>
-<script src="../pdf-a-excel/lib/tesseract.min.js"></script>
-<script src="../pdf-a-excel/motor.js?v=20"></script>
+<script src="/pdf-a-excel/lib/pdf.min.js"></script>
+<script src="/pdf-a-excel/lib/xlsx.full.min.js"></script>
+<script src="/pdf-a-excel/lib/tesseract.min.js"></script>
+<script src="/pdf-a-excel/motor.js?v=21"></script>
 </body>
 </html>

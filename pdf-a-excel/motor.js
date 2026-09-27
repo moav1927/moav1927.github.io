@@ -9,7 +9,14 @@
   const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const fmtNum = n => n.toLocaleString('es-CO', { maximumFractionDigits: 2 });
+  // Idioma de la página (lo fija cada página generada); los textos en español son la clave de traducción
+  const IDIOMA = (document.documentElement.lang || 'es').slice(0, 2);
+  const DIC = (window.SHEETCLERK_I18N || {})[IDIOMA] || {};
+  const T = (s, v) => { let r = DIC[s] ?? s; if (v) r = r.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? ''); return r; };
+  const LOCALE = { es: 'es-CO', en: 'en-US', pt: 'pt-BR', fr: 'fr-FR', de: 'de-DE', it: 'it-IT' }[IDIOMA] || 'es-CO';
+  const COLUMNA = T('Columna');
+  const enFrase = s => IDIOMA === 'de' ? s : s.toLowerCase();   // nombre en medio de una frase
+  const fmtNum = n => n.toLocaleString(LOCALE, { maximumFractionDigits: 2 });
   const fmtMonto = (n, m) => (m ? m + ' ' : '') + fmtNum(n);
 
   // =====================================================================
@@ -202,6 +209,11 @@
     'tipo': null, 'tipo de documento': null, 'clasificacion': null, 'archivo': null, 'nombre del archivo': null,
   };
 
+  if (IDIOMA !== 'es') {
+    for (const [k, c] of Object.entries(CAMPOS)) { c.etiqueta = T(c.etiqueta); ALIAS[norm(c.etiqueta)] ??= k; }
+    for (const t of [...TIPOS, OTRO]) { t.nombre = T(t.nombre); t.plural = T(t.plural); }
+    for (const [w, k] of Object.entries(DIC.__alias || {})) ALIAS[norm(w)] = k;
+  }
   // Palabras frecuentes y propias de cada idioma (las compartidas, como "de", se omiten)
   const IDIOMAS = {
     'Español': ['el', 'la', 'los', 'las', 'y', 'del', 'por', 'con', 'para', 'una', 'se', 'es', 'al', 'su', 'lo', 'como', 'pero'],
@@ -242,17 +254,17 @@
       const planos = [];
       for (const f of lista) {
         if (!RE_ZIP.test(f.name)) { planos.push(f); continue; }
-        estado(`Abriendo ${f.name}…`);
+        estado(T('Abriendo {f}…', { f: f.name }));
         try { const r = await expandirZip(f); planos.push(...r.files); pdfOmitidos += r.pdfOmitidos; }
-        catch { archivos.push({ file: f, nombre: f.name, estado: 'ZIP dañado', clase: 'error', malo: true }); }
+        catch { archivos.push({ file: f, nombre: f.name, estado: T('ZIP dañado'), clase: 'error', malo: true }); }
       }
       lista = planos;
     }
     const nuevos = lista.filter(f => /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name) || RE_XML.test(f.name) || RE_HOJA.test(f.name) || RE_IMAGEN.test(f.name) || RE_WORD.test(f.name) || RE_NO_SOPORTADO.test(f.name) || /^image\//.test(f.type));
     const omitidos = lista.length - nuevos.length;
     for (const f of nuevos) if (!archivos.some(a => a.nombre === f.name && a.file.size === f.size))
-      archivos.push({ file: f, nombre: f.name, estado: 'Pendiente', clase: '' });
-    estado(`${archivos.length} documento${archivos.length === 1 ? '' : 's'} listo${archivos.length === 1 ? '' : 's'} para procesar.` + (pdfOmitidos ? ` De los ZIP se tomó el XML (datos exactos) y no su PDF (${pdfOmitidos}).` : '') + (omitidos ? ` Se omitieron ${omitidos} archivo(s) de un formato que no se puede leer.` : ''));
+      archivos.push({ file: f, nombre: f.name, estado: T('Pendiente'), clase: '' });
+    estado((archivos.length === 1 ? T('1 documento listo para procesar.') : T('{n} documentos listos para procesar.', { n: archivos.length })) + (pdfOmitidos ? T(' De los ZIP se tomó el XML (datos exactos) y no su PDF ({n}).', { n: pdfOmitidos }) : '') + (omitidos ? T(' Se omitieron {n} archivo(s) de un formato que no se puede leer.', { n: omitidos }) : ''));
     ocupado(false);
   }
   function pintarArchivos() {
@@ -297,11 +309,11 @@
   const restante = faltan => {
     if (tiemposOcr.length < 1 || faltan < 2) return '';
     const seg = tiemposOcr.slice(-5).reduce((a, b) => a + b, 0) / Math.min(5, tiemposOcr.length) / 1000 * faltan;
-    return seg < 60 ? ` (faltan unos ${Math.ceil(seg / 5) * 5} s)` : ` (faltan unos ${Math.round(seg / 60)} min)`;
+    return seg < 60 ? T(' (faltan unos {n} s)', { n: Math.ceil(seg / 5) * 5 }) : T(' (faltan unos {n} min)', { n: Math.round(seg / 60) });
   };
   async function obtenerOcr() {
     if (ocrWorker) return ocrWorker;
-    estado('Preparando el lector de documentos escaneados (solo la primera vez tarda más)…');
+    estado(T('Preparando el lector de documentos escaneados (solo la primera vez tarda más)…'));
     ocrWorker = await Tesseract.createWorker('spa', 1, { workerPath: base + 'worker.min.js', corePath: base + 'tesseract-core', langPath: base + 'lang' });
     return ocrWorker;
   }
@@ -549,7 +561,7 @@
           const cols = columnasDeBloque(bloque);
           const filas = ubicar(bloque, cols);
           const cab = filas[0].every(v => !v || !esNumerico(v)) && filas[0].filter(Boolean).length >= 2;
-          const columnas = cab ? filas.shift().map((v, i) => v || `Columna ${i + 1}`) : cols.map((_, i) => `Columna ${i + 1}`);
+          const columnas = cab ? filas.shift().map((v, i) => v || `${COLUMNA} ${i + 1}`) : cols.map((_, i) => `${COLUMNA} ${i + 1}`);
           // Encabezado + una sola fila = etiquetas arriba y valores abajo (ej.: Fecha | NIT | Total)
           if (cab && filas.length === 1) columnas.forEach((c, i) => filas[0][i] && kv.push({ label: c, labelN: norm(c).replace(/[:.#]+$/, ''), valor: filas[0][i], pagina, pos: lineas.length }));
           // Filas "etiqueta | valor" sin encabezado (ej.: Subtotal / IVA / TOTAL) son datos, no una tabla
@@ -581,7 +593,7 @@
       }
       cerrar();
     });
-    const utiles = tablas.filter(t => t.filas.length >= 1 && !(t.filas.length === 1 && t.columnas.every(c => !/^Columna/.test(c))));
+    const utiles = tablas.filter(t => t.filas.length >= 1 && !(t.filas.length === 1 && t.columnas.every(c => !c.startsWith(COLUMNA + ' '))));
     return { kv, lineas, tablas: utiles, ratioTabla: lineas.length ? enTablas / lineas.length : 0 };
   }
 
@@ -1113,28 +1125,28 @@
     return (r || frases[0].slice(0, 380)).trim();
   }
   function resumenDoc(doc, tipo, d) {
-    const f = d.fecha ? ` del ${d.fecha}` : '';
+    const f = d.fecha ? T(' del {f}', { f: d.fecha }) : '';
     const items = doc.tablas.reduce((n, t) => n + t.filas.length, 0);
     if (COMERCIALES.has(tipo.id)) {
       const partes = [`${tipo.nombre}${d.numero ? ' ' + d.numero : ''}${f}`];
-      if (d.emisor) partes.push(`de ${d.emisor}`);
-      if (d.cliente) partes.push(`para ${d.cliente}`);
-      if (typeof d.total === 'number') partes.push(`por ${fmtMonto(d.total, d.moneda)}`);
-      return partes.join(' ') + (d.concepto ? `: ${d.concepto}.` : items ? `; ${items} ítem${items === 1 ? '' : 's'}.` : '.');
+      if (d.emisor) partes.push(T('de {x}', { x: d.emisor }));
+      if (d.cliente) partes.push(T('para {x}', { x: d.cliente }));
+      if (typeof d.total === 'number') partes.push(T('por {x}', { x: fmtMonto(d.total, d.moneda) }));
+      return partes.join(' ') + (d.concepto ? `: ${d.concepto}.` : items ? (items === 1 ? T('; 1 ítem.') : T('; {n} ítems.', { n: items })) : '.');
     }
     if (tipo.id === 'plano') {
       const r = rotuloDoc(doc) || {};
-      const partes = [`Plano${r.plano ? ' ' + r.plano : ''}${d.titulo ? ` «${d.titulo}»` : ''}${r.proyecto ? ' del proyecto ' + r.proyecto : ''}`];
-      if (r.escala) partes.push(`escala ${r.escala}`);
-      if (d.fecha) partes.push(`fecha ${d.fecha}`);
-      if (r.revision) partes.push(`revisión ${r.revision}`);
-      const firmas = [r.diseno && `diseñó ${r.diseno}`, r.dibujo && `dibujó ${r.dibujo}`, r.reviso && `revisó ${r.reviso}`, r.aprobo && `aprobó ${r.aprobo}`].filter(Boolean);
-      return partes.join(', ') + (firmas.length ? '; ' + firmas.join(', ') : '') + '.' + (r.observaciones && r.observaciones !== 'Sin observaciones' ? ` Observaciones: ${r.observaciones}` : '');
+      const partes = [`${T('Plano')}${r.plano ? ' ' + r.plano : ''}${d.titulo ? ` «${d.titulo}»` : ''}${r.proyecto ? T(' del proyecto {x}', { x: r.proyecto }) : ''}`];
+      if (r.escala) partes.push(T('escala {x}', { x: r.escala }));
+      if (d.fecha) partes.push(T('fecha {x}', { x: d.fecha }));
+      if (r.revision) partes.push(T('revisión {x}', { x: r.revision }));
+      const firmas = [r.diseno && T('diseñó {x}', { x: r.diseno }), r.dibujo && T('dibujó {x}', { x: r.dibujo }), r.reviso && T('revisó {x}', { x: r.reviso }), r.aprobo && T('aprobó {x}', { x: r.aprobo })].filter(Boolean);
+      return partes.join(', ') + (firmas.length ? '; ' + firmas.join(', ') : '') + '.' + (r.observaciones && r.observaciones !== 'Sin observaciones' ? T(' Observaciones: {x}', { x: r.observaciones }) : '');
     }
     if (tipo.id === 'datos') {
       const t = doc.tablas.slice().sort((a, b) => b.filas.length - a.filas.length)[0];
-      const cols = t ? t.columnas.filter(c => !/^Columna/.test(c)).slice(0, 6) : [];
-      return `${d.titulo ? d.titulo + '. ' : ''}Tabla de datos con ${items} fila${items === 1 ? '' : 's'}${cols.length ? '; columnas: ' + cols.join(', ') : ''}.`;
+      const cols = t ? t.columnas.filter(c => !c.startsWith(COLUMNA + ' ')).slice(0, 6) : [];
+      return `${d.titulo ? d.titulo + '. ' : ''}${items === 1 ? T('Tabla de datos con 1 fila') : T('Tabla de datos con {n} filas', { n: items })}${cols.length ? T('; columnas: {x}', { x: cols.join(', ') }) : ''}.`;
     }
     const cuerpo = resumenLibre(doc);
     return [d.titulo && !norm(cuerpo).startsWith(norm(d.titulo)) ? d.titulo + '.' : '', cuerpo].filter(Boolean).join(' ');
@@ -1195,7 +1207,7 @@
     for (const it of items) if (!unicos.some(u => norm(u.desc) === norm(it.desc))) unicos.push(it);
     const orden = unicos.some(u => typeof u.monto === 'number') ? unicos.slice().sort((a, b) => (b.monto || 0) - (a.monto || 0)) : unicos;
     const top = orden.slice(0, 3).map(u => u.desc.length > 60 ? u.desc.slice(0, 57) + '…' : u.desc);
-    return top.join('; ') + (unicos.length > 3 ? ` (y ${unicos.length - 3} más)` : '');
+    return top.join('; ') + (unicos.length > 3 ? T(' (y {n} más)', { n: unicos.length - 3 }) : '');
   }
   // Categorías de gasto: palabras (sin tildes) que las delatan
   const CATEGORIAS = [
@@ -1220,14 +1232,14 @@
       const p = pal.reduce((s, k) => s + (texto.includes(' ' + k) ? 1 : 0), 0);
       if (p > max) { max = p; mejor = n; }
     }
-    if (mejor) return mejor;
+    if (mejor) return T(mejor);
     // sin pistas en los ítems: la primera página, exigiendo dos palabras de la misma categoría
     const pag = ' ' + norm(doc.lineas.filter(l => l.pagina === 1).slice(0, 80).map(l => l.texto).join(' ')) + ' ';
     for (const [n, pal] of CATEGORIAS) {
       const p = pal.reduce((s, k) => s + (pag.includes(' ' + k) ? 1 : 0), 0);
       if (p >= 2 && p > max) { max = p; mejor = n; }
     }
-    return mejor || 'Otros';
+    return T(mejor || 'Otros');
   }
 
   // ---------- Temas principales (tesis, artículos, informes…) ----------
@@ -1280,7 +1292,7 @@
     switch (clave) {
       case 'plano': case 'escala': case 'numproyecto': case 'revision': case 'dibujo': case 'diseno': case 'reviso': case 'aprobo': case 'observaciones': {
         const r = tipo.id === 'plano' ? rotuloDoc(doc) : null;
-        if (r?.[clave]) return r[clave];
+        if (r?.[clave]) return clave === 'observaciones' ? T(r[clave]) : r[clave];
         if (r && clave !== 'plano') return null;   // con rótulo, lo que no está en él no se busca en el resto del dibujo (ni en otras láminas)
         if (clave === 'plano') return tipo.id === 'plano' ? (norm(meta.archivo || '').match(/^[a-z]{1,6}[\-_ ]?\d{1,4}/)?.[0].toUpperCase() ?? null) : null;
         if (clave === 'escala') { const l = doc.lineas.find(l => RE_ESCALA.test(l.texto) && /escala|scale/.test(l.textoN)); return l ? l.texto.match(RE_ESCALA)[0] : null; }
@@ -1332,7 +1344,7 @@
       case 'moneda': {
         if (!tipo.comercial && tipo.id !== 'contrato') return null;
         if (!('_rawTotal' in datos)) extraerCampo(doc, 'total', tipo, datos, meta);
-        return buscar(doc, CAMPOS.moneda) && monedaDe(buscar(doc, CAMPOS.moneda)) || monedaDoc(doc, datos._rawTotal) || (typeof datos.total === 'number' || typeof datos._total === 'number' ? '(sin moneda)' : null);
+        return buscar(doc, CAMPOS.moneda) && monedaDe(buscar(doc, CAMPOS.moneda)) || monedaDoc(doc, datos._rawTotal) || (typeof datos.total === 'number' || typeof datos._total === 'number' ? T('(sin moneda)') : null);
       }
       case 'resumen': return resumenDoc(doc, tipo, datos);
       case 'cantidaditems': return doc.tablas.reduce((n, t) => n + t.filas.length, 0);
@@ -1349,6 +1361,12 @@
     const extra = [];
     txt = txt.split(/[\n;,]|(?<=\?)/).map(p => {
       const n = norm(p).replace(/[¿?¡!]/g, '').trim();
+      // Otros idiomas: preguntas por el contenido (¿qué se compró?, ¿de qué tratan?)
+      if (IDIOMA !== 'es' && (/\?/.test(p) || /^(what|which|o que|de que|sobre o que|quoi|de quoi|was|worum|cosa|di cosa|di che)\b/.test(n))) {
+        const docs = /\b(documents?|documentos?|fichiers?|dateien|dokumente?|documenti|files?|arquivos?)\b/.test(n);
+        if (/\b(buy|bought|purchas\w*|spent|spend|pay|paid|invoices?|receipts?|bills?|compr\w*|faturas?|notas|achat\w*|achet\w*|factures?|depens\w*|gekauft|kauf\w*|rechnung\w*|ausgab\w*|acquist\w*|fattur\w*|spes\w*)\b/.test(n)) { extra.push('concepto', 'categoria'); return ''; }
+        if (/\b(about|topics?|themes?|subjects?|assuntos?|temas?|trata\w*|sujets?|parle\w*|traite\w*|thema|themen|worum|handelt|argoment\w*|parla\w*|tratta\w*)\b/.test(n)) { extra.push('temas'); if (docs) extra.push('concepto', 'categoria'); return ''; }
+      }
       if (!/\?|^(de )?que |^cual|^sobre que|^de que/.test(norm(p).replace(/^¿/, '')) && !/^(de|sobre) que/.test(n) && !/^(el |los |la |las )?temas? (de|del)\b/.test(n)) return p;
       if (/(de|sobre) que (son|es|era|eran|fueron|se trata|trata|tratan)|que (se )?(compr|vend|pag|factur)|que productos|que servicios|en que (se )?gast|concepto/.test(n)) {
         if (/tesis|articulo|informe|libro|documento|trabajo|trata/.test(n) && !/factura|compra|gasto|recibo|cotizacion/.test(n)) extra.push('temas');
@@ -1628,7 +1646,7 @@
 
   async function leerArchivo(a, i, total) {
     if (RE_HOJA.test(a.nombre)) return leerHojaCalculo(a);
-    if (RE_IMAGEN.test(a.nombre) || /^image\//.test(a.file.type) && !RE_NO_SOPORTADO.test(a.nombre)) { estado(`Documento ${i + 1} de ${total}: leyendo la imagen (OCR)…`); return leerImagen(a); }
+    if (RE_IMAGEN.test(a.nombre) || /^image\//.test(a.file.type) && !RE_NO_SOPORTADO.test(a.nombre)) { estado(T('Documento {i} de {n}: leyendo la imagen (OCR)…', { i: i + 1, n: total })); return leerImagen(a); }
     if (RE_WORD.test(a.nombre)) return leerWord(a);
     if (RE_XML.test(a.nombre)) return leerXml(a);
     if (RE_ZIP.test(a.nombre)) throw { msg: 'ZIP dañado o protegido con contraseña' };
@@ -1642,7 +1660,7 @@
       const vacias = [];
       for (let p = 1; p <= n; p++) {
         if (cancelado) throw { cancel: true };
-        if (p % 20 === 0) estado(`Documento ${i + 1} de ${total}: página ${p} de ${n}…`);
+        if (p % 20 === 0) estado(T('Documento {i} de {n}: página {p} de {t}…', { i: i + 1, n: total, p, t: n }));
         const pag = await pdf.getPage(p);
         const vp = pag.getViewport({ scale: 1 });
         if (vp.width > vp.height * 1.1) horizontales++;
@@ -1659,7 +1677,7 @@
         if (cancelado) throw { cancel: true };
         if (conOcr >= MAX_OCR) { sinLeer++; continue; }
         const faltan = Math.min(vacias.length, MAX_OCR) - conOcr;
-        estado(`Documento ${i + 1} de ${total}: leyendo página escaneada ${k + 1} de ${n}…` + restante(faltan));
+        estado(T('Documento {i} de {n}: leyendo página escaneada {p} de {t}…', { i: i + 1, n: total, p: k + 1, t: n }) + restante(faltan));
         const t0 = performance.now();
         const pag = await pdf.getPage(k + 1);
         crudas[k] = await piezasOcr(pag); conOcr++;
@@ -1701,7 +1719,7 @@
   $('#convertir').onclick = async () => {
     cancelado = false;
     $('#selloListo')?.classList.remove('ver');
-    archivos.forEach(a => { a.estado = 'Pendiente'; a.clase = ''; });
+    archivos.forEach(a => { a.estado = T('Pendiente'); a.clase = ''; });
     ocupado(true);
     try { localStorage.setItem(CLAVE_PEDIDO, $('#pedido').value.trim()); } catch { }
     const pedido = interpretarPedido($('#pedido').value);
@@ -1710,9 +1728,9 @@
     for (let i = 0; i < archivos.length; i++) {
       if (cancelado) break;
       const a = archivos[i];
-      a.estado = 'Leyendo…'; pintarArchivos();
+      a.estado = T('Leyendo…'); pintarArchivos();
       const porDoc = i ? (performance.now() - inicio) / i / 1000 : 0, faltan = porDoc * (archivos.length - i);
-      estado(`Leyendo documento ${i + 1} de ${archivos.length}: ${a.nombre}` + (i >= 2 && faltan > 20 ? (faltan < 90 ? ` (faltan unos ${Math.ceil(faltan / 10) * 10} s)` : ` (faltan unos ${Math.round(faltan / 60)} min)`) : '')); progreso(i / archivos.length);
+      estado(T('Leyendo documento {i} de {n}: {f}', { i: i + 1, n: archivos.length, f: a.nombre }) + (i >= 2 && faltan > 20 ? (faltan < 90 ? T(' (faltan unos {n} s)', { n: Math.ceil(faltan / 10) * 10 }) : T(' (faltan unos {n} min)', { n: Math.round(faltan / 60) })) : '')); progreso(i / archivos.length);
       try {
         const leido = await leerArchivo(a, i, archivos.length);
         const { paginas, numPaginas, leidas, conOcr, sinLeer, camposFormulario, horizontales, info } = leido;
@@ -1750,15 +1768,15 @@
         }
         delete doc.piezas1; delete doc.piezasPag;
         if (!$('#conTexto').checked && !COMERCIALES.has(tipo.id) && doc.lineas.length > 3000) doc.lineas = doc.lineas.filter(l => l.pagina <= 60);
-        docs.push({ archivo: a.nombre, paginas: numPaginas, conOcr, sinLeer, tipo, confianza, datos, doc, idioma: meta.idioma });
-        a.estado = (doc.xml ? doc.xml.valores.tipodian.replace(/ electrónica de venta$/, '') + ' · XML' : tipo.nombre) + (conOcr ? ' · OCR' : '') + (leidas < numPaginas ? ` · ${leidas} de ${numPaginas} págs.` : '');
+        docs.push({ archivo: a.nombre, paginas: numPaginas, conOcr, sinLeer, tipo, confianza, datos, doc, idioma: meta.idioma ? T(meta.idioma) : '' });
+        a.estado = (doc.xml ? doc.xml.valores.tipodian.replace(/ electrónica de venta$/, '') + ' · XML' : tipo.nombre) + (conOcr ? ' · OCR' : '') + (leidas < numPaginas ? T(' · {a} de {b} págs.', { a: leidas, b: numPaginas }) : '');
         a.clase = 'ok';
       } catch (e) {
-        if (e?.cancel) { a.estado = 'Detenido'; break; }
+        if (e?.cancel) { a.estado = T('Detenido'); break; }
         if (e?.reporteDian) { a.estado = `Reporte DIAN · ${e.reporteDian.length} documentos`; a.clase = 'ok'; reportes.push(...e.reporteDian); pintarArchivos(); continue; }
-        if (e?.omitir) { a.estado = 'Omitido'; a.clase = ''; omitidos.push([a.nombre, e.omitir]); pintarArchivos(); continue; }
+        if (e?.omitir) { a.estado = T('Omitido'); a.clase = ''; omitidos.push([a.nombre, T(e.omitir)]); pintarArchivos(); continue; }
         console.error(a.nombre, e);
-        a.estado = e?.name === 'PasswordException' ? 'Protegido con contraseña' : e?.name === 'InvalidPDFException' ? 'Archivo vacío o dañado' : e?.msg || 'No se pudo leer';
+        a.estado = T(e?.name === 'PasswordException' ? 'Protegido con contraseña' : e?.name === 'InvalidPDFException' ? 'Archivo vacío o dañado' : e?.msg || 'No se pudo leer');
         a.clase = 'error';
         docs.push({ archivo: a.nombre, error: a.estado });
       }
@@ -1773,18 +1791,18 @@
     const conXml = new Set(docs.filter(d => d.doc?.xml).map(numDoc).filter(Boolean));
     if (conXml.size) docs = docs.filter(d => {
       if (d.error || d.doc.xml || !COMERCIALES.has(d.tipo.id) || !conXml.has(numDoc(d))) return true;
-      omitidos.push([d.archivo, 'Representación en PDF de una factura cuyo XML también se subió']);
-      const a = archivos.find(x => x.nombre === d.archivo); if (a) { a.estado = 'Omitido (ya está su XML)'; a.clase = ''; }
+      omitidos.push([d.archivo, T('Representación en PDF de una factura cuyo XML también se subió')]);
+      const a = archivos.find(x => x.nombre === d.archivo); if (a) { a.estado = T('Omitido (ya está su XML)'); a.clase = ''; }
       return false;
     });
     pintarArchivos();
     if (!docs.some(d => !d.error) && reportes.length) { estado('Solo se subió el reporte de la DIAN: agrega también los ZIP, XML o PDF de las facturas para cruzarlos.', 'error'); ocupado(false); return; }
-    if (!docs.some(d => !d.error)) { estado(cancelado ? 'Proceso detenido.' : omitidos.length ? 'Ninguno de los archivos es una factura o documento para procesar.' : 'No se pudo leer ningún documento.', 'error'); ocupado(false); return; }
+    if (!docs.some(d => !d.error)) { estado(T(cancelado ? 'Proceso detenido.' : omitidos.length ? 'Ninguno de los archivos es una factura o documento para procesar.' : 'No se pudo leer ningún documento.'), 'error'); ocupado(false); return; }
     mostrar(construirLibro(docs, pedido, omitidos, reportes));
-    estado(cancelado ? `Proceso detenido: se incluyen los ${docs.length} documentos leídos.` : 'Listo. Revisa las hojas (doble clic en una celda para corregirla) y descarga el Excel.', cancelado ? '' : 'ok');
+    estado(cancelado ? T('Proceso detenido: se incluyen los {n} documentos leídos.', { n: docs.length }) : T('Listo. Revisa las hojas (doble clic en una celda para corregirla) y descarga el Excel.'), cancelado ? '' : 'ok');
     ocupado(false);
   };
-  $('#detener').onclick = () => { cancelado = true; estado('Deteniendo…'); };
+  $('#detener').onclick = () => { cancelado = true; estado(T('Deteniendo…')); };
 
   // =====================================================================
   // Libro de Excel
@@ -1803,7 +1821,7 @@
     return [fila(monedas[0] ? `TOTAL ${monedas[0]}` : 'TOTAL', j => ({ t: 'n', v: Math.round(filas.reduce((s, f) => s + (typeof f[j] === 'number' ? f[j] : 0), 0) * 100) / 100, f: `SUM(${colLetra(j)}2:${colLetra(j)}${ult})` }))];
   }
   function hojaDocs(nombre, lista, claves, etiquetas, tipos) {
-    const columnas = ['Archivo', 'Tipo', 'Idioma', ...etiquetas, 'Resumen', 'Por revisar'];
+    const columnas = [T('Archivo'), T('Tipo'), T('Idioma'), ...etiquetas, T('Resumen'), T('Por revisar')];
     const tiposCol = ['texto', 'texto', 'texto', ...tipos, 'texto', 'texto'];
     let faltantes = 0;
     const filas = lista.map(d => {
@@ -1811,12 +1829,12 @@
       const noAplica = k => (['concepto', 'categoria'].includes(k) && !COMERCIALES.has(d.tipo.id)) || (k === 'temas' && COMERCIALES.has(d.tipo.id)) ||
         (d.tipo.id === 'plano' && d.doc._rotulo && (k === 'emisor' || ['numproyecto', 'revision', 'dibujo', 'diseno', 'reviso', 'aprobo', 'observaciones', 'escala'].includes(k) && !d.doc._rotulo.presentes.has(k)));   // el rótulo no tiene ese recuadro; la empresa suele ir como logo
       const f = etiquetas.filter((_, j) => (vals[j] === '' || vals[j] === null) && !noAplica(claves[j]));
-      if (d.confianza === 'baja') f.unshift('tipo de documento');
-      if (d.sinLeer) f.push(`${d.sinLeer} páginas escaneadas sin leer`);
+      if (d.confianza === 'baja') f.unshift(T('tipo de documento'));
+      if (d.sinLeer) f.push(T('{n} páginas escaneadas sin leer', { n: d.sinLeer }));
       if (f.length) faltantes++;
       return [d.archivo, d.tipo.nombre, d.idioma || '', ...vals, d.datos.resumen || '', f.join(', ')];
     });
-    const totales = filasTotal(columnas, filas, tiposCol, 1, columnas.indexOf('Moneda'));
+    const totales = filasTotal(columnas, filas, tiposCol, 1, columnas.indexOf(CAMPOS.moneda.etiqueta));
     return { nombre, columnas, filas: [...filas, ...totales], tipos: tiposCol, nTotales: totales.length, faltantes };
   }
 
@@ -1934,7 +1952,7 @@
         cs.splice(iDin + 1, 0, { clave: 'moneda', etiqueta: CAMPOS.moneda.etiqueta, tipo: 'texto' });
         for (const d of ok) if (!('moneda' in d.datos)) d.datos.moneda = d.datos._moneda ?? null;
       }
-      hojasDatos.push(hojaDocs('Datos solicitados', ok, cs.map(c => c.clave), cs.map(c => c.etiqueta), cs.map(c => c.tipo)));
+      hojasDatos.push(hojaDocs(T('Datos solicitados'), ok, cs.map(c => c.clave), cs.map(c => c.etiqueta), cs.map(c => c.tipo)));
     } else {
       for (const g of grupos) {
         const claves = g.t.campos.filter(k => k !== 'resumen');
@@ -1948,12 +1966,12 @@
     const textoSumas = id => Object.entries(sumas[id] || {}).map(([m, x]) => fmtMonto(x.suma, m === 'sin moneda' ? '' : m)).join(' + ');
 
     // --- Resumen ---
-    const partesTipo = grupos.map(g => `${g.docs.length} ${(g.docs.length === 1 ? g.t.nombre : g.t.plural).toLowerCase()}`);
-    const lista = partesTipo.length > 1 ? partesTipo.slice(0, -1).join(', ') + ' y ' + partesTipo.at(-1) : partesTipo[0];
-    const frasesDinero = grupos.filter(g => COMERCIALES.has(g.t.id) && sumas[g.t.id]).map(g => `${g.t.plural.toLowerCase()}, ${textoSumas(g.t.id)}`);
+    const partesTipo = grupos.map(g => `${g.docs.length} ${enFrase(g.docs.length === 1 ? g.t.nombre : g.t.plural)}`);
+    const lista = partesTipo.length > 1 ? partesTipo.slice(0, -1).join(', ') + T(' y ') + partesTipo.at(-1) : partesTipo[0];
+    const frasesDinero = grupos.filter(g => COMERCIALES.has(g.t.id) && sumas[g.t.id]).map(g => `${enFrase(g.t.plural)}, ${textoSumas(g.t.id)}`);
     const idiomas = {};
     ok.forEach(d => d.idioma && (idiomas[d.idioma] = (idiomas[d.idioma] || 0) + 1));
-    const textoIdiomas = Object.entries(idiomas).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k.toLowerCase()} (${n})`).join(', ');
+    const textoIdiomas = Object.entries(idiomas).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${IDIOMA === 'en' || IDIOMA === 'de' ? k : k.toLowerCase()} (${n})`).join(', ');
     const clave = d => d.tipo.id + '|' + norm(d.datos.numero ?? d.datos._numero ?? '') + '|' + norm(d.datos.nit ?? d.datos.emisor ?? d.datos._emisor ?? '');
     const vistos = {}, duplicados = [];
     for (const d of ok) { if (!COMERCIALES.has(d.tipo.id)) continue; const n = d.datos.numero ?? d.datos._numero; if (!n) continue; const k = clave(d); if (vistos[k]) duplicados.push([d.tipo.nombre, n, vistos[k], d.archivo]); else vistos[k] = d.archivo; }
@@ -1964,7 +1982,7 @@
     const porCategoria = {};
     for (const d of ok) {
       if (!COMERCIALES.has(d.tipo.id)) continue;
-      const c = d.datos.categoria ?? d.datos._categoria ?? 'Sin identificar';
+      const c = d.datos.categoria ?? d.datos._categoria ?? T('Sin identificar');
       const x = (porCategoria[c] ??= { n: 0, montos: {} });
       x.n++;
       const v = tot(d); if (v !== null) { const m = mon(d) || 'sin moneda'; x.montos[m] = (x.montos[m] || 0) + v; }
@@ -1978,40 +1996,40 @@
     }
     const nNoCom = ok.filter(d => !COMERCIALES.has(d.tipo.id) && d.tipo.id !== 'plano').length;
     const planos = ok.filter(d => d.tipo.id === 'plano').map(d => {
-      if (d.doc.laminas?.length > 1) return `${d.archivo.replace(/\.[^.]+$/, '')} (juego de ${d.doc.laminas.length} láminas)`;
+      if (d.doc.laminas?.length > 1) return `${d.archivo.replace(/\.[^.]+$/, '')} ${T('(juego de {n} láminas)', { n: d.doc.laminas.length })}`;
       const r = d.doc._rotulo || {}; const t = d.datos.titulo ?? d.datos._titulo ?? r.titulo; return (r.plano || d.archivo.replace(/\.[^.]+$/, '')) + (t ? ` (${t})` : '');
     });
     const temasPorDoc = ok.filter(d => !COMERCIALES.has(d.tipo.id) && d.tipo.id !== 'plano' && (d.datos.temas ?? d.datos._temas)).map(d => [d.archivo, d.tipo.nombre, d.datos.temas ?? d.datos._temas]);
     const repetidos = Object.values(temasLote).filter(x => x.n >= 2).sort((a, b) => b.n - a.n);
     const temasComunes = Object.values(temasLote).filter(x => x.n >= 2 || nNoCom === 1).sort((a, b) => b.n - a.n).slice(0, 8);
     let texto = [
-      `Se procesaron ${docs.length} documento${docs.length === 1 ? '' : 's'} (${paginasTot.toLocaleString('es-CO')} páginas): ${lista || 'ninguno legible'}.`,
-      errores.length ? `${errores.length === 1 ? 'Uno no se pudo leer' : errores.length + ' no se pudieron leer'} (${errores.map(d => d.error.toLowerCase()).filter((v, i, a) => a.indexOf(v) === i).join(', ')}).` : '',
-      textoIdiomas && Object.keys(idiomas).length > 1 ? `Idiomas: ${textoIdiomas}.` : '',
-      frasesDinero.length ? `Sumas por tipo: ${frasesDinero.join('; ')}.` : '',
-      planos.length ? `Plano${planos.length === 1 ? '' : 's'}: ${planos.slice(0, 8).join('; ')}${planos.length > 8 ? '; …' : ''}.` : '',
-      catOrden.length ? `Los documentos comerciales son principalmente de ${catOrden.slice(0, 4).map(([c, x]) => `${c.toLowerCase()} (${x.n})`).join(', ')}.` : '',
-      temasComunes.length ? `Temas ${nNoCom === 1 ? 'del documento' : 'en común'}: ${temasComunes.map(x => x.forma + (x.n > 1 ? ` (${x.n})` : '')).join(', ')}.` : (temasPorDoc.length ? `Temas por documento: ${temasPorDoc.slice(0, 5).map(([a, , t]) => `${a.replace(/\.[^.]+$/, '')} (${t.split(', ').slice(0, 3).join(', ')})`).join('; ')}${temasPorDoc.length > 5 ? '; …' : ''}.` : ''),
-      largos.length ? `El más extenso es «${largos[0].datos.titulo ?? largos[0].datos._titulo ?? largos[0].archivo}» (${largos[0].paginas} páginas).` : '',
-      duplicados.length ? `Hay ${duplicados.length} posible${duplicados.length === 1 ? '' : 's'} duplicado${duplicados.length === 1 ? '' : 's'} (mismo número y emisor).` : '',
-      porRevisar ? `${porRevisar} documento${porRevisar === 1 ? ' tiene' : 's tienen'} datos que no se encontraron: revisa la columna «Por revisar».` : 'Se encontraron todos los datos buscados.',
+      (docs.length === 1 ? T('Se procesaron 1 documento ({p} páginas): {lista}.', { p: paginasTot.toLocaleString(LOCALE), lista: lista || T('ninguno legible') }) : T('Se procesaron {n} documentos ({p} páginas): {lista}.', { n: docs.length, p: paginasTot.toLocaleString(LOCALE), lista: lista || T('ninguno legible') })),
+      errores.length ? `${errores.length === 1 ? T('Uno no se pudo leer') : T('{n} no se pudieron leer', { n: errores.length })} (${errores.map(d => enFrase(d.error)).filter((v, i, a) => a.indexOf(v) === i).join(', ')}).` : '',
+      textoIdiomas && Object.keys(idiomas).length > 1 ? T('Idiomas: {x}.', { x: textoIdiomas }) : '',
+      frasesDinero.length ? T('Sumas por tipo: {x}.', { x: frasesDinero.join('; ') }) : '',
+      planos.length ? (planos.length === 1 ? T('Plano: {x}.', { x: planos[0] }) : T('Planos: {x}.', { x: planos.slice(0, 8).join('; ') + (planos.length > 8 ? '; …' : '') })) : '',
+      catOrden.length ? T('Los documentos comerciales son principalmente de {x}.', { x: catOrden.slice(0, 4).map(([c, x]) => `${enFrase(c)} (${x.n})`).join(', ') }) : '',
+      temasComunes.length ? T(nNoCom === 1 ? 'Temas del documento: {x}.' : 'Temas en común: {x}.', { x: temasComunes.map(x => x.forma + (x.n > 1 ? ` (${x.n})` : '')).join(', ') }) : (temasPorDoc.length ? T('Temas por documento: {x}.', { x: temasPorDoc.slice(0, 5).map(([a, , t]) => `${a.replace(/\.[^.]+$/, '')} (${t.split(', ').slice(0, 3).join(', ')})`).join('; ') + (temasPorDoc.length > 5 ? '; …' : '') }) : ''),
+      largos.length ? T('El más extenso es «{t}» ({n} páginas).', { t: largos[0].datos.titulo ?? largos[0].datos._titulo ?? largos[0].archivo, n: largos[0].paginas }) : '',
+      duplicados.length ? (duplicados.length === 1 ? T('Hay 1 posible duplicado (mismo número y emisor).') : T('Hay {n} posibles duplicados (mismo número y emisor).', { n: duplicados.length })) : '',
+      porRevisar ? (porRevisar === 1 ? T('1 documento tiene datos que no se encontraron: revisa la columna «Por revisar».') : T('{n} documentos tienen datos que no se encontraron: revisa la columna «Por revisar».', { n: porRevisar })) : T('Se encontraron todos los datos buscados.'),
     ].filter(Boolean).join(' ');
 
     const filasRes = grupos.map(g => [g.t.nombre, g.docs.length, g.docs.reduce((s, d) => s + d.paginas, 0), textoSumas(g.t.id)]);
-    if (errores.length) filasRes.push(['No se pudo leer', errores.length, '', '']);
-    const resumen = { nombre: 'Resumen', columnas: ['Tipo de documento', 'Cantidad', 'Páginas', 'Suma de totales'], tipos: ['texto', 'numero', 'numero', 'texto'], filas: filasRes };
+    if (errores.length) filasRes.push([T('No se pudo leer'), errores.length, '', '']);
+    const resumen = { nombre: T('Resumen'), columnas: [T('Tipo de documento'), T('Cantidad'), T('Páginas'), T('Suma de totales')], tipos: ['texto', 'numero', 'numero', 'texto'], filas: filasRes };
     resumen.filas.push(['TOTAL', { t: 'n', v: ok.length + errores.length, f: `SUM(B2:B${filasRes.length + 1})` }, { t: 'n', v: paginasTot, f: `SUM(C2:C${filasRes.length + 1})` }, '']);
     resumen.nTotales = 1;
     const porMoneda = {};
     for (const d of ok) if (COMERCIALES.has(d.tipo.id) && tot(d) !== null) { const m = mon(d) || 'sin moneda'; (porMoneda[m] ??= { n: 0, suma: 0 }); porMoneda[m].n++; porMoneda[m].suma += tot(d); }
-    resumen.pie = [[], ['Resumen', texto],
-      ...(catOrden.length ? [[], ['¿De qué son? Documentos comerciales por categoría'], ['Categoría', 'Documentos', 'Suma'], ...catOrden.map(([c, x]) => [c, x.n, Object.entries(x.montos).map(([m, v]) => fmtMonto(v, m === 'sin moneda' ? '' : m)).join(' + ')])] : []),
-      ...(temasPorDoc.length ? [[], ['¿De qué tratan? Temas de tesis, artículos, informes y otros documentos'], ['Archivo', 'Tipo', 'Temas principales'], ...temasPorDoc.slice(0, 60)] : []),
-      ...(repetidos.length ? [[], ['Temas que se repiten en varios documentos'], ['Tema', 'Documentos'], ...repetidos.slice(0, 15).map(x => [x.forma, x.n])] : []),
-      ...(Object.keys(porMoneda).length ? [[], ['Totales por moneda (documentos comerciales)'], ['Moneda', 'Documentos', 'Suma'], ...Object.entries(porMoneda).map(([m, x]) => [m, x.n, x.suma])] : []),
-      ...(duplicados.length ? [[], ['Posibles duplicados'], ['Tipo', 'Número', 'Archivo', 'Repetido en'], ...duplicados] : []),
-      ...(errores.length ? [[], ['Archivos no leídos'], ...errores.map(d => [d.archivo, d.error])] : []),
-      ...(omitidos.length ? [[], ['Archivos omitidos'], ...omitidos] : [])];
+    resumen.pie = [[], [T('Resumen'), texto],
+      ...(catOrden.length ? [[], [T('¿De qué son? Documentos comerciales por categoría')], [T('Categoría'), T('Documentos'), T('Suma')], ...catOrden.map(([c, x]) => [c, x.n, Object.entries(x.montos).map(([m, v]) => fmtMonto(v, m === 'sin moneda' ? '' : m)).join(' + ')])] : []),
+      ...(temasPorDoc.length ? [[], [T('¿De qué tratan? Temas de tesis, artículos, informes y otros documentos')], [T('Archivo'), T('Tipo'), T('Temas principales')], ...temasPorDoc.slice(0, 60)] : []),
+      ...(repetidos.length ? [[], [T('Temas que se repiten en varios documentos')], [T('Tema'), T('Documentos')], ...repetidos.slice(0, 15).map(x => [x.forma, x.n])] : []),
+      ...(Object.keys(porMoneda).length ? [[], [T('Totales por moneda (documentos comerciales)')], [T('Moneda'), T('Documentos'), T('Suma')], ...Object.entries(porMoneda).map(([m, x]) => [T(m), x.n, x.suma])] : []),
+      ...(duplicados.length ? [[], [T('Posibles duplicados')], [T('Tipo'), T('Número'), T('Archivo'), T('Repetido en')], ...duplicados] : []),
+      ...(errores.length ? [[], [T('Archivos no leídos')], ...errores.map(d => [d.archivo, d.error])] : []),
+      ...(omitidos.length ? [[], [T('Archivos omitidos')], ...omitidos] : [])];
     const contables = (MODO === 'contadores' || ok.some(d => d.doc.xml)) ? hojasContables(ok) : null;
     if (contables) { resumen.pie.splice(2, 0, ['Contabilidad', contables.frase]); texto = contables.frase + ' ' + texto; }
     const cruce = reportes.length ? cruceDian(ok, reportes) : null;
@@ -2019,10 +2037,10 @@
     hojas.push(resumen, ...(cruce ? [cruce.hoja] : []), ...(contables ? contables.hojas : []), ...hojasDatos);
     const conPlanos = ok.filter(d => d.tipo.id === 'plano');
     if (conPlanos.some(d => d.doc.laminas?.length > 1)) {
-      const cols = ['Archivo', 'Hoja', 'Número de plano', 'Título', 'Proyecto', 'Escala', 'Fecha', 'Revisión', 'Dibujó', 'Diseñó', 'Revisó', 'Aprobó', 'Observaciones'];
+      const cols = ['Archivo', 'Hoja', 'Número de plano', 'Título', 'Proyecto', 'Escala', 'Fecha', 'Revisión', 'Dibujó', 'Diseñó', 'Revisó', 'Aprobó', 'Observaciones'].map(c => T(c));
       const filas = conPlanos.flatMap(d => (d.doc.laminas?.length ? d.doc.laminas : [{ pagina: 1, r: d.doc._rotulo || {} }]).map(({ pagina, r }) =>
-        [d.archivo, pagina, r.plano || '', r.titulo || '', r.proyecto || '', r.escala || '', r.fecha ? (fechaDe(r.fecha) || r.fecha) : '', r.revision || '', r.dibujo || '', r.diseno || '', r.reviso || '', r.aprobo || '', r.observaciones || '']));
-      hojas.splice(1 + (cruce ? 1 : 0) + (contables ? contables.hojas.length : 0), 0, { nombre: 'Listado de planos', columnas: cols, tipos: ['texto', 'numero', 'codigo', 'texto', 'texto', 'texto', 'fecha', 'codigo', 'texto', 'texto', 'texto', 'texto', 'largo'], filas, nTotales: 0 });
+        [d.archivo, pagina, r.plano || '', r.titulo || '', r.proyecto || '', r.escala || '', r.fecha ? (fechaDe(r.fecha) || r.fecha) : '', r.revision || '', r.dibujo || '', r.diseno || '', r.reviso || '', r.aprobo || '', r.observaciones ? T(r.observaciones) : '']));
+      hojas.splice(1 + (cruce ? 1 : 0) + (contables ? contables.hojas.length : 0), 0, { nombre: T('Listado de planos'), columnas: cols, tipos: ['texto', 'numero', 'codigo', 'texto', 'texto', 'texto', 'fecha', 'codigo', 'texto', 'texto', 'texto', 'texto', 'largo'], filas, nTotales: 0 });
     }
 
     // --- Tablas: ítems de documentos comerciales (columnas unificadas) y tablas de los demás (una debajo de otra) ---
@@ -2034,34 +2052,34 @@
       }
       if (filas.length) {
         const ancho = 4 + cols.length;
-        hojas.push({ nombre: 'Ítems', columnas: ['Archivo', 'Tipo', 'Número doc.', 'Página', ...cols], filas: filas.map(f => Array.from({ length: ancho }, (_, j) => f[j] ?? '')) });
+        hojas.push({ nombre: T('Ítems'), columnas: [T('Archivo'), T('Tipo'), T('Número doc.'), T('Página'), ...cols], filas: filas.map(f => Array.from({ length: ancho }, (_, j) => f[j] ?? '')) });
       }
       const apiladas = [];
       for (const d of ok.filter(d => !COMERCIALES.has(d.tipo.id) && d.tipo.id !== 'plano')) for (const t of d.doc.tablas) {
         if (apiladas.length > 20000) break;
-        apiladas.push([`${d.archivo} · página ${t.pagina}`], t.columnas, ...t.filas.map(f => f.map(convertir)), []);
+        apiladas.push([`${d.archivo} · ${T('página')} ${t.pagina}`], t.columnas, ...t.filas.map(f => f.map(convertir)), []);
       }
-      if (apiladas.length) hojas.push({ nombre: 'Tablas', columnas: ['Tablas encontradas en informes, listados y otros documentos'], filas: apiladas });
+      if (apiladas.length) hojas.push({ nombre: T('Tablas'), columnas: [T('Tablas encontradas en informes, listados y otros documentos')], filas: apiladas });
     }
     if ($('#conTexto').checked)
-      hojas.push({ nombre: 'Texto', columnas: ['Archivo', 'Página', 'Texto'], filas: ok.flatMap(d => d.doc.lineas.map(l => [d.archivo, l.pagina, l.texto])) });
+      hojas.push({ nombre: T('Texto'), columnas: [T('Archivo'), T('Página'), T('Texto')], filas: ok.flatMap(d => d.doc.lineas.map(l => [d.archivo, l.pagina, l.texto])) });
 
-    const cifras = [[docs.length, 'documentos'], [paginasTot, 'páginas'], ...grupos.slice().sort((a, b) => b.docs.length - a.docs.length).slice(0, 4).map(g => [g.docs.length, g.t.plural.toLowerCase()])];
-    for (const [m, x] of Object.entries(sumas.factura || {}).slice(0, 2)) cifras.push([fmtMonto(x.suma, m === 'sin moneda' ? '' : m), 'total facturas']);
-    return { titulo: docs.length === 1 ? docs[0].archivo.replace(/\.pdf$/i, '') : `${docs.length} documentos`, resumen: texto, cifras, hojas };
+    const cifras = [[docs.length, T('documentos')], [paginasTot, T('páginas')], ...grupos.slice().sort((a, b) => b.docs.length - a.docs.length).slice(0, 4).map(g => [g.docs.length, enFrase(g.t.plural)])];
+    for (const [m, x] of Object.entries(sumas.factura || {}).slice(0, 2)) cifras.push([fmtMonto(x.suma, m === 'sin moneda' ? '' : m), T('total facturas')]);
+    return { titulo: docs.length === 1 ? docs[0].archivo.replace(/\.pdf$/i, '') : T('{n} documentos', { n: docs.length }), resumen: texto, cifras, hojas };
   }
 
   // =====================================================================
   // Vista previa
   // =====================================================================
   const EJEMPLO = {
-    titulo: 'Ejemplo: 4 documentos', cifras: [[4, 'documentos'], [2, 'facturas'], [1, 'remisión'], [1, 'tesis'], ['COP 2.128.000', 'total facturas']],
-    resumen: 'Así se ve un resultado: los documentos se clasifican, cada uno queda en una fila con los datos pedidos y al final va el TOTAL. Sube tus PDF para reemplazarlo.',
-    hojas: [{ nombre: 'Datos solicitados', columnas: ['Archivo', 'Tipo', 'Idioma', 'Número', 'Fecha', 'Emisor', 'Total', 'Moneda', 'Por revisar'], tipos: ['texto', 'texto', 'texto', 'codigo', 'fecha', 'texto', 'dinero', 'texto', 'texto'], nTotales: 1, filas: [
-      ['factura-2031.pdf', 'Factura', 'Español', 'FE-2031', '2026-08-14', 'Suministros Médicos Andinos S.A.S.', 1428000, 'COP', ''],
-      ['factura-0457.pdf', 'Factura', 'Español', 'FV-0457', '2026-08-20', 'Ferretería El Tornillo Ltda.', 700000, 'COP', ''],
-      ['remision-88.pdf', 'Remisión', 'Español', 'R-88', '2026-08-21', 'Suministros Médicos Andinos S.A.S.', '', '', 'Total, Moneda'],
-      ['tesis-maestria.pdf', 'Tesis', 'Español', '', '2025-11', 'Universidad Nacional de Colombia', '', '', 'Número, Total, Moneda'],
+    titulo: T('Ejemplo: 4 documentos'), cifras: [[4, T('documentos')], [2, enFrase(T('Facturas'))], [1, enFrase(T('Remisión'))], [1, enFrase(T('Tesis'))], ['COP 2.128.000', T('total facturas')]],
+    resumen: T('Así se ve un resultado: los documentos se clasifican, cada uno queda en una fila con los datos pedidos y al final va el TOTAL. Sube tus PDF para reemplazarlo.'),
+    hojas: [{ nombre: T('Datos solicitados'), columnas: ['Archivo', 'Tipo', 'Idioma', 'Número', 'Fecha', 'Emisor', 'Total', 'Moneda', 'Por revisar'].map(c => T(c)), tipos: ['texto', 'texto', 'texto', 'codigo', 'fecha', 'texto', 'dinero', 'texto', 'texto'], nTotales: 1, filas: [
+      ['factura-2031.pdf', T('Factura'), T('Español'), 'FE-2031', '2026-08-14', 'Suministros Médicos Andinos S.A.S.', 1428000, 'COP', ''],
+      ['factura-0457.pdf', T('Factura'), T('Español'), 'FV-0457', '2026-08-20', 'Ferretería El Tornillo Ltda.', 700000, 'COP', ''],
+      ['remision-88.pdf', T('Remisión'), T('Español'), 'R-88', '2026-08-21', 'Suministros Médicos Andinos S.A.S.', '', '', [T('Total'), T('Moneda')].join(', ')],
+      ['tesis-maestria.pdf', T('Tesis'), T('Español'), '', '2025-11', 'Universidad Nacional de Colombia', '', '', [T('Número'), T('Total'), T('Moneda')].join(', ')],
       ['', 'TOTAL COP', '', '', '', '', { t: 'n', v: 2128000 }, '', '']] }]
   };
   const EJEMPLO_CONTADORES = {
@@ -2077,7 +2095,8 @@
   // Sello fechador: la fecha de hoy, como en la oficina
   const MESES_SELLO = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
   const hoy = new Date();
-  document.querySelectorAll('.fecha-sello').forEach(e => e.textContent = `${String(hoy.getDate()).padStart(2, '0')} ${MESES_SELLO[hoy.getMonth()]} ${hoy.getFullYear()}`);
+  const mesSello = IDIOMA === 'es' ? MESES_SELLO[hoy.getMonth()] : hoy.toLocaleString(LOCALE, { month: 'short' }).replace('.', '').toUpperCase();
+  document.querySelectorAll('.fecha-sello').forEach(e => e.textContent = `${String(hoy.getDate()).padStart(2, '0')} ${mesSello} ${hoy.getFullYear()}`);
   function mostrar(datos) {
     libro = datos; esEjemplo = false; hojaActiva = Math.min(1, datos.hojas.length - 1); pintar();
     const sello = $('#selloListo');
@@ -2101,33 +2120,33 @@
   let esperaRelleno;
   addEventListener('resize', () => { clearTimeout(esperaRelleno); esperaRelleno = setTimeout(rellenarFilas, 150); });
   function pintar() {
-    $('#titulo').innerHTML = esc(libro.titulo) + (esEjemplo ? '<span class="chip">Ejemplo</span>' : '');
-    $('#cifras').innerHTML = libro.cifras.map(([n, t]) => `<span class="cifra"><b>${esc(typeof n === 'number' ? n.toLocaleString('es-CO') : n)}</b>${esc(t)}</span>`).join('');
+    $('#titulo').innerHTML = esc(libro.titulo) + (esEjemplo ? `<span class="chip">${esc(T('Ejemplo'))}</span>` : '');
+    $('#cifras').innerHTML = libro.cifras.map(([n, t]) => `<span class="cifra"><b>${esc(typeof n === 'number' ? n.toLocaleString(LOCALE) : n)}</b>${esc(t)}</span>`).join('');
     $('#resumen').textContent = libro.resumen;
     const h = libro.hojas[hojaActiva];
     const ancho = Math.max(h.columnas.length, ...h.filas.slice(0, 1000).map(f => f.length));
     const cols = Array.from({ length: ancho }, (_, i) => h.columnas[i] ?? '');
-    const iRev = h.columnas.indexOf('Por revisar');
+    const iRev = h.columnas.indexOf(T('Por revisar'));
     const n = h.filas.length, nt = h.nTotales || 0;
     const celda = (v, i, j) => {
       v = valorCelda(v);
       const falta = iRev >= 0 && (v === '' || v == null) && j > 2 && j < iRev - 1 && i < n - nt;
-      const editable = !esEjemplo && i < n - nt && h.nombre !== 'Tablas';
+      const editable = !esEjemplo && i < n - nt && h.nombre !== T('Tablas');
       const editada = h.editadas?.has(i + ',' + j);
-      return `<td class="${typeof v === 'number' ? 'num' : ''}${falta ? ' falta' : ''}${editada ? ' editada' : ''}"${editable ? ` data-i="${i}" data-j="${j}"` : ''} title="${esc(v ?? '')}${editable ? ' — doble clic para corregir' : ''}">${esc(typeof v === 'number' ? fmtNum(v) : v ?? '')}</td>`;
+      return `<td class="${typeof v === 'number' ? 'num' : ''}${falta ? ' falta' : ''}${editada ? ' editada' : ''}"${editable ? ` data-i="${i}" data-j="${j}"` : ''} title="${esc(v ?? '')}${editable ? esc(T(' — doble clic para corregir')) : ''}">${esc(typeof v === 'number' ? fmtNum(v) : v ?? '')}</td>`;
     };
     // Como en Excel: letras de columna arriba y los encabezados en la fila 1 (los números coinciden con el archivo descargado)
     $('#tablaCaja').innerHTML = `<table><thead><tr><th class="fila"></th>${cols.map((_, j) => `<th>${colLetra(j)}</th>`).join('')}</tr></thead><tbody><tr class="cab"><th class="fila">1</th>${cols.map(c => `<td title="${esc(c)}">${esc(c)}</td>`).join('')}</tr>${
       h.filas.slice(0, 1000).map((f, i) => `<tr class="${i >= n - nt ? 'total' : ''}"><th class="fila">${i + 2}</th>${cols.map((_, j) => celda(f[j] ?? '', i, j)).join('')}</tr>`).join('')
-    }</tbody></table>${n > 1000 ? `<p class="vacio">Vista previa de 1.000 de ${n.toLocaleString('es-CO')} filas. El Excel las incluye todas.</p>` : ''}`;
+    }</tbody></table>${n > 1000 ? `<p class="vacio">${esc(T('Vista previa de 1.000 de {n} filas. El Excel las incluye todas.', { n: n.toLocaleString(LOCALE) }))}</p>` : ''}`;
     rellenarFilas();
     $('#pestanas').innerHTML = libro.hojas.map((x, i) =>
-      `<button role="tab" aria-selected="${i === hojaActiva}" data-i="${i}">${esc(x.nombre)} · ${x.nombre === 'Tablas' ? x.filas.filter(f => f.length === 1).length : x.filas.length - (x.nTotales || 0)}</button>`).join('');
+      `<button role="tab" aria-selected="${i === hojaActiva}" data-i="${i}">${esc(x.nombre)} · ${x.nombre === T('Tablas') ? x.filas.filter(f => f.length === 1).length : x.filas.length - (x.nTotales || 0)}</button>`).join('');
   }
   // Corregir una celda en la vista previa: el cambio va al Excel y los totales se recalculan
   function recalcularTotales(h) {
     const nt = h.nTotales || 0; if (!nt) return;
-    const datos = h.filas.slice(0, h.filas.length - nt), iMon = h.columnas.indexOf('Moneda');
+    const datos = h.filas.slice(0, h.filas.length - nt), iMon = [CAMPOS.moneda.etiqueta, 'Moneda'].map(x => h.columnas.indexOf(x)).find(i => i >= 0) ?? -1;
     for (const fila of h.filas.slice(-nt)) fila.forEach((c, j) => {
       if (!c || typeof c !== 'object' || !('v' in c)) return;
       const m = String(fila.find(x => typeof x === 'string' && /^TOTAL/.test(x)) || '').replace(/^TOTAL\s*/, '');
@@ -2155,10 +2174,10 @@
           h.filas[i][j] = v;
           (h.editadas ??= new Set()).add(i + ',' + j);
           // Si el dato faltaba, deja de estar "por revisar"
-          const iRev = h.columnas.indexOf('Por revisar');
+          const iRev = h.columnas.indexOf(T('Por revisar'));
           if (iRev >= 0 && v !== '' && typeof h.filas[i][iRev] === 'string') h.filas[i][iRev] = h.filas[i][iRev].split(', ').filter(x => norm(x) !== norm(h.columnas[j])).join(', ');
           recalcularTotales(h);
-          estado('Corrección guardada: se incluye en el Excel que descargues.', 'ok');
+          estado(T('Corrección guardada: se incluye en el Excel que descargues.'), 'ok');
         }
       }
       pintar();
@@ -2181,17 +2200,17 @@
       const hoja = XLSX.utils.aoa_to_sheet(filas);
       const ancho = Math.max(...filas.slice(0, 2000).map(f => f.length));
       hoja['!cols'] = Array.from({ length: ancho }, (_, j) => ({
-        wch: Math.min(j === h.columnas.indexOf('Resumen') ? 90 : 50, Math.max(8, ...[h.columnas[j], ...h.filas.slice(0, 300).map(f => valorCelda(f[j]))].map(v => String(v ?? '').length + 2)))
+        wch: Math.min(j === h.columnas.indexOf(T('Resumen')) ? 90 : 50, Math.max(8, ...[h.columnas[j], ...h.filas.slice(0, 300).map(f => valorCelda(f[j]))].map(v => String(v ?? '').length + 2)))
       }));
       // Formato numérico para las columnas de dinero
       (h.tipos || []).forEach((t, j) => {
         if (t !== 'dinero') return;
         for (let r = 1; r <= h.filas.length; r++) { const c = hoja[colLetra(j) + (r + 1)]; if (c && c.t === 'n') c.z = '#,##0.00'; }
       });
-      if (h.nombre !== 'Tablas' && h.filas.length) hoja['!autofilter'] = { ref: `A1:${colLetra(h.columnas.length - 1)}${h.filas.length + 1 - (h.nTotales || 0)}` };
+      if (h.nombre !== T('Tablas') && h.filas.length) hoja['!autofilter'] = { ref: `A1:${colLetra(h.columnas.length - 1)}${h.filas.length + 1 - (h.nTotales || 0)}` };
       XLSX.utils.book_append_sheet(wb, hoja, h.nombre.replace(/[\[\]:*?/\\]/g, ' ').slice(0, 31));
     }
-    const nombre = archivos.length === 1 ? archivos[0].nombre.replace(/\.pdf$/i, '') : `documentos-${new Date().toISOString().slice(0, 10)}`;
+    const nombre = archivos.length === 1 ? archivos[0].nombre.replace(/\.pdf$/i, '') : `${T('documentos')}-${new Date().toISOString().slice(0, 10)}`;
     XLSX.writeFile(wb, nombre.replace(/[\\/:*?"<>|]/g, '').trim() + '.xlsx');
   };
   $('#csv').onclick = () => {
@@ -2207,8 +2226,8 @@
   $('#copiar').onclick = async () => {
     const h = libro.hojas[hojaActiva];
     const tsv = [h.columnas, ...h.filas].map(f => f.map(v => String(valorCelda(v) ?? '').replace(/[\t\n]/g, ' ')).join('\t')).join('\n');
-    try { await navigator.clipboard.writeText(tsv); estado(`Hoja «${h.nombre}» copiada. Pégala en Excel o Google Sheets.`, 'ok'); }
-    catch { estado('El navegador no permitió copiar. Descarga el Excel en su lugar.', 'error'); }
+    try { await navigator.clipboard.writeText(tsv); estado(T('Hoja «{h}» copiada. Pégala en Excel o Google Sheets.', { h: h.nombre }), 'ok'); }
+    catch { estado(T('El navegador no permitió copiar. Descarga el Excel en su lugar.'), 'error'); }
   };
 
   if (/[?&]debug\b/.test(location.search)) window.__motor = { leerImagen, leerWord, analizar, armarLineas, porColumnas, piezasTexto, tituloInfo, autorDoc, emisorDoc, institucionDoc, clasificar, buscarCon, CAMPOS, TIPOS, dineroDe, fechaDe };
