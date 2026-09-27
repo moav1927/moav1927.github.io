@@ -1,4 +1,4 @@
-# Cuadra · PDF a Excel
+# SheetClerk · PDF a Excel
 
 Tus documentos, pasados en limpio a Excel: https://moav1927.github.io/pdf-a-excel/
 

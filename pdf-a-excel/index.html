@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cuadra · PDF a Excel: tus documentos pasados en limpio</title>
+<title>SheetClerk · PDF a Excel: tus documentos pasados en limpio</title>
 <meta name="description" content="Extractor de información de PDF gratis: sube facturas, remisiones, planos, informes o fotos y descarga un Excel ordenado con resumen y totales. Sin cuenta y sin subir tus archivos.">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' data: blob:; img-src 'self' data: blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
@@ -13,8 +13,8 @@
 <link rel="apple-touch-icon" href="marca/icono-180.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Cuadra">
-<meta property="og:title" content="Cuadra · PDF a Excel: tus documentos pasados en limpio">
+<meta property="og:site_name" content="SheetClerk">
+<meta property="og:title" content="SheetClerk · PDF a Excel: tus documentos pasados en limpio">
 <meta property="og:description" content="Extractor de información de PDF gratis: sube facturas, remisiones, planos, informes o fotos y descarga un Excel ordenado con resumen y totales. Sin cuenta y sin subir tus archivos.">
 <meta property="og:image" content="https://moav1927.github.io/pdf-a-excel/marca/compartir.png">
 <meta property="og:url" content="https://moav1927.github.io/pdf-a-excel/">
@@ -36,14 +36,14 @@
   ============================================================
 -->
 <link rel="preload" href="lib/fuentes/zilla-slab-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="estilo.css?v=19">
+<link rel="stylesheet" href="estilo.css?v=20">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="tinta"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7" result="r"/><feDisplacementMap in="SourceGraphic" in2="r" scale="2.4"/></filter></svg>
 <div class="envoltura">
   <div class="barra">
-    <a class="marca" href="../pdf-a-excel/" aria-label="Cuadra, inicio"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"> <rect width="64" height="64" rx="14" fill="#2d5f4a"/> <path d="M15 10h22l12 12v32H15z" fill="#fbfcf8"/> <path d="M37 10v12h12z" fill="#c9dccf"/> <path d="M20 18h12M20 23.5h9" stroke="#9db5a7" stroke-width="3" stroke-linecap="round"/> <path d="M15 31h34M15 42.5h34M26.5 31v23M38 31v23" stroke="#2d5f4a" stroke-width="2.4"/> <rect x="26.5" y="42.5" width="11.5" height="11.5" fill="#a57a26"/> <circle cx="48" cy="48" r="11" fill="#5b3e8f" stroke="#fbfcf8" stroke-width="3"/> <path d="M42.8 48.3l3.6 3.6 6.8-7.4" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/> </svg><span>Cuadra<small>PDF a Excel</small></span></a>
-    <button class="instalar" id="instalar" hidden>Instalar Cuadra</button>
+    <a class="marca" href="../pdf-a-excel/" aria-label="SheetClerk, inicio"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"> <rect width="64" height="64" rx="14" fill="#2d5f4a"/> <path d="M15 10h22l12 12v32H15z" fill="#fbfcf8"/> <path d="M37 10v12h12z" fill="#c9dccf"/> <path d="M20 18h12M20 23.5h9" stroke="#9db5a7" stroke-width="3" stroke-linecap="round"/> <path d="M15 31h34M15 42.5h34M26.5 31v23M38 31v23" stroke="#2d5f4a" stroke-width="2.4"/> <rect x="26.5" y="42.5" width="11.5" height="11.5" fill="#a57a26"/> <circle cx="48" cy="48" r="11" fill="#5b3e8f" stroke="#fbfcf8" stroke-width="3"/> <path d="M42.8 48.3l3.6 3.6 6.8-7.4" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/> </svg><span>SheetClerk<small>PDF a Excel</small></span></a>
+    <button class="instalar" id="instalar" hidden>Instalar SheetClerk</button>
     <nav class="secciones" aria-label="Secciones"><a href="../pdf-a-excel/" aria-current="page">Documentos en general</a><a href="../contadores/">Contadores · Facturas DIAN</a></nav>
   </div>
   <header>
@@ -198,12 +198,12 @@
         <p>En la vista previa puedes <b>corregir cualquier dato con doble clic</b>: los totales se recalculan y el cambio sale en el Excel. Reconoce los formatos habituales en varios idiomas («Total:», «Invoice No.», «NIT», «Escala», «Drawn by»…). Las fotos y escaneados se leen con OCR (reconocimiento de texto en imágenes): la primera vez se descargan unos 6 MB que quedan guardados en el navegador.</p>
       </details>
   </aside>
-  <footer class="pie"><span>Cuadra · de PDF a Excel, hecho en Colombia y gratis para todos.</span><span>Tus archivos se leen en tu equipo y no se guardan en ningún lado.</span></footer>
+  <footer class="pie"><span>SheetClerk · de PDF a Excel, hecho en Colombia y gratis para todos.</span><span>Tus archivos se leen en tu equipo y no se guardan en ningún lado.</span></footer>
 </div>
 
 <script src="lib/pdf.min.js"></script>
 <script src="lib/xlsx.full.min.js"></script>
 <script src="lib/tesseract.min.js"></script>
-<script src="motor.js?v=19"></script>
+<script src="motor.js?v=20"></script>
 </body>
 </html>

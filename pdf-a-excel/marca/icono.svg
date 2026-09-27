@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <title>Cuadra</title>
+  <title>SheetClerk</title>
   <!-- Una hoja de papel cuya mitad de abajo se vuelve cuadrícula, con el sello morado de "cuadrado" -->
   <rect width="64" height="64" rx="14" fill="#2d5f4a"/>
   <path d="M15 10h22l12 12v32H15z" fill="#fbfcf8"/>

@@ -270,7 +270,7 @@
   const marcarPreset = () => { const v = $('#pedido').value.trim(); for (const b of $('#presets').querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.v === v)); };
   $('#presets').onclick = e => { const b = e.target.closest('button'); if (b) { $('#pedido').value = b.dataset.v; marcarPreset(); } };
   $('#pedido').addEventListener('input', marcarPreset);
-  const CLAVE_PEDIDO = 'cuadra-pedido-' + MODO;
+  const CLAVE_PEDIDO = 'sheetclerk-pedido-' + MODO;
   try { const v = localStorage.getItem(CLAVE_PEDIDO); if (v) { $('#pedido').value = v; marcarPreset(); } } catch { }
 
   // =====================================================================
