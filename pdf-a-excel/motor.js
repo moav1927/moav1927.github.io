@@ -229,6 +229,7 @@
     $('#detener').hidden = !si;
     $('#limpiar').hidden = si || !archivos.length;
     $('#descargar').disabled = si || esEjemplo;
+    $('#csv').disabled = si || esEjemplo;
     $('#entrada').disabled = si;
     pintarArchivos();
   }
@@ -269,6 +270,8 @@
   const marcarPreset = () => { const v = $('#pedido').value.trim(); for (const b of $('#presets').querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.v === v)); };
   $('#presets').onclick = e => { const b = e.target.closest('button'); if (b) { $('#pedido').value = b.dataset.v; marcarPreset(); } };
   $('#pedido').addEventListener('input', marcarPreset);
+  const CLAVE_PEDIDO = 'cuadra-pedido-' + MODO;
+  try { const v = localStorage.getItem(CLAVE_PEDIDO); if (v) { $('#pedido').value = v; marcarPreset(); } } catch { }
 
   // =====================================================================
   // Lectura de PDF: piezas de texto con posición (y crece hacia abajo)
@@ -474,8 +477,20 @@
     const puntos = Object.entries(IDIOMAS).map(([id, palabras]) => [id, palabras.reduce((n, p) => n + (t.match(new RegExp(' ' + p + ' ', 'g')) || []).length, 0)]).sort((a, b) => b[1] - a[1]);
     const [[mejor, max], [, segundo]] = puntos;
     // En documentos cortos basta con pocas palabras si ningún otro idioma compite
-    return max >= 4 && max >= segundo * 1.5 || max >= 2 && segundo === 0 ? mejor : '';
+    if (max >= 4 && max >= segundo * 1.5 || max >= 2 && segundo === 0) return mejor;
+    // Poco texto corrido (facturas, planos, formularios): se decide por las etiquetas típicas de cada idioma
+    const etq = Object.entries(ETIQUETAS_IDIOMA).map(([id, ps]) => [id, ps.reduce((n, p) => n + (t.includes(' ' + p + ' ') ? 1 : 0), 0)]).sort((a, b) => b[1] - a[1]);
+    return etq[0][1] >= 2 && etq[0][1] > etq[1][1] ? etq[0][0] : '';
   }
+  const ETIQUETAS_IDIOMA = {
+    'Español': ['factura', 'fecha', 'valor', 'cliente', 'cantidad', 'descripcion', 'nit', 'iva', 'proyecto', 'escala', 'dibujo', 'reviso', 'aprobo', 'observaciones', 'plano', 'direccion', 'telefono', 'ciudad', 'pagina', 'precio', 'vencimiento'],
+    'Inglés': ['invoice', 'date', 'amount', 'quantity', 'description', 'customer', 'scale', 'drawn', 'checked', 'approved', 'aprobed', 'project', 'sheet', 'notes', 'address', 'phone', 'page', 'due', 'balance', 'price', 'observations'],
+    'Francés': ['facture', 'montant', 'quantite', 'echelle', 'dessine', 'verifie', 'projet', 'adresse', 'prix', 'client'],
+    'Alemán': ['rechnung', 'datum', 'betrag', 'menge', 'massstab', 'gezeichnet', 'gepruft', 'projekt', 'preis', 'kunde'],
+    'Neerlandés': ['factuur', 'bedrag', 'aantal', 'schaal', 'getekend', 'adres', 'prijs', 'klant'],
+    'Portugués': ['fatura', 'quantidade', 'desenho', 'projeto', 'endereco', 'preco'],
+    'Italiano': ['fattura', 'importo', 'quantita', 'scala', 'disegnato', 'progetto', 'indirizzo', 'prezzo'],
+  };
 
   // =====================================================================
   // Análisis de un documento: líneas, pares clave-valor y tablas
@@ -611,13 +626,9 @@
   ];
   const RE_ESCALA = /\b1\s?:\s?\d{1,5}\b|\b(indicada|as shown|n\.?t\.?s|sin escala|varias)\b/i;
   const etiquetaRotulo = t => { const n = norm(t).replace(/[:.\-]+$/, '').replace(/[.]/g, '').trim(); return ROTULO.find(([, re]) => re.test(n))?.[0] || null; };
-  function rotuloDoc(doc) {
-    if (doc._rotulo !== undefined) return doc._rotulo;
-    // Piezas sueltas de la primera página (x, fin, y, alto, txt)
-    let P = doc.piezas1;
-    if (!P) P = doc.lineas.filter(l => l.pagina === 1).flatMap(l => (l.cx || []).map(c => ({ x: c.x, fin: c.fin, y: l.y, alto: l.alto, txt: c.txt })));
+  function rotuloDe(P) {
     P = P.filter(p => p.txt.trim());
-    if (P.length < 5) return (doc._rotulo = null);
+    if (P.length < 5) return null;
     // "ESCALA: 1:75" en una sola pieza → etiqueta y valor
     const piezas = [];
     for (const p of P) {
@@ -627,7 +638,7 @@
     }
     const etiquetas = piezas.map(p => ({ p, k: etiquetaRotulo(p.txt) })).filter(e => e.k);
     const fuertes = etiquetas.filter(e => ['dibujo', 'diseno', 'reviso', 'aprobo', 'escala', 'numproyecto', 'plano'].includes(e.k));
-    if (new Set(fuertes.map(e => e.k)).size < 2) return (doc._rotulo = null);
+    if (new Set(fuertes.map(e => e.k)).size < 2) return null;
     const W = Math.max(...P.map(p => p.fin)), H = Math.max(...P.map(p => p.y));
     const bx0 = Math.min(...fuertes.map(e => e.p.x)), by0 = Math.min(...fuertes.map(e => e.p.y));
     const altoEtq = fuertes.map(e => e.p.alto).sort((a, b) => a - b)[Math.floor(fuertes.length / 2)] || 10;
@@ -687,8 +698,15 @@
       if (texto) { r.observaciones = texto.length > 600 ? texto.slice(0, 597) + '…' : texto; break; }
       r.observaciones ??= 'Sin observaciones';
     }
-    return (doc._rotulo = r);
+    return r;
   }
+  function rotuloDoc(doc) {
+    if (doc._rotulo !== undefined) return doc._rotulo;
+    // Piezas sueltas de la primera página (x, fin, y, alto, txt)
+    const P = doc.piezas1 || doc.lineas.filter(l => l.pagina === 1).flatMap(l => (l.cx || []).map(c => ({ x: c.x, fin: c.fin, y: l.y, alto: l.alto, txt: c.txt })));
+    return (doc._rotulo = rotuloDe(P));
+  }
+
 
   function clasificar(doc, nombreArchivo, meta) {
     const inicio = doc.lineas.filter(l => l.pagina === 1).slice(0, 16);
@@ -1263,6 +1281,7 @@
       case 'plano': case 'escala': case 'numproyecto': case 'revision': case 'dibujo': case 'diseno': case 'reviso': case 'aprobo': case 'observaciones': {
         const r = tipo.id === 'plano' ? rotuloDoc(doc) : null;
         if (r?.[clave]) return r[clave];
+        if (r && clave !== 'plano') return null;   // con rótulo, lo que no está en él no se busca en el resto del dibujo (ni en otras láminas)
         if (clave === 'plano') return tipo.id === 'plano' ? (norm(meta.archivo || '').match(/^[a-z]{1,6}[\-_ ]?\d{1,4}/)?.[0].toUpperCase() ?? null) : null;
         if (clave === 'escala') { const l = doc.lineas.find(l => RE_ESCALA.test(l.texto) && /escala|scale/.test(l.textoN)); return l ? l.texto.match(RE_ESCALA)[0] : null; }
         return CAMPOS[clave].syn.length ? buscar(doc, CAMPOS[clave]) : null;
@@ -1542,8 +1561,34 @@
   }
 
   // Hojas de cálculo: cada hoja visible es una "página"; cada fila, una línea; cada celda, una celda con su posición
+  // Listado de documentos descargado del portal de la DIAN: tiene columnas de CUFE, folio/prefijo y emisor
+  function reporteDian(wb) {
+    const filas = [];
+    for (const nombre of wb.SheetNames) {
+      const aoa = XLSX.utils.sheet_to_json(wb.Sheets[nombre], { header: 1, defval: '', raw: true });
+      const h = aoa.slice(0, 15).findIndex(f => f.some(c => /\b(cufe|cude)\b/.test(norm(c))) && f.some(c => /folio|prefijo|emisor/.test(norm(c))));
+      if (h < 0) continue;
+      const cab = aoa[h].map(c => norm(c));
+      const col = re => cab.findIndex(c => re.test(c));
+      const c = { cufe: col(/\b(cufe|cude)\b/), folio: col(/^folio$|^numero( de)? (documento|factura)$|^numero$/), prefijo: col(/prefijo/), nit: col(/^nit (del )?emisor|identificacion (del )?emisor/), emisor: col(/^nombre (del )?emisor|razon social (del )?emisor|^emisor$/),
+        nitr: col(/^nit (del )?receptor|identificacion (del )?(receptor|adquiriente)/), receptor: col(/^nombre (del )?receptor|nombre (del )?adquiriente/), fecha: col(/fecha (de )?emision|^fecha$/), total: col(/^total$|^valor total|^total factura/), tipo: col(/^tipo (de )?documento$|^tipo$/), iva: col(/^iva$/) };
+      const v = (f, k) => c[k] >= 0 ? f[c[k]] : '';
+      const dinero = x => typeof x === 'number' ? x : (dineroDe(String(x)) ?? null);
+      for (const f of aoa.slice(h + 1)) {
+        if (!f.some(x => x !== '')) continue;
+        const folio = String(v(f, 'folio')).trim(), pref = String(v(f, 'prefijo')).trim();
+        const fecha = v(f, 'fecha');
+        filas.push({ cufe: String(v(f, 'cufe')).trim().toLowerCase(), numero: pref && !folio.startsWith(pref) ? pref + folio : folio, nit: String(v(f, 'nit')).trim(), emisor: String(v(f, 'emisor')).trim(),
+          nitr: String(v(f, 'nitr')).trim(), receptor: String(v(f, 'receptor')).trim(), fecha: typeof fecha === 'number' ? XLSX.SSF.format('yyyy-mm-dd', fecha) : (fechaDe(String(fecha)) || String(fecha)),
+          total: dinero(v(f, 'total')), iva: dinero(v(f, 'iva')), tipo: String(v(f, 'tipo')).trim() });
+      }
+    }
+    return filas.length ? filas : null;
+  }
   async function leerHojaCalculo(a) {
     const wb = XLSX.read(new Uint8Array(await a.file.arrayBuffer()), { cellDates: false, cellStyles: true });
+    const rep = reporteDian(wb);
+    if (rep) throw { reporteDian: rep };
     const ocultas = new Set((wb.Workbook?.Sheets || []).filter(h => h.Hidden).map(h => h.name));
     const paginas = [];
     for (const nombre of wb.SheetNames) {
@@ -1649,7 +1694,8 @@
       }
       paginas.forEach((ls, k) => paginas[k] = porColumnas(ls));
     } finally { pdf.destroy(); }
-    return { paginas, numPaginas: pdf.numPages ?? n, leidas: n, conOcr, sinLeer, camposFormulario, horizontales, info, ladoMayor, piezas1: crudas[0] };
+    // Hojas grandes con varias páginas pueden ser un juego de planos: se guardan las piezas de cada lámina para leer su rótulo
+    return { paginas, numPaginas: pdf.numPages ?? n, leidas: n, conOcr, sinLeer, camposFormulario, horizontales, info, ladoMayor, piezas1: crudas[0], piezasPag: ladoMayor >= 1150 && n > 1 ? crudas.slice(0, 300) : null };
   }
 
   $('#convertir').onclick = async () => {
@@ -1657,9 +1703,10 @@
     $('#selloListo')?.classList.remove('ver');
     archivos.forEach(a => { a.estado = 'Pendiente'; a.clase = ''; });
     ocupado(true);
+    try { localStorage.setItem(CLAVE_PEDIDO, $('#pedido').value.trim()); } catch { }
     const pedido = interpretarPedido($('#pedido').value);
     let docs = [];
-    const omitidos = [], inicio = performance.now();
+    const omitidos = [], reportes = [], inicio = performance.now();
     for (let i = 0; i < archivos.length; i++) {
       if (cancelado) break;
       const a = archivos[i];
@@ -1671,6 +1718,7 @@
         const { paginas, numPaginas, leidas, conOcr, sinLeer, camposFormulario, horizontales, info } = leido;
         const doc = analizar(paginas);
         if (leido.piezas1) doc.piezas1 = leido.piezas1;
+        if (leido.piezasPag) doc.piezasPag = leido.piezasPag;
         if (leido.xml) { doc.xml = leido.xml; doc.tablas = leido.xml.tablas; doc._items = leido.xml.items; }
         doc.ocr = conOcr > 0;
         if (!doc.lineas.length) throw { msg: 'Sin texto' };
@@ -1696,14 +1744,18 @@
         // En la página de contadores, "$" en una factura colombiana (con NIT) es COP
         if (MODO === 'contadores' && !doc.xml && meta.idioma !== 'Inglés') for (const k of ['moneda', '_moneda']) if (datos[k] === '$' && (meta.idioma === 'Español' || doc.lineas.slice(0, 80).some(l => /\b(nit|cufe|dian)\b/.test(l.textoN)))) datos[k] = 'COP';
         // Con 100 o más documentos la memoria cuenta: se suelta lo que ya no se usa
-        if (tipo.id === 'plano') rotuloDoc(doc);
-        delete doc.piezas1;
+        if (tipo.id === 'plano') {
+          rotuloDoc(doc);
+          if (doc.piezasPag) doc.laminas = doc.piezasPag.map((P, k) => ({ pagina: k + 1, r: rotuloDe(P) })).filter(x => x.r && (x.r.plano || x.r.titulo));
+        }
+        delete doc.piezas1; delete doc.piezasPag;
         if (!$('#conTexto').checked && !COMERCIALES.has(tipo.id) && doc.lineas.length > 3000) doc.lineas = doc.lineas.filter(l => l.pagina <= 60);
         docs.push({ archivo: a.nombre, paginas: numPaginas, conOcr, sinLeer, tipo, confianza, datos, doc, idioma: meta.idioma });
         a.estado = (doc.xml ? doc.xml.valores.tipodian.replace(/ electrónica de venta$/, '') + ' · XML' : tipo.nombre) + (conOcr ? ' · OCR' : '') + (leidas < numPaginas ? ` · ${leidas} de ${numPaginas} págs.` : '');
         a.clase = 'ok';
       } catch (e) {
         if (e?.cancel) { a.estado = 'Detenido'; break; }
+        if (e?.reporteDian) { a.estado = `Reporte DIAN · ${e.reporteDian.length} documentos`; a.clase = 'ok'; reportes.push(...e.reporteDian); pintarArchivos(); continue; }
         if (e?.omitir) { a.estado = 'Omitido'; a.clase = ''; omitidos.push([a.nombre, e.omitir]); pintarArchivos(); continue; }
         console.error(a.nombre, e);
         a.estado = e?.name === 'PasswordException' ? 'Protegido con contraseña' : e?.name === 'InvalidPDFException' ? 'Archivo vacío o dañado' : e?.msg || 'No se pudo leer';
@@ -1726,9 +1778,10 @@
       return false;
     });
     pintarArchivos();
+    if (!docs.some(d => !d.error) && reportes.length) { estado('Solo se subió el reporte de la DIAN: agrega también los ZIP, XML o PDF de las facturas para cruzarlos.', 'error'); ocupado(false); return; }
     if (!docs.some(d => !d.error)) { estado(cancelado ? 'Proceso detenido.' : omitidos.length ? 'Ninguno de los archivos es una factura o documento para procesar.' : 'No se pudo leer ningún documento.', 'error'); ocupado(false); return; }
-    mostrar(construirLibro(docs, pedido, omitidos));
-    estado(cancelado ? `Proceso detenido: se incluyen los ${docs.length} documentos leídos.` : 'Listo. Revisa las hojas y descarga el Excel.', cancelado ? '' : 'ok');
+    mostrar(construirLibro(docs, pedido, omitidos, reportes));
+    estado(cancelado ? `Proceso detenido: se incluyen los ${docs.length} documentos leídos.` : 'Listo. Revisa las hojas (doble clic en una celda para corregirla) y descarga el Excel.', cancelado ? '' : 'ok');
     ocupado(false);
   };
   $('#detener').onclick = () => { cancelado = true; estado('Deteniendo…'); };
@@ -1756,7 +1809,7 @@
     const filas = lista.map(d => {
       const vals = claves.map(k => d.datos[k] ?? '');
       const noAplica = k => (['concepto', 'categoria'].includes(k) && !COMERCIALES.has(d.tipo.id)) || (k === 'temas' && COMERCIALES.has(d.tipo.id)) ||
-        (d.tipo.id === 'plano' && d.doc._rotulo && (k === 'emisor' || ['numproyecto', 'revision', 'dibujo', 'diseno', 'reviso', 'aprobo', 'observaciones', 'escala'].includes(k) && !d.doc._rotulo.presentes.has(k)));   // el rótulo no tiene ese recuadro; la empresa suele ir como logo   // el rótulo no tiene ese recuadro
+        (d.tipo.id === 'plano' && d.doc._rotulo && (k === 'emisor' || ['numproyecto', 'revision', 'dibujo', 'diseno', 'reviso', 'aprobo', 'observaciones', 'escala'].includes(k) && !d.doc._rotulo.presentes.has(k)));   // el rótulo no tiene ese recuadro; la empresa suele ir como logo
       const f = etiquetas.filter((_, j) => (vals[j] === '' || vals[j] === null) && !noAplica(claves[j]));
       if (d.confianza === 'baja') f.unshift('tipo de documento');
       if (d.sinLeer) f.push(`${d.sinLeer} páginas escaneadas sin leer`);
@@ -1838,7 +1891,34 @@
     return { hojas: [libroH, terceroH, ...(filasI.length ? [impH] : [])], frase };
   }
 
-  function construirLibro(docs, pedido, omitidos = []) {
+  // Cruce con el reporte de la DIAN: qué está en ambos, qué falta y qué sobra
+  function cruceDian(ok, reportes) {
+    const clave = x => String(x || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const nitK = n => String(n || '').split('-')[0].replace(/\D/g, '');
+    const val = (d, k) => d.datos[k] ?? d.datos['_' + k] ?? (d.datos['_' + k] = extraerCampo(d.doc, k, d.tipo, d.datos, d.doc.meta || {}));
+    const mios = ok.filter(d => COMERCIALES.has(d.tipo.id)).map(d => ({ d, cufe: String(val(d, 'cufe') || '').toLowerCase(), num: clave(val(d, 'numero')), nit: nitK(val(d, 'nit')), total: val(d, 'total'), usado: false }));
+    const filas = [];
+    for (const r of reportes) {
+      const m = mios.find(x => !x.usado && r.cufe && x.cufe === r.cufe) || mios.find(x => !x.usado && x.num && x.num === clave(r.numero) && (!r.nit || !x.nit || x.nit === nitK(r.nit)));
+      let estadoTxt = 'Falta: no subiste esta factura', dif = '';
+      if (m) {
+        m.usado = true;
+        dif = typeof m.total === 'number' && typeof r.total === 'number' ? Math.round((m.total - r.total) * 100) / 100 : '';
+        estadoTxt = dif && Math.abs(dif) > 1 ? 'Total distinto al de la DIAN' : 'Cuadra';
+      }
+      filas.push([estadoTxt, r.tipo, r.numero, r.fecha, r.nit, r.emisor, r.total ?? '', m && typeof m.total === 'number' ? m.total : '', dif, r.cufe, m ? m.d.archivo : '']);
+    }
+    for (const x of mios.filter(x => !x.usado)) filas.push(['No aparece en el reporte de la DIAN', x.d.tipo.nombre, val(x.d, 'numero') || '', val(x.d, 'fecha') || '', val(x.d, 'nit') || '', val(x.d, 'emisor') || '', '', typeof x.total === 'number' ? x.total : '', '', x.cufe, x.d.archivo]);
+    const orden = e => e === 'Cuadra' ? 2 : e.startsWith('Total') ? 1 : 0;
+    filas.sort((a, b) => orden(a[0]) - orden(b[0]));
+    const n = e => filas.filter(f => f[0] === e).length;
+    const cuadran = n('Cuadra'), faltan = n('Falta: no subiste esta factura'), sobran = n('No aparece en el reporte de la DIAN'), distintos = n('Total distinto al de la DIAN');
+    const frase = `Cruce con la DIAN: ${cuadran} de ${reportes.length} documentos del reporte cuadran` + (faltan ? `; falta${faltan === 1 ? '' : 'n'} ${faltan} por subir` : '') + (distintos ? `; ${distintos} con total distinto` : '') + (sobran ? `; ${sobran} archivo${sobran === 1 ? '' : 's'} no aparece${sobran === 1 ? '' : 'n'} en el reporte` : '') + '.';
+    return { frase, hoja: { nombre: 'Cruce con DIAN', columnas: ['Estado', 'Tipo', 'Número', 'Fecha', 'NIT emisor', 'Emisor', 'Total DIAN', 'Total en tu archivo', 'Diferencia', 'CUFE / CUDE', 'Archivo'],
+      tipos: ['texto', 'texto', 'codigo', 'fecha', 'nit', 'texto', 'dinero', 'dinero', 'dinero', 'codigo', 'texto'], filas, nTotales: 0 } };
+  }
+
+  function construirLibro(docs, pedido, omitidos = [], reportes = []) {
     const ok = docs.filter(d => !d.error), errores = docs.filter(d => d.error);
     const hojas = [];
     const grupos = [...TIPOS, OTRO].map(t => ({ t, docs: ok.filter(d => d.tipo === t) })).filter(g => g.docs.length);
@@ -1897,7 +1977,10 @@
       if (t) for (const x of String(t).split(', ')) { const k = norm(x); (temasLote[k] ??= { forma: x, n: 0 }).n++; }
     }
     const nNoCom = ok.filter(d => !COMERCIALES.has(d.tipo.id) && d.tipo.id !== 'plano').length;
-    const planos = ok.filter(d => d.tipo.id === 'plano').map(d => { const r = d.doc._rotulo || {}; const t = d.datos.titulo ?? d.datos._titulo ?? r.titulo; return (r.plano || d.archivo.replace(/\.[^.]+$/, '')) + (t ? ` (${t})` : ''); });
+    const planos = ok.filter(d => d.tipo.id === 'plano').map(d => {
+      if (d.doc.laminas?.length > 1) return `${d.archivo.replace(/\.[^.]+$/, '')} (juego de ${d.doc.laminas.length} láminas)`;
+      const r = d.doc._rotulo || {}; const t = d.datos.titulo ?? d.datos._titulo ?? r.titulo; return (r.plano || d.archivo.replace(/\.[^.]+$/, '')) + (t ? ` (${t})` : '');
+    });
     const temasPorDoc = ok.filter(d => !COMERCIALES.has(d.tipo.id) && d.tipo.id !== 'plano' && (d.datos.temas ?? d.datos._temas)).map(d => [d.archivo, d.tipo.nombre, d.datos.temas ?? d.datos._temas]);
     const repetidos = Object.values(temasLote).filter(x => x.n >= 2).sort((a, b) => b.n - a.n);
     const temasComunes = Object.values(temasLote).filter(x => x.n >= 2 || nNoCom === 1).sort((a, b) => b.n - a.n).slice(0, 8);
@@ -1931,7 +2014,16 @@
       ...(omitidos.length ? [[], ['Archivos omitidos'], ...omitidos] : [])];
     const contables = (MODO === 'contadores' || ok.some(d => d.doc.xml)) ? hojasContables(ok) : null;
     if (contables) { resumen.pie.splice(2, 0, ['Contabilidad', contables.frase]); texto = contables.frase + ' ' + texto; }
-    hojas.push(resumen, ...(contables ? contables.hojas : []), ...hojasDatos);
+    const cruce = reportes.length ? cruceDian(ok, reportes) : null;
+    if (cruce) { resumen.pie.splice(2, 0, ['Cruce con la DIAN', cruce.frase]); texto = cruce.frase + ' ' + texto; }
+    hojas.push(resumen, ...(cruce ? [cruce.hoja] : []), ...(contables ? contables.hojas : []), ...hojasDatos);
+    const conPlanos = ok.filter(d => d.tipo.id === 'plano');
+    if (conPlanos.some(d => d.doc.laminas?.length > 1)) {
+      const cols = ['Archivo', 'Hoja', 'Número de plano', 'Título', 'Proyecto', 'Escala', 'Fecha', 'Revisión', 'Dibujó', 'Diseñó', 'Revisó', 'Aprobó', 'Observaciones'];
+      const filas = conPlanos.flatMap(d => (d.doc.laminas?.length ? d.doc.laminas : [{ pagina: 1, r: d.doc._rotulo || {} }]).map(({ pagina, r }) =>
+        [d.archivo, pagina, r.plano || '', r.titulo || '', r.proyecto || '', r.escala || '', r.fecha ? (fechaDe(r.fecha) || r.fecha) : '', r.revision || '', r.dibujo || '', r.diseno || '', r.reviso || '', r.aprobo || '', r.observaciones || '']));
+      hojas.splice(1 + (cruce ? 1 : 0) + (contables ? contables.hojas.length : 0), 0, { nombre: 'Listado de planos', columnas: cols, tipos: ['texto', 'numero', 'codigo', 'texto', 'texto', 'texto', 'fecha', 'codigo', 'texto', 'texto', 'texto', 'texto', 'largo'], filas, nTotales: 0 });
+    }
 
     // --- Tablas: ítems de documentos comerciales (columnas unificadas) y tablas de los demás (una debajo de otra) ---
     if ($('#conItems').checked) {
@@ -2020,7 +2112,9 @@
     const celda = (v, i, j) => {
       v = valorCelda(v);
       const falta = iRev >= 0 && (v === '' || v == null) && j > 2 && j < iRev - 1 && i < n - nt;
-      return `<td class="${typeof v === 'number' ? 'num' : ''}${falta ? ' falta' : ''}" title="${esc(v ?? '')}">${esc(typeof v === 'number' ? fmtNum(v) : v ?? '')}</td>`;
+      const editable = !esEjemplo && i < n - nt && h.nombre !== 'Tablas';
+      const editada = h.editadas?.has(i + ',' + j);
+      return `<td class="${typeof v === 'number' ? 'num' : ''}${falta ? ' falta' : ''}${editada ? ' editada' : ''}"${editable ? ` data-i="${i}" data-j="${j}"` : ''} title="${esc(v ?? '')}${editable ? ' — doble clic para corregir' : ''}">${esc(typeof v === 'number' ? fmtNum(v) : v ?? '')}</td>`;
     };
     // Como en Excel: letras de columna arriba y los encabezados en la fila 1 (los números coinciden con el archivo descargado)
     $('#tablaCaja').innerHTML = `<table><thead><tr><th class="fila"></th>${cols.map((_, j) => `<th>${colLetra(j)}</th>`).join('')}</tr></thead><tbody><tr class="cab"><th class="fila">1</th>${cols.map(c => `<td title="${esc(c)}">${esc(c)}</td>`).join('')}</tr>${
@@ -2030,6 +2124,51 @@
     $('#pestanas').innerHTML = libro.hojas.map((x, i) =>
       `<button role="tab" aria-selected="${i === hojaActiva}" data-i="${i}">${esc(x.nombre)} · ${x.nombre === 'Tablas' ? x.filas.filter(f => f.length === 1).length : x.filas.length - (x.nTotales || 0)}</button>`).join('');
   }
+  // Corregir una celda en la vista previa: el cambio va al Excel y los totales se recalculan
+  function recalcularTotales(h) {
+    const nt = h.nTotales || 0; if (!nt) return;
+    const datos = h.filas.slice(0, h.filas.length - nt), iMon = h.columnas.indexOf('Moneda');
+    for (const fila of h.filas.slice(-nt)) fila.forEach((c, j) => {
+      if (!c || typeof c !== 'object' || !('v' in c)) return;
+      const m = String(fila.find(x => typeof x === 'string' && /^TOTAL/.test(x)) || '').replace(/^TOTAL\s*/, '');
+      c.v = Math.round(datos.reduce((t, f) => t + ((!/^SUMIF/.test(c.f || '') || f[iMon] === m) && typeof f[j] === 'number' ? f[j] : 0), 0) * 100) / 100;
+    });
+  }
+  function editarCelda(td) {
+    if (td.isContentEditable) return;
+    const h = libro.hojas[hojaActiva], i = +td.dataset.i, j = +td.dataset.j;
+    const antes = valorCelda(h.filas[i][j]);
+    td.contentEditable = 'true'; td.classList.add('editando');
+    td.textContent = antes ?? '';
+    td.focus(); getSelection().selectAllChildren(td);
+    let listo = false;
+    const terminar = guardar => {
+      if (listo) return; listo = true;
+      td.contentEditable = 'false';
+      if (guardar) {
+        const txt = td.textContent.trim();
+        const tipo = h.tipos?.[j];
+        let v = txt;
+        if (txt === '') v = '';
+        else if (tipo === 'dinero' || tipo === 'numero' || typeof antes === 'number') { const d = dineroDe(txt); v = typeof d === 'number' ? d : txt; }
+        if (String(v) !== String(antes ?? '')) {
+          h.filas[i][j] = v;
+          (h.editadas ??= new Set()).add(i + ',' + j);
+          // Si el dato faltaba, deja de estar "por revisar"
+          const iRev = h.columnas.indexOf('Por revisar');
+          if (iRev >= 0 && v !== '' && typeof h.filas[i][iRev] === 'string') h.filas[i][iRev] = h.filas[i][iRev].split(', ').filter(x => norm(x) !== norm(h.columnas[j])).join(', ');
+          recalcularTotales(h);
+          estado('Corrección guardada: se incluye en el Excel que descargues.', 'ok');
+        }
+      }
+      pintar();
+    };
+    td.addEventListener('blur', () => terminar(true), { once: true });
+    td.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); terminar(true); } else if (e.key === 'Escape') terminar(false); });
+  }
+  $('#tablaCaja').addEventListener('dblclick', e => { const td = e.target.closest('td[data-i]'); if (td) editarCelda(td); });
+  $('#tablaCaja').addEventListener('keydown', e => { const td = e.target.closest('td[data-i]'); if (td && !td.isContentEditable && (e.key === 'Enter' || e.key === 'F2')) { e.preventDefault(); editarCelda(td); } });
+
   $('#pestanas').onclick = e => { const b = e.target.closest('button'); if (b) { hojaActiva = +b.dataset.i; pintar(); } };
 
   // =====================================================================
@@ -2055,6 +2194,16 @@
     const nombre = archivos.length === 1 ? archivos[0].nombre.replace(/\.pdf$/i, '') : `documentos-${new Date().toISOString().slice(0, 10)}`;
     XLSX.writeFile(wb, nombre.replace(/[\\/:*?"<>|]/g, '').trim() + '.xlsx');
   };
+  $('#csv').onclick = () => {
+    const h = libro.hojas[hojaActiva];
+    // Separado por ";" y con coma decimal, como lo abre Excel en español; con BOM para las tildes
+    const celda = v => { v = valorCelda(v); if (typeof v === 'number') return String(v).replace('.', ','); v = String(v ?? ''); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    const csv = '\uFEFF' + [h.columnas, ...h.filas].map(f => f.map(celda).join(';')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = `${h.nombre}.csv`.replace(/[\\/:*?"<>|]/g, '');
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
   $('#copiar').onclick = async () => {
     const h = libro.hojas[hojaActiva];
     const tsv = [h.columnas, ...h.filas].map(f => f.map(v => String(valorCelda(v) ?? '').replace(/[\t\n]/g, ' ')).join('\t')).join('\n');
@@ -2063,5 +2212,11 @@
   };
 
   if (/[?&]debug\b/.test(location.search)) window.__motor = { leerImagen, leerWord, analizar, armarLineas, porColumnas, piezasTexto, tituloInfo, autorDoc, emisorDoc, institucionDoc, clasificar, buscarCon, CAMPOS, TIPOS, dineroDe, fechaDe };
+  // App instalable: funciona sin internet después de la primera visita
+  if ('serviceWorker' in navigator && /^(https:|http:\/\/localhost)/.test(location.href)) navigator.serviceWorker.register('/sw.js').catch(() => { });
+  let pedirInstalar = null;
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); pedirInstalar = e; const b = $('#instalar'); if (b) b.hidden = false; });
+  $('#instalar')?.addEventListener('click', async () => { if (!pedirInstalar) return; pedirInstalar.prompt(); await pedirInstalar.userChoice; pedirInstalar = null; $('#instalar').hidden = true; });
+  addEventListener('appinstalled', () => { const b = $('#instalar'); if (b) b.hidden = true; });
   libro = MODO === 'contadores' ? EJEMPLO_CONTADORES : EJEMPLO; hojaActiva = 0; pintar(); ocupado(false);
 })();
