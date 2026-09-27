@@ -227,3 +227,9 @@ tr.relleno td{height:30px}
 .archivo-zip.xml{border-color:var(--libro);color:var(--tinta)}
 .archivo-zip.xml .ext{background:var(--libro)}
 .archivo-zip.xml i{color:var(--libro);font-weight:600}
+td[data-i]{cursor:cell}
+td.editando{outline:2px solid var(--sello);outline-offset:-2px;background:#fff!important;white-space:pre;text-overflow:clip}
+td.editada{box-shadow:inset 0 -2px 0 var(--sello);color:var(--sello)}
+.instalar{align-self:center;margin-left:auto;margin-bottom:6px;border:1.5px solid var(--sello);color:var(--sello);background:var(--hoja);border-radius:99px;padding:4px 12px;font-size:.8rem;font-weight:600;cursor:pointer}
+.instalar:hover{background:var(--sello);color:#fff}
+.instalar:not([hidden])+.secciones{margin-left:0}
