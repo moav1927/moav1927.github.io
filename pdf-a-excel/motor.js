@@ -1695,6 +1695,10 @@
         datos.resumen = resumenDoc(doc, tipo, { numero: b('numero'), fecha: b('fecha'), emisor: b('emisor'), cliente: b('cliente'), total: b('total'), moneda: b('moneda'), titulo: b('titulo'), concepto: b('concepto') });
         // En la página de contadores, "$" en una factura colombiana (con NIT) es COP
         if (MODO === 'contadores' && !doc.xml && meta.idioma !== 'Inglés') for (const k of ['moneda', '_moneda']) if (datos[k] === '$' && (meta.idioma === 'Español' || doc.lineas.slice(0, 80).some(l => /\b(nit|cufe|dian)\b/.test(l.textoN)))) datos[k] = 'COP';
+        // Con 100 o más documentos la memoria cuenta: se suelta lo que ya no se usa
+        if (tipo.id === 'plano') rotuloDoc(doc);
+        delete doc.piezas1;
+        if (!$('#conTexto').checked && !COMERCIALES.has(tipo.id) && doc.lineas.length > 3000) doc.lineas = doc.lineas.filter(l => l.pagina <= 60);
         docs.push({ archivo: a.nombre, paginas: numPaginas, conOcr, sinLeer, tipo, confianza, datos, doc, idioma: meta.idioma });
         a.estado = (doc.xml ? doc.xml.valores.tipodian.replace(/ electrónica de venta$/, '') + ' · XML' : tipo.nombre) + (conOcr ? ' · OCR' : '') + (leidas < numPaginas ? ` · ${leidas} de ${numPaginas} págs.` : '');
         a.clase = 'ok';
