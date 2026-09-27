@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SheetClerk · PDF zu Excel: Ihre Dokumente sauber übertragen</title>
+<meta name="description" content="Kostenloser PDF-Datenextraktor: Rechnungen, Lieferscheine, Pläne, Berichte oder Fotos hochladen und eine geordnete Excel-Datei mit Zusammenfassung und Summen herunterladen. Ohne Konto, Ihre Dateien bleiben auf Ihrem Gerät.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' data: blob:; img-src 'self' data: blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#2d5f4a">
+<script src="/pdf-a-excel/lang.js?v=21"></script>
+<link rel="icon" href="/pdf-a-excel/marca/icono.svg" type="image/svg+xml">
+<link rel="icon" href="/pdf-a-excel/marca/icono-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/pdf-a-excel/marca/icono-180.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="canonical" href="https://moav1927.github.io/de/">
+<link rel="alternate" hreflang="es" href="https://moav1927.github.io/pdf-a-excel/">
+<link rel="alternate" hreflang="en" href="https://moav1927.github.io/en/">
+<link rel="alternate" hreflang="pt" href="https://moav1927.github.io/pt/">
+<link rel="alternate" hreflang="fr" href="https://moav1927.github.io/fr/">
+<link rel="alternate" hreflang="de" href="https://moav1927.github.io/de/">
+<link rel="alternate" hreflang="it" href="https://moav1927.github.io/it/">
+<link rel="alternate" hreflang="x-default" href="https://moav1927.github.io/en/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SheetClerk">
+<meta property="og:locale" content="de_DE">
+<meta property="og:title" content="SheetClerk · PDF zu Excel: Ihre Dokumente sauber übertragen">
+<meta property="og:description" content="Kostenloser PDF-Datenextraktor: Rechnungen, Lieferscheine, Pläne, Berichte oder Fotos hochladen und eine geordnete Excel-Datei mit Zusammenfassung und Summen herunterladen. Ohne Konto, Ihre Dateien bleiben auf Ihrem Gerät.">
+<meta property="og:image" content="https://moav1927.github.io/pdf-a-excel/marca/compartir.png">
+<meta property="og:url" content="https://moav1927.github.io/de/">
+<meta name="twitter:card" content="summary_large_image">
+<!--
+  SheetClerk (PDF a Excel) — funciona 100 % en el navegador; los archivos nunca salen del equipo.
+  Página generada desde una plantilla (idioma: de). Motor: /pdf-a-excel/motor.js · estilos: /pdf-a-excel/estilo.css
+  · textos del motor: /pdf-a-excel/i18n.js. Librerías y fuentes incluidas en /pdf-a-excel/lib (ver LICENSE).
+-->
+<link rel="preload" href="/pdf-a-excel/lib/fuentes/zilla-slab-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/pdf-a-excel/estilo.css?v=21">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="tinta"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7" result="r"/><feDisplacementMap in="SourceGraphic" in2="r" scale="2.4"/></filter></svg>
+<div class="envoltura">
+  <div class="barra">
+    <a class="marca" href="/de/" aria-label="SheetClerk, Startseite"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"> <rect width="64" height="64" rx="14" fill="#2d5f4a"/> <path d="M15 10h22l12 12v32H15z" fill="#fbfcf8"/> <path d="M37 10v12h12z" fill="#c9dccf"/> <path d="M20 18h12M20 23.5h9" stroke="#9db5a7" stroke-width="3" stroke-linecap="round"/> <path d="M15 31h34M15 42.5h34M26.5 31v23M38 31v23" stroke="#2d5f4a" stroke-width="2.4"/> <rect x="26.5" y="42.5" width="11.5" height="11.5" fill="#a57a26"/> <circle cx="48" cy="48" r="11" fill="#5b3e8f" stroke="#fbfcf8" stroke-width="3"/> <path d="M42.8 48.3l3.6 3.6 6.8-7.4" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/> </svg><span>SheetClerk<small>PDF zu Excel</small></span></a>
+    <button class="instalar" id="instalar" hidden>SheetClerk installieren</button>
+    <details class="idiomas"><summary aria-label="Sprache"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 12h19M12 2.5c3 3.2 3 15.8 0 19M12 2.5c-3 3.2-3 15.8 0 19" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>DE</summary><ul><li><a href="/pdf-a-excel/" hreflang="es" lang="es" data-lang="es">Español</a></li><li><a href="/en/" hreflang="en" lang="en" data-lang="en">English</a></li><li><a href="/pt/" hreflang="pt" lang="pt" data-lang="pt">Português</a></li><li><a href="/fr/" hreflang="fr" lang="fr" data-lang="fr">Français</a></li><li><a href="/de/" hreflang="de" lang="de" data-lang="de" aria-current="page">Deutsch</a></li><li><a href="/it/" hreflang="it" lang="it" data-lang="it">Italiano</a></li></ul></details>
+    
+  </div>
+  <header>
+    <div class="texto">
+      <h1>Ihre Dokumente, <em>sauber übertragen</em> in Excel.</h1>
+      <p>Legen Sie Ihren Stapel Rechnungen, Lieferscheine, Pläne oder Berichte ab und erhalten Sie eine geordnete Excel-Datei mit Zusammenfassung und Summen. Kostenlos, ohne Konto, und Ihre Dateien verlassen nie Ihren Computer.</p>
+      <a class="que-es" href="#que-es">Was ist ein Datenextraktor und wofür ist er gut?</a>
+    </div>
+    <div class="sello" aria-label="Verarbeitet: auf Ihrem Gerät · ohne Konto"><b>Verarbeitet</b><span class="fecha-sello">&nbsp;</span><small>auf Ihrem Gerät · ohne Konto</small></div>
+  </header>
+
+  <main class="mesa">
+    <div class="pasos">
+      <section class="paso" aria-labelledby="p1">
+        <span class="pestana" aria-hidden="true">Schritt 1</span>
+        <h2 id="p1">Dokumente hinzufügen</h2>
+        <label class="soltar" id="zona" for="entrada">
+          <b>Stapel hier ablegen</b>
+          <span class="sub">oder klicken, um Dateien auszuwählen. 100 oder mehr auf einmal sind möglich.</span>
+          <span class="formatos"><span class="dest">PDF</span><span>Fotos</span><span>Word</span><span>Excel</span><span>ZIP / XML</span></span>
+          <input type="file" id="entrada" accept="application/pdf,.pdf,.zip,.xml,.xlsx,.xlsm,.xls,.ods,.csv,.docx,image/*,.png,.jpg,.jpeg,.webp,.bmp,.gif" multiple hidden>
+        </label>
+        <ul class="archivos" id="archivos" aria-label="Hochgeladene Dateien"></ul>
+        <button class="enlace" id="limpiar" hidden>Alle Dateien entfernen</button>
+      </section>
+
+      <section class="paso" aria-labelledby="p2">
+        <span class="pestana" aria-hidden="true">Schritt 2</span>
+        <h2 id="p2">Welche Daten brauchen Sie?</h2>
+        <div class="presets" id="presets" aria-label="Vorschläge">
+          <button type="button" data-v="" aria-pressed="true">Automatisch</button>
+          <button type="button" data-v="rechnungsnummer, datum, lieferant, steuernummer, kunde, gegenstand, kategorie, zwischensumme, mwst, einbehalt, gesamt, währung" aria-pressed="false">Rechnungen</button>
+          <button type="button" data-v="nummer, datum, kunde, adresse, stadt, spediteur, kennzeichen" aria-pressed="false">Lieferscheine</button>
+          <button type="button" data-v="titel, autor, institution, datum, seiten, themen, zusammenfassung" aria-pressed="false">Berichte und Arbeiten</button>
+          <button type="button" data-v="plannummer, titel, projekt, maßstab, datum, revision, gezeichnet, geprüft, freigegeben, bemerkungen" aria-pressed="false">Pläne</button>
+        </div>
+        <textarea id="pedido" aria-labelledby="p2" aria-describedby="ayudaPedido" placeholder="z. B.: rechnungsnummer, datum, lieferant, gesamt"></textarea>
+        <p class="campo-ayuda" id="ayudaPedido">Durch Kommas getrennt eingeben oder fragen: „Wofür sind die Rechnungen?“. Leer lassen, dann werden die Felder nach Dokumenttyp gewählt.</p>
+      </section>
+
+      <section class="paso" aria-labelledby="p3">
+        <span class="pestana" aria-hidden="true">Schritt 3</span>
+        <h2 id="p3">In Excel übertragen</h2>
+        <div class="botones">
+          <button class="btn grande" id="convertir" disabled>In Excel übertragen</button>
+          <button class="btn sec" id="detener" hidden>Anhalten</button>
+        </div>
+        <progress id="progreso" max="1" value="0" hidden></progress>
+        <div class="estado" id="estado" role="status" aria-live="polite"></div>
+        <p class="aviso-equipo" id="avisoEquipo" hidden>Ihr Gerät hat wenig Arbeitsspeicher oder einen einfachen Prozessor: PDFs mit Text, Word und Excel laufen normal, Fotos und Scans können aber etwa 1 Minute pro Seite dauern. Es wird ein leichterer Modus verwendet; schließen Sie andere Tabs, damit es schneller geht.</p>
+        <details class="opciones">
+          <summary>Weitere Optionen</summary>
+          <label class="opcion" for="conItems"><input type="checkbox" id="conItems" checked>
+            <span>Tabellen der Dokumente einbeziehen (Rechnungspositionen und Berichtstabellen).</span></label>
+          <label class="opcion" for="conTexto"><input type="checkbox" id="conTexto">
+            <span>Ein Blatt mit dem gesamten Text Zeile für Zeile einbeziehen.</span></label>
+          <label class="opcion" for="forzarOcr"><input type="checkbox" id="forzarOcr">
+            <span>Alles als Scan lesen (OCR). Langsam: nur verwenden, wenn der Text falsch herauskommt.</span></label>
+        </details>
+      </section>
+    </div>
+
+    <section class="libro" aria-label="Excel-Vorschau">
+      <div class="libro-cab">
+        <div class="nombre"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="1" width="20" height="20" rx="4" fill="#ffffff"/><path d="M1 8h20M1 14h20M8 8v13M15 8v13" stroke="#2d5f4a" stroke-width="1.4"/><rect x="1" y="1" width="20" height="7" rx="4" fill="#a57a26"/><rect x="1" y="5" width="20" height="3" fill="#a57a26"/></svg><h2 id="titulo"></h2></div>
+        <div class="botones">
+          <button class="btn sec" id="copiar">Blatt kopieren</button>
+          <button class="btn sec" id="csv" disabled title="Lädt nur das angezeigte Blatt als CSV herunter">CSV</button>
+          <button class="btn claro" id="descargar" disabled>Excel herunterladen</button>
+        </div>
+      </div>
+      <div class="barra-fx"><span class="fx" aria-hidden="true">fx</span><p class="resumen" id="resumen"></p></div>
+      <div class="tabla-caja" id="tablaCaja"></div>
+      <div class="pestanas" id="pestanas" role="tablist" aria-label="Blätter"></div>
+      <div class="cifras" id="cifras"></div>
+      <div class="sello sello-listo" id="selloListo" aria-hidden="true"><b>Fertig</b><span class="fecha-sello">&nbsp;</span><small>sauber übertragen</small></div>
+    </section>
+  </main>
+
+  <section class="explica" id="que-es" aria-labelledby="t-que-es">
+    <div class="explica-a">
+      <div class="texto">
+        <h2 id="t-que-es">Was ist ein PDF-Datenextraktor?</h2>
+        <p>Ein Werkzeug, das <b>Ihre Dokumente liest und die wichtigen Daten in eine Tabelle überträgt</b>: Rechnungsnummer, Datum, Steuernummer, Gesamtbetrag, den Titel eines Plans oder den Autor einer Arbeit. Das, was Sie sonst von Hand machen würden, Dokument für Dokument – aber in Sekunden und ohne Tippfehler.</p>
+        <p>Ein PDF ist zum Ansehen gemacht, nicht zum Addieren oder Filtern. Bei 10, 50 oder 200 Stück dauert das Abtippen in Excel Stunden. Der Extraktor liest alle, ordnet sie ein, legt eine Zeile pro Dokument an und berechnet die Summen.</p>
+      </div>
+      <div class="diagrama" aria-label="Beispiel: von einer PDF-Rechnung zu einer Excel-Zeile">
+        <div class="papel" aria-hidden="true">
+          <span class="enc">Ferretería La Campana</span>
+          <span class="marca-dato"><span class="n">1</span><span>Rechnung FE-3021</span></span>
+          <span class="marca-dato"><span class="n">2</span><span>14/08/2026</span></span>
+          <span class="raya"></span><span class="raya corta"></span>
+          <span class="marca-dato"><span class="n">3</span><span>USt-IdNr. 811.045.678-9</span></span>
+          <span class="raya"></span><span class="raya"></span><span class="raya corta"></span>
+          <span class="marca-dato"><span class="n">4</span><span>Gesamt $ 3.164.140</span></span>
+        </div>
+        <span class="flecha" aria-hidden="true">➜</span>
+        <div class="mini-excel">
+          <div class="top">rechnungen.xlsx</div>
+          <table>
+            <thead><tr><th><span class="n">1</span> Nummer</th><th><span class="n">2</span> Datum</th><th><span class="n">3</span> USt-IdNr.</th><th><span class="n">4</span> Gesamt</th></tr></thead>
+            <tbody>
+              <tr><td>FE-3021</td><td>2026-08-14</td><td>811.045.678-9</td><td class="num">3.164.140</td></tr>
+              <tr><td>FV-0457</td><td>2026-08-20</td><td>900.555.444-1</td><td class="num">700.000</td></tr>
+              <tr class="total"><td>TOTAL</td><td></td><td></td><td class="num">3.864.140</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="usos" aria-label="Wofür ist es gut?">
+      <article class="uso">
+        <h3>Buchhaltung</h3>
+        <p>Die Einkäufe des Monats erfassen, ohne jede Rechnung abzutippen.</p>
+        <div class="ej"><span>50 Rechnungen</span><span>eine Tabelle mit Lieferant, Steuernummer, MwSt. und Summen</span></div>
+        
+      </article>
+      <article class="uso">
+        <h3>Verwaltung und Einkauf</h3>
+        <p>Die Liste der Lieferscheine, Angebote oder Rechnungen erstellen.</p>
+        <div class="ej"><span>Ein Ordner mit Lieferscheinen</span><span>Tabelle mit Daten, Kunden und Summen</span></div>
+        
+      </article>
+      <article class="uso">
+        <h3>Ingenieurwesen und Bau</h3>
+        <p>Die Planliste mit den Daten des Schriftfelds erstellen.</p>
+        <div class="ej"><span>Der Plansatz als PDF</span><span>Nummer, Titel, Maßstab, Datum und Unterschriften</span></div>
+        
+      </article>
+      <article class="uso">
+        <h3>Studium und Forschung</h3>
+        <p>Die Literatur einer Arbeit oder Forschungsgruppe ordnen.</p>
+        <div class="ej"><span>Abschlussarbeiten und Artikel</span><span>Titel, Autor, Jahr und Hauptthemen</span></div>
+        
+      </article>
+    </div>
+  </section>
+
+  <aside class="ayuda" aria-label="Hilfe">
+      <div class="tarjeta">
+        <h3>Ihre Dateien werden nicht hochgeladen</h3>
+        <p>Alles wird in Ihrem Browser gelesen. Nichts wird an einen Server gesendet, es gibt kein Konto, und beim Schließen der Seite bleibt nichts gespeichert.</p>
+      </div>
+      <details>
+        <summary>Welchen Computer brauche ich?<span class="breve">PDFs mit Text, Word, Excel und XML laufen auf fast jedem Gerät schnell. Fotos und Scans sind langsamer: ideal sind 8 GB RAM; mit 4 GB geht es auch, mit etwas Geduld.</span><span class="mas">Details ansehen</span></summary>
+        <ul>
+          <li><b>PDFs mit Text, Word, Excel und XML:</b> Sekunden auf fast jedem Gerät, auch mit 100 Dateien oder mehr.</li>
+          <li><b>Fotos und gescannte PDFs (OCR):</b> der aufwendige Teil. Mit 8 GB RAM und 4 Kernen etwa 3 bis 10 Sekunden pro Seite; mit 4 GB 30 Sekunden bis 1 Minute.</li>
+          <li><b>Minimum:</b> 4 GB RAM und aktuelles Chrome, Edge oder Firefox. Auf dem Handy geht es auch, aber langsamer.</li>
+          <li><b>Tipp:</b> andere Tabs schließen und Scans in Gruppen von 5 bis 10 hochladen.</li>
+        </ul>
+      </details>
+      <details>
+        <summary>Wie liest es die Dokumente?<span class="breve">Mit Regeln, ohne künstliche Intelligenz: Es sucht nach Bezeichnungen wie „Gesamt“, „Rechnungsnummer“ oder „Maßstab“. Was es nicht findet, erscheint gelb und in der Spalte „Zu prüfen“.</span><span class="mas">Details ansehen</span></summary>
+        <p>In der Vorschau können Sie <b>jeden Wert per Doppelklick korrigieren</b>: Die Summen werden neu berechnet und die Änderung kommt in die Excel-Datei. Es erkennt gängige Formate in mehreren Sprachen („Total:“, „Invoice No.“, „Rechnungsdatum“, „Maßstab“, „Drawn by“…). Fotos und Scans werden per OCR gelesen: Beim ersten Mal werden etwa 6 MB heruntergeladen und im Browser gespeichert.</p>
+      </details>
+  </aside>
+  <footer class="pie"><span>SheetClerk · von PDF zu Excel, gemacht in Kolumbien und kostenlos für alle.</span><span>Ihre Dateien werden auf Ihrem Gerät gelesen und nirgends gespeichert.</span></footer>
+</div>
+
+<script src="/pdf-a-excel/lib/pdf.min.js"></script>
+<script src="/pdf-a-excel/lib/xlsx.full.min.js"></script>
+<script src="/pdf-a-excel/lib/tesseract.min.js"></script>
+<script src="/pdf-a-excel/i18n.js?v=21"></script>
+<script src="/pdf-a-excel/motor.js?v=21"></script>
+</body>
+</html>

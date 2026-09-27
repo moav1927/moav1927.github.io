@@ -233,3 +233,15 @@ td.editada{box-shadow:inset 0 -2px 0 var(--sello);color:var(--sello)}
 .instalar{align-self:center;margin-left:auto;margin-bottom:6px;border:1.5px solid var(--sello);color:var(--sello);background:var(--hoja);border-radius:99px;padding:4px 12px;font-size:.8rem;font-weight:600;cursor:pointer}
 .instalar:hover{background:var(--sello);color:#fff}
 .instalar:not([hidden])+.secciones{margin-left:0}
+/* Selector de idioma */
+.idiomas{position:relative;align-self:center;margin-bottom:6px}
+.idiomas summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:.8rem;font-weight:600;color:var(--tinta-2);border:1px solid var(--linea);border-radius:99px;padding:3px 10px;background:var(--hoja)}
+.idiomas summary::-webkit-details-marker{display:none}
+.idiomas summary:hover{border-color:var(--sello);color:var(--sello)}
+.idiomas ul{position:absolute;right:0;top:calc(100% + 6px);z-index:20;list-style:none;margin:0;padding:6px;min-width:150px;background:var(--hoja);border:1px solid var(--linea);border-radius:10px;box-shadow:var(--sombra)}
+.idiomas a{display:block;padding:6px 10px;border-radius:6px;color:var(--tinta);text-decoration:none;font-size:.88rem}
+.idiomas a:hover{background:var(--papel)}
+.idiomas a[aria-current="page"]{font-weight:600;color:var(--sello)}
+.barra .idiomas{margin-left:auto}
+.barra .idiomas+.secciones{margin-left:0}
+.instalar:not([hidden])~.idiomas{margin-left:8px}
