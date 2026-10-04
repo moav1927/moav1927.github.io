@@ -1579,34 +1579,128 @@
   }
 
   // Hojas de cálculo: cada hoja visible es una "página"; cada fila, una línea; cada celda, una celda con su posición
-  // Listado de documentos descargado del portal de la DIAN: tiene columnas de CUFE, folio/prefijo y emisor
+  // Listado de documentos descargado del portal de la DIAN: tiene columnas de CUFE, folio/prefijo y emisor.
+  // También el «Informe de facturas electrónicas adquiridas» (renta): encabezado tras ~25 filas de datos del informe
   function reporteDian(wb) {
     const filas = [];
     for (const nombre of wb.SheetNames) {
       const aoa = XLSX.utils.sheet_to_json(wb.Sheets[nombre], { header: 1, defval: '', raw: true });
-      const h = aoa.slice(0, 15).findIndex(f => f.some(c => /\b(cufe|cude)\b/.test(norm(c))) && f.some(c => /folio|prefijo|emisor/.test(norm(c))));
+      const h = aoa.slice(0, 60).findIndex(f => f.some(c => /\b(cufe|cude)\b/.test(norm(c))) && f.some(c => /folio|prefijo|emisor|num_?factura/.test(norm(c))));
       if (h < 0) continue;
       const cab = aoa[h].map(c => norm(c));
       const col = re => cab.findIndex(c => re.test(c));
-      const c = { cufe: col(/\b(cufe|cude)\b/), folio: col(/^folio$|^numero( de)? (documento|factura)$|^numero$/), prefijo: col(/prefijo/), nit: col(/^nit (del )?emisor|identificacion (del )?emisor/), emisor: col(/^nombre (del )?emisor|razon social (del )?emisor|^emisor$/),
-        nitr: col(/^nit (del )?receptor|identificacion (del )?(receptor|adquiriente)/), receptor: col(/^nombre (del )?receptor|nombre (del )?adquiriente/), fecha: col(/fecha (de )?emision|^fecha$/), total: col(/^total$|^valor total|^total factura/), tipo: col(/^tipo (de )?documento$|^tipo$/), iva: col(/^iva$/) };
+      const c = { cufe: col(/\b(cufe|cude)\b/), folio: col(/^folio$|^numero( de)? (documento|factura)$|^numero$|^num_?factura|^numero (de )?factura (de )?venta/), prefijo: col(/prefijo/), nit: col(/^nit (del )?emisor|identificacion (del )?emisor/), emisor: col(/^nombre (del )?emisor|razon social (del )?emisor|^emisor$/),
+        nitr: col(/^nit (del )?receptor|identificacion (del )?(receptor|adquiriente)/), receptor: col(/^nombre (del )?receptor|nombre (del )?adquiriente/), fecha: col(/fecha (de )?emision|^fecha$/), total: col(/^total$|^valor total|^total factura|^valor facturado$/), tipo: col(/^tipo (de )?documento$|^tipo$/), iva: col(/^iva$/),
+        nc: col(/^valor (de )?notas? credito/), nd: col(/^valor (de )?notas? debito/), afectado: col(/^valor factura.*afectada|^valor neto/), beneficio: col(/susceptible|beneficio/), pago: col(/medios? de pago|forma de pago/) };
       const v = (f, k) => c[k] >= 0 ? f[c[k]] : '';
       const dinero = x => typeof x === 'number' ? x : (dineroDe(String(x)) ?? null);
       for (const f of aoa.slice(h + 1)) {
         if (!f.some(x => x !== '')) continue;
-        const folio = String(v(f, 'folio')).trim(), pref = String(v(f, 'prefijo')).trim();
+        const folio = String(v(f, 'folio')).trim(), pref = String(v(f, 'prefijo')).trim(), cufe = String(v(f, 'cufe')).trim().toLowerCase();
+        if (!folio && !cufe) continue;   // filas de pie («120 Facturas procesadas…»)
         const fecha = v(f, 'fecha');
-        filas.push({ cufe: String(v(f, 'cufe')).trim().toLowerCase(), numero: pref && !folio.startsWith(pref) ? pref + folio : folio, nit: String(v(f, 'nit')).trim(), emisor: String(v(f, 'emisor')).trim(),
+        filas.push({ cufe, numero: pref && !folio.startsWith(pref) ? pref + folio : folio, nit: String(v(f, 'nit')).trim(), emisor: String(v(f, 'emisor')).replace(/\s+/g, ' ').trim(),
           nitr: String(v(f, 'nitr')).trim(), receptor: String(v(f, 'receptor')).trim(), fecha: typeof fecha === 'number' ? XLSX.SSF.format('yyyy-mm-dd', fecha) : (fechaDe(String(fecha)) || String(fecha)),
-          total: dinero(v(f, 'total')), iva: dinero(v(f, 'iva')), tipo: String(v(f, 'tipo')).trim() });
+          total: dinero(v(f, 'total')), iva: dinero(v(f, 'iva')), tipo: String(v(f, 'tipo')).trim(),
+          nc: dinero(v(f, 'nc')), nd: dinero(v(f, 'nd')), afectado: dinero(v(f, 'afectado')), beneficio: dinero(v(f, 'beneficio')), pago: String(v(f, 'pago')).trim() });
       }
     }
     return filas.length ? filas : null;
+  }
+
+  // Solo se subió el reporte de la DIAN: se organiza el reporte mismo (todas las facturas, por proveedor y totales)
+  function libroReporteDian(reportes, exogenas = [], omitidos = []) {
+    const exog = exogenas.length ? hojasExogena(exogenas) : null;
+    if (!reportes.length) return { titulo: 'Información exógena DIAN', resumen: exog.frase, cifras: [[exogenas.filter(r => !r.tope).length, 'reportes'], [exog.hojas[0].filas.length, 'renglones']],
+      hojas: [{ nombre: 'Resumen', columnas: ['Concepto', 'Valor'], tipos: ['texto', 'texto'], nTotales: 0, filas: [['Reportes de terceros', exogenas.filter(r => !r.tope).length], ['Renglones o topes', exog.hojas[0].filas.length]], pie: [[], ['Resumen', exog.frase], ...(omitidos.length ? [[], ['Archivos omitidos'], ...omitidos] : [])] }, ...exog.hojas] };
+    const hay = k => reportes.some(r => typeof r[k] === 'number' && r[k] !== 0);
+    const neto = r => r.afectado ?? (typeof r.total === 'number' ? r.total - (r.nc || 0) + (r.nd || 0) : null);
+    const extra = [['nc', 'Notas crédito'], ['nd', 'Notas débito'], ['afectado', 'Valor neto (con notas)'], ['beneficio', 'Valor susceptible de beneficio']].filter(([k]) => k === 'afectado' ? reportes.some(r => r.afectado != null) : hay(k));
+    const conPago = reportes.some(r => r.pago), conTipo = reportes.some(r => r.tipo), conIva = hay('iva');
+    const columnas = ['Fecha', ...(conTipo ? ['Tipo'] : []), 'Número', 'NIT emisor', 'Emisor', 'Valor facturado', ...(conIva ? ['IVA'] : []), ...extra.map(x => x[1]), ...(conPago ? ['Medio de pago'] : []), 'CUFE / CUDE'];
+    const tipos = ['fecha', ...(conTipo ? ['texto'] : []), 'codigo', 'nit', 'texto', 'dinero', ...(conIva ? ['dinero'] : []), ...extra.map(() => 'dinero'), ...(conPago ? ['texto'] : []), 'codigo'];
+    const orden = reportes.slice().sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+    const filas = orden.map(r => [r.fecha, ...(conTipo ? [r.tipo] : []), r.numero, r.nit, r.emisor, r.total ?? '', ...(conIva ? [r.iva ?? ''] : []), ...extra.map(([k]) => r[k] ?? ''), ...(conPago ? [r.pago] : []), r.cufe]);
+    const tot = filasTotal(columnas, filas, tipos, columnas.indexOf('Emisor'), -1);
+    const libroH = { nombre: 'Facturas DIAN', columnas, tipos, filas: [...filas, ...tot], nTotales: tot.length };
+    // Por proveedor: cuántas facturas y cuánto, de mayor a menor
+    const prov = {};
+    for (const r of reportes) {
+      const k = String(r.nit || r.emisor).split('-')[0].replace(/\D/g, '') || norm(r.emisor);
+      const x = (prov[k] ??= { nit: r.nit, emisor: r.emisor, n: 0, total: 0, neto: 0, beneficio: 0 });
+      x.n++; x.total += r.total || 0; x.neto += neto(r) || 0; x.beneficio += r.beneficio || 0;
+    }
+    const conBen = hay('beneficio');
+    const pc = ['NIT emisor', 'Emisor', 'Facturas', 'Valor facturado', 'Valor neto (con notas)', ...(conBen ? ['Valor susceptible de beneficio'] : []), '% del total'];
+    const pt = ['nit', 'texto', 'numero', 'dinero', 'dinero', ...(conBen ? ['dinero'] : []), 'texto'];
+    const sumaNeto = Object.values(prov).reduce((s, x) => s + x.neto, 0);
+    const pf = Object.values(prov).sort((a, b) => b.neto - a.neto).map(x => [x.nit, x.emisor, x.n, Math.round(x.total * 100) / 100, Math.round(x.neto * 100) / 100, ...(conBen ? [Math.round(x.beneficio * 100) / 100] : []), sumaNeto ? (x.neto / sumaNeto * 100).toFixed(1).replace('.', ',') + ' %' : '']);
+    const ptot = filasTotal(pc, pf, pt, 1, -1);
+    if (ptot[0]) ptot[0][2] = { t: 'n', v: reportes.length, f: `SUM(C2:C${pf.length + 1})` };
+    const provH = { nombre: 'Por proveedor', columnas: pc, tipos: pt, filas: [...pf, ...ptot], nTotales: ptot.length };
+    // Por mes
+    const mes = {};
+    for (const r of reportes) { const m = /^\d{4}-\d{2}/.test(r.fecha) ? r.fecha.slice(0, 7) : 'Sin fecha'; const x = (mes[m] ??= { n: 0, neto: 0 }); x.n++; x.neto += neto(r) || 0; }
+    const mf = Object.entries(mes).sort().map(([m, x]) => [m, x.n, Math.round(x.neto * 100) / 100]);
+    const mtot = filasTotal(['Mes', 'Facturas', 'Valor neto (con notas)'], mf, ['texto', 'numero', 'dinero'], 0, -1);
+    if (mtot[0]) mtot[0][1] = { t: 'n', v: reportes.length, f: `SUM(B2:B${mf.length + 1})` };
+    const mesH = { nombre: 'Por mes', columnas: ['Mes', 'Facturas', 'Valor neto (con notas)'], tipos: ['texto', 'numero', 'dinero'], filas: [...mf, ...mtot], nTotales: mtot.length };
+    const suma = k => Math.round(reportes.reduce((s, r) => s + (typeof r[k] === 'number' ? r[k] : 0), 0) * 100) / 100;
+    const ncN = reportes.filter(r => r.nc).length, nProv = Object.keys(prov).length, ben = suma('beneficio');
+    const frase = `Reporte de la DIAN: ${reportes.length} factura${reportes.length === 1 ? '' : 's'} de ${nProv} proveedor${nProv === 1 ? '' : 'es'}; valor facturado ${fmtMonto(suma('total'), 'COP')}` + (ncN ? `, ${ncN} con notas crédito por ${fmtMonto(suma('nc'), 'COP')}` : '') + `; valor neto ${fmtMonto(Math.round(sumaNeto * 100) / 100, 'COP')}` + (conBen ? `; valor susceptible de beneficio ${fmtMonto(ben, 'COP')}` : '') + '.';
+    const nota = conBen ? 'El «valor susceptible de beneficio» es el que la DIAN reporta para la renta exenta por compras con factura electrónica (hasta el 1 % de las compras, con topes). Es una referencia: confirma el cálculo y los topes con tu contador o el formulario.' : '';
+    const top = pf.slice(0, 5).map(f => `${f[1]} (${fmtMonto(f[4], 'COP')})`).join('; ');
+    const texto = frase + (top ? ` Mayores proveedores: ${top}.` : '') + ' Para cruzarlo, sube también los ZIP o XML de las facturas.' + (exog ? ' ' + exog.frase : '');
+    const resumen = { nombre: 'Resumen', columnas: ['Concepto', 'Valor'], tipos: ['texto', 'texto'], nTotales: 0, filas: [
+      ['Facturas en el reporte', reportes.length], ['Proveedores', nProv], ['Valor facturado', fmtMonto(suma('total'), 'COP')],
+      ...(ncN ? [['Notas crédito', fmtMonto(suma('nc'), 'COP')]] : []), ...(hay('nd') ? [['Notas débito', fmtMonto(suma('nd'), 'COP')]] : []),
+      ['Valor neto (con notas)', fmtMonto(Math.round(sumaNeto * 100) / 100, 'COP')], ...(conBen ? [['Valor susceptible de beneficio', fmtMonto(ben, 'COP')]] : [])],
+      pie: [[], ['Resumen', texto], ...(nota ? [['Nota', nota]] : []), ...(exog ? [['Exógena', exog.frase]] : []), ...(omitidos.length ? [[], ['Archivos omitidos'], ...omitidos] : [])] };
+    return { titulo: 'Reporte de facturas DIAN', resumen: texto, cifras: [[reportes.length, 'facturas'], [nProv, nProv === 1 ? 'proveedor' : 'proveedores'], [fmtMonto(Math.round(sumaNeto * 100) / 100, 'COP'), 'valor neto']], hojas: [resumen, libroH, provH, mesH, ...(exog ? exog.hojas : [])] };
+  }
+  // «Consulta de información reportada por terceros» (exógena) del portal de la DIAN: quién reportó qué y en qué renglón sugiere usarlo
+  function reporteExogena(wb) {
+    const filas = [];
+    for (const nombre of wb.SheetNames) {
+      const aoa = XLSX.utils.sheet_to_json(wb.Sheets[nombre], { header: 1, defval: '', raw: true });
+      const h = aoa.slice(0, 60).findIndex(f => f.some(c => /^detalle$/.test(norm(c))) && f.some(c => /^valor$/.test(norm(c))) && f.some(c => /uso (de )?(la )?declaracion/.test(norm(c))));
+      if (h < 0) continue;
+      const cab = aoa[h].map(c => norm(c));
+      const col = re => cab.findIndex(c => re.test(c));
+      const c = { nit: col(/^nit$/), nombre: col(/^nombre/), detalle: col(/^detalle$/), valor: col(/^valor$/), uso: col(/uso (de )?(la )?declaracion/), extra: col(/informacion adicional/) };
+      const v = (f, k) => c[k] >= 0 ? f[c[k]] : '';
+      for (const f of aoa.slice(h + 1)) {
+        const detalle = String(v(f, 'detalle')).replace(/\s+/g, ' ').trim(), valor = typeof v(f, 'valor') === 'number' ? v(f, 'valor') : dineroDe(String(v(f, 'valor')));
+        if (!detalle || valor == null) continue;
+        const uso = String(v(f, 'uso')).replace(/\s+/g, ' ').trim();
+        const r = uso.match(/\bR(\d+)\s+([^|(]+)/), t = uso.match(/Tope (\d+)\s*[-:]\s*([^|,.(]+)/);
+        const renglon = r ? `R${r[1]} ${r[2].trim()}` : t ? `Tope ${t[1]}: ${t[2].trim()}` : '';
+        filas.push({ nit: String(v(f, 'nit')).trim(), nombre: String(v(f, 'nombre')).replace(/\s+/g, ' ').trim(), detalle, valor, uso, renglon, extra: String(v(f, 'extra')).replace(/\s+/g, ' ').trim(), tope: !String(v(f, 'nit')).trim() && /^tope\b/i.test(detalle) });
+      }
+    }
+    return filas.length ? filas : null;
+  }
+  function hojasExogena(exo) {
+    const det = exo.filter(r => !r.tope), topes = exo.filter(r => r.tope);
+    const filas = det.map(r => [r.nit, r.nombre, r.detalle, r.valor, r.renglon || 'Informativo', r.uso, r.extra]);
+    const cols = ['NIT de quien reporta', 'Quién reporta', 'Concepto', 'Valor', 'Renglón sugerido', 'Uso sugerido por la DIAN', 'Información adicional'];
+    const tps = ['nit', 'texto', 'texto', 'dinero', 'texto', 'largo', 'largo'];
+    const ex = { nombre: 'Exógena', columnas: cols, tipos: tps, filas: [...filas.sort((a, b) => String(a[4]).localeCompare(String(b[4]), 'es', { numeric: true }))], nTotales: 0 };
+    const g = {};
+    for (const r of det) { const k = r.renglon || 'Informativo'; const x = (g[k] ??= { n: 0, v: 0, quien: new Set() }); x.n++; x.v += r.valor; x.quien.add(r.nombre); }
+    const gf = Object.entries(g).sort((a, b) => a[0].localeCompare(b[0], 'es', { numeric: true })).map(([k, x]) => [k, x.n, Math.round(x.v * 100) / 100, [...x.quien].slice(0, 5).join('; ') + (x.quien.size > 5 ? '…' : '')]);
+    const porR = { nombre: 'Exógena por renglón', columnas: ['Renglón o tope sugerido', 'Reportes', 'Suma reportada', 'Quiénes reportan'], tipos: ['texto', 'numero', 'dinero', 'largo'], filas: gf, nTotales: 0 };
+    const tf = topes.map(r => [r.detalle, r.valor]);
+    const topH = tf.length ? { nombre: 'Topes para declarar', columnas: ['Tope', 'Valor'], tipos: ['texto', 'dinero'], filas: tf, nTotales: 0 } : null;
+    const frase = `Exógena: ${det.length} reporte${det.length === 1 ? '' : 's'} de ${new Set(det.map(r => r.nit || r.nombre)).size} entidades, agrupados en ${gf.length} renglones o topes sugeridos. Son valores que terceros reportaron a la DIAN: verifícalos con tus soportes antes de declarar.`;
+    return { hojas: [porR, ex, ...(topH ? [topH] : [])], frase };
   }
   async function leerHojaCalculo(a) {
     const wb = XLSX.read(new Uint8Array(await a.file.arrayBuffer()), { cellDates: false, cellStyles: true });
     const rep = reporteDian(wb);
     if (rep) throw { reporteDian: rep };
+    const exo = reporteExogena(wb);
+    if (exo) throw { exogena: exo };
     const ocultas = new Set((wb.Workbook?.Sheets || []).filter(h => h.Hidden).map(h => h.name));
     const paginas = [];
     for (const nombre of wb.SheetNames) {
@@ -1724,7 +1818,7 @@
     try { localStorage.setItem(CLAVE_PEDIDO, $('#pedido').value.trim()); } catch { }
     const pedido = interpretarPedido($('#pedido').value);
     let docs = [];
-    const omitidos = [], reportes = [], inicio = performance.now();
+    const omitidos = [], reportes = [], exogenas = [], inicio = performance.now();
     for (let i = 0; i < archivos.length; i++) {
       if (cancelado) break;
       const a = archivos[i];
@@ -1773,6 +1867,7 @@
         a.clase = 'ok';
       } catch (e) {
         if (e?.cancel) { a.estado = T('Detenido'); break; }
+        if (e?.exogena) { a.estado = `Exógena DIAN · ${e.exogena.length} reportes`; a.clase = 'ok'; exogenas.push(...e.exogena); pintarArchivos(); continue; }
         if (e?.reporteDian) { a.estado = `Reporte DIAN · ${e.reporteDian.length} documentos`; a.clase = 'ok'; reportes.push(...e.reporteDian); pintarArchivos(); continue; }
         if (e?.omitir) { a.estado = T('Omitido'); a.clase = ''; omitidos.push([a.nombre, T(e.omitir)]); pintarArchivos(); continue; }
         console.error(a.nombre, e);
@@ -1796,9 +1891,9 @@
       return false;
     });
     pintarArchivos();
-    if (!docs.some(d => !d.error) && reportes.length) { estado('Solo se subió el reporte de la DIAN: agrega también los ZIP, XML o PDF de las facturas para cruzarlos.', 'error'); ocupado(false); return; }
+    if (!docs.some(d => !d.error) && (reportes.length || exogenas.length)) { mostrar(libroReporteDian(reportes, exogenas, omitidos)); estado(reportes.length ? 'Listo: se organizó el reporte de la DIAN. Si subes también los ZIP o XML de las facturas, se cruzan contra él.' : 'Listo: se organizó la información exógena de la DIAN.', 'ok'); ocupado(false); return; }
     if (!docs.some(d => !d.error)) { estado(T(cancelado ? 'Proceso detenido.' : omitidos.length ? 'Ninguno de los archivos es una factura o documento para procesar.' : 'No se pudo leer ningún documento.'), 'error'); ocupado(false); return; }
-    mostrar(construirLibro(docs, pedido, omitidos, reportes));
+    mostrar(construirLibro(docs, pedido, omitidos, reportes, exogenas));
     estado(cancelado ? T('Proceso detenido: se incluyen los {n} documentos leídos.', { n: docs.length }) : T('Listo. Revisa las hojas (doble clic en una celda para corregirla) y descarga el Excel.'), cancelado ? '' : 'ok');
     ocupado(false);
   };
@@ -1936,7 +2031,7 @@
       tipos: ['texto', 'texto', 'codigo', 'fecha', 'nit', 'texto', 'dinero', 'dinero', 'dinero', 'codigo', 'texto'], filas, nTotales: 0 } };
   }
 
-  function construirLibro(docs, pedido, omitidos = [], reportes = []) {
+  function construirLibro(docs, pedido, omitidos = [], reportes = [], exogenas = []) {
     const ok = docs.filter(d => !d.error), errores = docs.filter(d => d.error);
     const hojas = [];
     const grupos = [...TIPOS, OTRO].map(t => ({ t, docs: ok.filter(d => d.tipo === t) })).filter(g => g.docs.length);
@@ -2032,15 +2127,22 @@
       ...(omitidos.length ? [[], [T('Archivos omitidos')], ...omitidos] : [])];
     const contables = (MODO === 'contadores' || ok.some(d => d.doc.xml)) ? hojasContables(ok) : null;
     if (contables) { resumen.pie.splice(2, 0, ['Contabilidad', contables.frase]); texto = contables.frase + ' ' + texto; }
-    const cruce = reportes.length ? cruceDian(ok, reportes) : null;
+    let cruce = reportes.length ? cruceDian(ok, reportes) : null;
+    // Si ninguna factura subida está en el reporte, no hay nada que cruzar: se muestra el reporte organizado
+    if (cruce && !cruce.hoja.filas.some(f => f[0] === 'Cuadra' || f[0].startsWith('Total'))) {
+      const rep = libroReporteDian(reportes);
+      cruce = { frase: rep.resumen.replace(/ Para cruzarlo.*$/, ' Ninguna de las facturas subidas aparece en él (para cruzarlo, sube los ZIP o XML de esas facturas).'), hojas: rep.hojas.slice(1) };
+    } else if (cruce) cruce.hojas = [cruce.hoja];
     if (cruce) { resumen.pie.splice(2, 0, ['Cruce con la DIAN', cruce.frase]); texto = cruce.frase + ' ' + texto; }
-    hojas.push(resumen, ...(cruce ? [cruce.hoja] : []), ...(contables ? contables.hojas : []), ...hojasDatos);
+    const exog = exogenas.length ? hojasExogena(exogenas) : null;
+    if (exog) resumen.pie.splice(2, 0, ['Exógena', exog.frase]);
+    hojas.push(resumen, ...(cruce ? cruce.hojas : []), ...(contables ? contables.hojas : []), ...hojasDatos, ...(exog ? exog.hojas : []));
     const conPlanos = ok.filter(d => d.tipo.id === 'plano');
     if (conPlanos.some(d => d.doc.laminas?.length > 1)) {
       const cols = ['Archivo', 'Hoja', 'Número de plano', 'Título', 'Proyecto', 'Escala', 'Fecha', 'Revisión', 'Dibujó', 'Diseñó', 'Revisó', 'Aprobó', 'Observaciones'].map(c => T(c));
       const filas = conPlanos.flatMap(d => (d.doc.laminas?.length ? d.doc.laminas : [{ pagina: 1, r: d.doc._rotulo || {} }]).map(({ pagina, r }) =>
         [d.archivo, pagina, r.plano || '', r.titulo || '', r.proyecto || '', r.escala || '', r.fecha ? (fechaDe(r.fecha) || r.fecha) : '', r.revision || '', r.dibujo || '', r.diseno || '', r.reviso || '', r.aprobo || '', r.observaciones ? T(r.observaciones) : '']));
-      hojas.splice(1 + (cruce ? 1 : 0) + (contables ? contables.hojas.length : 0), 0, { nombre: T('Listado de planos'), columnas: cols, tipos: ['texto', 'numero', 'codigo', 'texto', 'texto', 'texto', 'fecha', 'codigo', 'texto', 'texto', 'texto', 'texto', 'largo'], filas, nTotales: 0 });
+      hojas.splice(1 + (cruce ? cruce.hojas.length : 0) + (contables ? contables.hojas.length : 0), 0, { nombre: T('Listado de planos'), columnas: cols, tipos: ['texto', 'numero', 'codigo', 'texto', 'texto', 'texto', 'fecha', 'codigo', 'texto', 'texto', 'texto', 'texto', 'largo'], filas, nTotales: 0 });
     }
 
     // --- Tablas: ítems de documentos comerciales (columnas unificadas) y tablas de los demás (una debajo de otra) ---
